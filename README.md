@@ -7,3 +7,5 @@ https://hrnl.sharepoint.com/sites/CMI-ANL8-SQ-24-25/Shared%20Documents/Forms/All
 Chris van der Elst - 1029000 - Jacksn1219
 
 Aymane Aazouz - 1073235 - ItzGalaxy15
+
+Amer Alhasoun - 0992644 - ameralhasoun
