@@ -38,7 +38,7 @@ class Scooter:
             raise ValueError("brand, model and serial_number are mandatory")
 
         if not BRAND_RE.fullmatch(brand):
-            raise ValueError("brand format invalid (2‑30 alphanum chars)")
+            raise ValueError("brand format invalid (2‑30 alphanum/- chars)")
         if not MODEL_RE.fullmatch(model):
             raise ValueError("model format invalid (1‑30 alphanum/‑ chars)")
         if not SERIAL_RE.fullmatch(serial_number):
