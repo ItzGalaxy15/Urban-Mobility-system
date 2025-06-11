@@ -142,5 +142,22 @@ def verify_user_password(user_id, password):
         return check_password(password, row[0])
     return False
 
+def get_user_by_username(username):
+    conn = sqlite3.connect('urban_mobility.db')
+    c = conn.cursor()
+    c.execute('SELECT user_id, username, first_name, last_name, role FROM User')
+    users = c.fetchall()
+    conn.close()
+    for row in users:
+        if decrypt(row[1]) == username:
+            return {
+                "user_id": row[0],
+                "username": decrypt(row[1]),
+                "first_name": decrypt(row[2]),
+                "last_name": decrypt(row[3]),
+                "role": row[4]
+            }
+    return None
+
 if __name__ == "__main__":
     create_db()

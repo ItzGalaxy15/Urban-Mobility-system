@@ -1,18 +1,34 @@
 # um_members.py
 from dbcontext.dbcontext import create_db, add_user, get_user_by_id, verify_user_password
+from controllers.usercontroller import change_password
+from controllers.session import UserSession
 
-print("Urban Mobility System Starting...")
+def main():
+    print("Urban Mobility System Starting...")
+# add_user("mike_admin", "StrongPass123!", "Mike", "Jansen", "system_admin")
 
-# Create the database and add a user
-create_db()
-add_user("mike_admin", "StrongPass123!", "Mike", "Jansen", "system_admin")
+    session = UserSession()
+    while not session.is_authenticated():
+        username = input("Username: ")
+        password = input("Password: ")
+        session.login(username, password)
 
-# Retrieve the user by ID
-user = get_user_by_id(1)
-if user:
-    print("Username:", user["username"])
-    print("Full name:", f"{user['first_name']} {user['last_name']}")
-    print("Role:", user["role"])
-    print("Password check:", verify_user_password(1, "StrongPass123!"))  # Should print True
-else:
-    print("User not found.")
+    while True:
+        print(f"\nWelcome, {session.username} ({session.role})")
+        option = input("Choose option: \n 1. Change password\n 2. Logout\n 3. Exit\n")
+        if option == "1":
+            old_pw = input("Enter your old password: ")
+            new_pw = input("Enter your new password: ")
+            success, message = change_password(session.user_id, old_pw, new_pw)
+            print(message)
+        elif option == "2":
+            session.logout()
+            break
+        elif option == "3":
+            print("Exiting...")
+            break
+        else:
+            print("Invalid option")
+
+if __name__ == "__main__":
+    main()
