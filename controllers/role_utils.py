@@ -1,14 +1,30 @@
 from functools import wraps
 from dbcontext.userdata import get_user_by_id
 
-# Define role hierarchy
+# Role hierarchy defines the permission levels for different roles
+# Higher numbers indicate higher permission levels
 ROLE_HIERARCHY = {
-    "service_engineer": 1,
-    "system_admin": 2,
-    "super_admin": 3
+    "service_engineer": 1,  # Basic access level
+    "system_admin": 2,      # Administrative access
+    "super_admin": 3        # Full system access
 }
 
 def require_role(required_role):
+    """
+    Decorator that checks if a user has sufficient role permissions before executing a function.
+    
+    Args:
+        required_role (str): The minimum role level required to execute the decorated function
+        
+    Returns:
+        function: Decorated function that includes role permission checking
+        
+    Example:
+        @require_role("system_admin")
+        def admin_only_function(user_id):
+            # Only users with system_admin role or higher can execute this
+            pass
+    """
     def decorator(func):
         @wraps(func)
         def wrapper(user_id, *args, **kwargs):
@@ -26,6 +42,21 @@ def require_role(required_role):
     return decorator
 
 def has_permission(user_id, required_role):
+    """
+    Checks if a user has sufficient permissions for a given role level.
+    
+    Args:
+        user_id: The ID of the user to check permissions for
+        required_role (str): The role level to check against
+        
+    Returns:
+        bool: True if user has sufficient permissions, False otherwise
+        
+    Example:
+        if has_permission(user_id, "system_admin"):
+            # Perform admin-only operation
+            pass
+    """
     user = get_user_by_id(user_id)
     if not user:
         return False
