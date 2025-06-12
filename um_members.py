@@ -1,11 +1,13 @@
 # um_members.py
-from dbcontext.dbcontext import create_db, add_user, get_user_by_id, verify_user_password
+from dbcontext.dbcontext import create_db
+from dbcontext.userdata import add_user
 from controllers.usercontroller import change_password
 from controllers.session import UserSession
 
 def main():
     print("Urban Mobility System Starting...")
 # add_user("mike_admin", "StrongPass123!", "Mike", "Jansen", "system_admin")
+    create_db()
 
     session = UserSession()
     while not session.is_authenticated():

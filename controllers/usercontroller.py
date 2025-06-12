@@ -1,8 +1,7 @@
 # namespace: controllers
 
 from models.user import User
-from dbcontext.dbcontext import verify_user_password, get_user_by_id
-from dbcontext.userdata import update_password
+from dbcontext.userdata import verify_user_password, get_user_by_id, update_password
 from controllers.role_utils import require_role
 
 class UserController:

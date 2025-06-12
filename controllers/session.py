@@ -1,4 +1,4 @@
-from dbcontext.dbcontext import get_user_by_id, verify_user_password
+from dbcontext.userdata import get_user_by_id, verify_user_password
 
 class UserSession:
     def __init__(self):
