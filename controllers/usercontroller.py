@@ -23,9 +23,9 @@ def change_password(user_id, old_password, new_password):
     return True, "Password updated successfully."
 
 @require_role("system_admin")
-def add_user_controller(user_id, username, password, first_name, last_name, role):
+def add_sys_eng_user_controller(user_id, username, password, first_name, last_name, role):
     # Only system_admin and super_admin can add users
     from dbcontext.dbcontext import add_user
     add_user(username, password, first_name, last_name, role)
     print("User added successfully.")
-        
+
