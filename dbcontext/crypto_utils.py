@@ -1,17 +1,27 @@
 from cryptography.fernet import Fernet
 import bcrypt
+import os
 
-def load_key():
-    with open("secret.key", "rb") as key_file:
-        return key_file.read()
+# Singleton pattern for Fernet instance
+_fernet = None
 
-fernet = Fernet(load_key())
+def get_fernet():
+    global _fernet
+    if _fernet is None:
+        with open("secret.key", "rb") as key_file:
+            key = key_file.read()
+        _fernet = Fernet(key)
+    return _fernet
 
 def encrypt(data: str) -> bytes:
-    return fernet.encrypt(data.encode())
+    if data is None:
+        return None
+    return get_fernet().encrypt(data.encode())
 
 def decrypt(token: bytes) -> str:
-    return fernet.decrypt(token).decode()
+    if token is None:
+        return None
+    return get_fernet().decrypt(token).decode()
 
 def hash_password(password: str) -> bytes:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt())
