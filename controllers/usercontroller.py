@@ -8,7 +8,7 @@ class UserController:
     def __init__(self):
         pass
         
-@require_role("service_engineer")
+@require_role("service_engineer", "system_admin")
 def change_password(user_id, old_password, new_password):
     # Special case for super admin
     if user_id == 0:
@@ -28,7 +28,7 @@ def change_password(user_id, old_password, new_password):
     update_password(user_id, new_password)
     return True, "Password updated successfully."
 
-@require_role("system_admin")
+@require_role("system_admin", "super")
 def add_sys_eng_user_controller(user_id, username, password, first_name, last_name, role):
     # Only system_admin and super_admin can add users
     try:

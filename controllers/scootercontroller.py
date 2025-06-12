@@ -2,11 +2,13 @@ from typing import Optional, Dict, Any
 from models.scooter import Scooter
 from models.user import User
 from dbcontext.scooterdata import ScooterData
+from utils.role_utils import requires_role
 
 class ScooterController:
     def __init__(self, db_path: str):
         self.scooter_data = ScooterData(db_path)
-
+        
+    @requires_role("system_admin", "super")
     def add_scooter(self, user: User, scooter_data: Dict[str, Any]) -> tuple[bool, str]:
         """
         Add a new scooter to the system.
