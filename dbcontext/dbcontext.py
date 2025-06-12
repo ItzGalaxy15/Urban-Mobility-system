@@ -18,35 +18,39 @@ def create_db():
     )
     ''')
 
-    # Create super admin user
-    super_admin = User(
-        username="super_admin",
-        password_plain="Admin_123?",
-        role="super",
-        first_name="John",
-        last_name="Doe"
-    )
+    # Check if super admin exists
+    c.execute('SELECT COUNT(*) FROM User WHERE role = "super"')
+    super_admin_count = c.fetchone()[0]
 
-    # Insert super admin if not exists
-    c.execute('''
-    INSERT OR IGNORE INTO User (
-        user_id,
-        username,
-        password_hash,
-        first_name,
-        last_name,
-        registration_date,
-        role
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        super_admin.user_id,
-        super_admin.username,
-        super_admin.password_hash,
-        super_admin.first_name,
-        super_admin.last_name,
-        super_admin.registration_date,
-        super_admin.role
-    ))
+    # Only create super admin if none exists
+    if super_admin_count == 0:
+        super_admin = User(
+            username="super_admin",
+            password_plain="Admin_123?",
+            role="super",
+            first_name="John",
+            last_name="Doe"
+        )
+
+        c.execute('''
+        INSERT INTO User (
+            user_id,
+            username,
+            password_hash,
+            first_name,
+            last_name,
+            registration_date,
+            role
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            super_admin.user_id,
+            super_admin.username,
+            super_admin.password_hash,
+            super_admin.first_name,
+            super_admin.last_name,
+            super_admin.registration_date,
+            super_admin.role
+        ))
 
     # Traveller table
     c.execute('''
