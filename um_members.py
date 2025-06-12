@@ -1,6 +1,6 @@
 # um_members.py
 from dbcontext.dbcontext import create_db
-from dbcontext.dbcontext import add_user
+from services.userdata import add_user
 from controllers.usercontroller import change_password
 from controllers.session import UserSession
 from controllers.scootercontroller import ScooterController

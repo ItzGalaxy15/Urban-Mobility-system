@@ -49,7 +49,7 @@ class User:
                 raise ValueError("first_name and last_name are required for this role")
 
         # Make random id
-        self.user_id = random.randint(1_000_000, 9_999_999)
+        # self.user_id = random.randint(1_000_000, 9_999_999)
 
         # Core fields
         self.username: bytes = encrypt(username.lower())  # case‑insensitive store

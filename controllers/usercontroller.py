@@ -1,14 +1,14 @@
 # namespace: controllers
 
 from models.user import User
-from dbcontext.userdata import verify_user_password, get_user_by_id, update_password, add_user
+from services.userdata import verify_user_password, get_user_by_id, update_password, add_user
 from utils.role_utils import require_role
 
 class UserController:
     def __init__(self):
         pass
         
-@require_role("service_engineer", "system_admin")
+@require_role("service_engineer")
 def change_password(user_id, old_password, new_password):
     # Special case for super admin
     if user_id == 0:
@@ -28,7 +28,7 @@ def change_password(user_id, old_password, new_password):
     update_password(user_id, new_password)
     return True, "Password updated successfully."
 
-@require_role("system_admin", "super")
+@require_role("system_admin")
 def add_sys_eng_user_controller(user_id, username, password, first_name, last_name, role):
     # Only system_admin and super_admin can add users
     try:

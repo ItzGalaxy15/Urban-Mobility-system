@@ -1,5 +1,5 @@
 from functools import wraps
-from dbcontext.userdata import get_user_by_id
+from services.userdata import get_user_by_id
 
 # Role hierarchy defines the permission levels for different roles
 # Higher numbers indicate higher permission levels
