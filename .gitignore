@@ -197,7 +197,7 @@ urban_mobility.db
 
 # encription key handling
 generate_key.py
-.secret.key
+secret.key
 
 # Database
 urban_mobility.db
