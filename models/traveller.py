@@ -1,8 +1,7 @@
 # models/traveller.py
 import re, random
 from datetime import datetime, date
-from cryptography.fernet import Fernet
-from models.user import fernet 
+from utils.crypto_utils import fernet
 
 CITY_CHOICES = {
     "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",

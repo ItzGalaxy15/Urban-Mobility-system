@@ -1,8 +1,7 @@
 import re, random
 from datetime import datetime
 from typing import Optional
-from cryptography.fernet import Fernet
-from models.user import fernet
+from utils.crypto_utils import get_fernet, encrypt, decrypt
 
 # Regex & ranges
 BRAND_RE   = re.compile(r"^[A-Za-z0-9\- ]{2,30}$")
@@ -94,11 +93,11 @@ class Scooter:
     # Encryption helpers
     @staticmethod
     def _encrypt(value: str) -> bytes:
-        return fernet.encrypt(value.encode())
+        return encrypt(value.encode())
 
     @staticmethod
     def _decrypt(value: bytes) -> str:
-        return fernet.decrypt(value).decode()
+        return decrypt(value).decode()
 
     # Getters (plain text)
     @property

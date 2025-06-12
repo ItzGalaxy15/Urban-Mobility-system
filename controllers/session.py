@@ -19,10 +19,10 @@ class UserSession:
         # Regular user login
         user = get_user_by_username(username)
         if not user:
-            print("User not found.")
+            print("Username or password incorrect.")
             return False
         if not verify_user_password(user["user_id"], password):
-            print("Incorrect password.")
+            print("Password incorrect.")
             return False
         self.user_id = user["user_id"]
         self.username = user["username"]

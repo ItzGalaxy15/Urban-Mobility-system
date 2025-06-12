@@ -1,19 +1,46 @@
 import sqlite3
-from dbcontext.crypto_utils import hash_password, encrypt, decrypt, check_password
+from utils.crypto_utils import hash_password, decrypt, check_password
+from models.user import User
 
 
-def add_user(username, password, first_name, last_name, role):
+def add_user_from_params(username, password, first_name, last_name, role):
+    """
+    Add a user to the database using individual parameters.
+    This is a wrapper around the User model for backward compatibility.
+    """
+    try:
+        user = User(
+            username=username,
+            password_plain=password,
+            role=role,
+            first_name=first_name,
+            last_name=last_name
+        )
+        add_user(user)
+        return True
+    except ValueError as e:
+        print(f"Error adding user: {e}")
+        return False
+
+
+def add_user(user):
+    """
+    Add a user to the database. The user object should already have encrypted data.
+    
+    Args:
+        user: User object with encrypted username, password_hash, first_name, and last_name
+    """
     conn = sqlite3.connect('urban_mobility.db')
     c = conn.cursor()
     c.execute('''
         INSERT INTO User (username, password_hash, first_name, last_name, registration_date, role)
         VALUES (?, ?, ?, ?, datetime('now'), ?)
     ''', (
-        encrypt(username),
-        hash_password(password),
-        encrypt(first_name),
-        encrypt(last_name),
-        role
+        user.username,
+        user.password_hash,
+        user.first_name,
+        user.last_name,
+        user.role
     ))
     conn.commit()
     conn.close()

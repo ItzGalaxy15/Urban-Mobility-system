@@ -2,7 +2,7 @@
 import re, random
 from datetime import datetime
 from typing import Optional
-from dbcontext.crypto_utils import encrypt, decrypt, hash_password, check_password
+from utils.crypto_utils import encrypt, decrypt, hash_password, check_password
 
 # Username & password validation patterns
 USERNAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)
