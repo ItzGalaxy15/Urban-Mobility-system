@@ -3,7 +3,8 @@ from dbcontext.dbcontext import create_db
 from dbcontext.dbcontext import add_user
 from controllers.usercontroller import change_password
 from controllers.session import UserSession
-from controllers.scootercontroller import add_scooter_controller
+from controllers.scootercontroller import ScooterController
+from validation.scooter_validation import validate_scooter_inputs
 
 def main():
     print("Urban Mobility System Starting...")
@@ -17,41 +18,73 @@ def main():
         password = input("Password: ")
         session.login(username, password)
 
+    scooter_controller = ScooterController("urban_mobility.db")
+
     while True:
         print(f"\nWelcome, {session.username} ({session.role})")
-        option = input("Choose option: \n 1. Change password\n 2. Add scooter\n 3. Logout\n 4. Exit\n")
+        print("\nMain Menu:")
+        print("1. Change password")
+        print("2. Scooter Management")
+        print("3. Logout")
+        print("4. Exit")
+        
+        option = input("\nChoose an option (1-4): ")
+        
         if option == "1":
             old_pw = input("Enter your old password: ")
             new_pw = input("Enter your new password: ")
             success, message = change_password(session.user_id, old_pw, new_pw)
             print(message)
-        # elif option == "2":
-        #     try:
-        #         print("\nEnter scooter details:")
-        #         brand = input("Brand (2-30 alphanumeric chars): ")
-        #         model = input("Model (1-30 alphanumeric chars): ")
-        #         serial_number = input("Serial Number (10-17 alphanumeric chars): ")
-        #         top_speed = input("Top Speed (5-50 km/h): ")
-        #         battery_capacity = input("Battery Capacity (0-5000 Wh): ")
-        #         state_of_charge = input("State of Charge (0-100%): ")
-        #         target_soc_min = input("Target SOC Min (0-100%): ")
-        #         target_soc_max = input("Target SOC Max (0-100%): ")
-        #         location_lat = input("Location Lat (-90 to 90): ")
-        #         location_lon = input("Location Lon (-180 to 180): ")
-        #         out_of_service = input("Out of Service (1 for Yes, 2 for No): ")
-        #         mileage = input("Mileage (0-1,000,000 km): ")
-        #         last_maint_date = input("Last Maintenance Date (YYYY-MM-DD): ")
-
-        #         success, message = add_scooter_controller(
-        #             brand, model, serial_number, top_speed, battery_capacity,
-        #             state_of_charge, target_soc_min, target_soc_max, location_lat,
-        #             location_lon, out_of_service, mileage, last_maint_date
-        #         )
-        #         print(message)
-        #     except KeyboardInterrupt:
-        #         print("\nScooter addition cancelled")
-        #     except Exception as e:
-        #         print(f"Error adding scooter: {str(e)}")
+            
+        elif option == "2":
+            if session.role not in {"super", "system_admin"}:
+                print("Access denied: Only super admin and system admin can manage scooters")
+                continue
+                
+            print("\nScooter Management:")
+            print("1. Add new scooter")
+            print("2. View scooter details")
+            print("3. Back to main menu")
+            
+            scooter_option = input("\nChoose an option (1-3): ")
+            
+            if scooter_option == "1":
+                scooter_data, success = validate_scooter_inputs()
+                if success:
+                    success, message = scooter_controller.add_scooter(session.user, scooter_data)
+                    print(message)
+                    
+            elif scooter_option == "2":
+                try:
+                    scooter_id = int(input("\nEnter scooter ID to view: "))
+                    scooter, message = scooter_controller.get_scooter(session.user, scooter_id)
+                    if scooter:
+                        print("\nScooter Details:")
+                        print(f"ID: {scooter.scooter_id}")
+                        print(f"Brand: {scooter.brand_plain}")
+                        print(f"Model: {scooter.model_plain}")
+                        print(f"Serial Number: {scooter.serial_number_plain}")
+                        print(f"Top Speed: {scooter.top_speed} km/h")
+                        print(f"Battery Capacity: {scooter.battery_capacity} Wh")
+                        print(f"State of Charge: {scooter.state_of_charge}%")
+                        print(f"Target SOC Range: {scooter.target_soc_min}% - {scooter.target_soc_max}%")
+                        print(f"Location: {scooter.location_lat}, {scooter.location_lon}")
+                        print(f"Status: {'Out of Service' if scooter.is_out_of_service else 'In Service'}")
+                        print(f"Mileage: {scooter.mileage} km")
+                        if scooter.last_maint_date:
+                            print(f"Last Maintenance: {scooter.last_maint_date}")
+                    else:
+                        print(message)
+                except ValueError:
+                    print("Invalid scooter ID")
+                except Exception as e:
+                    print(f"Error retrieving scooter: {str(e)}")
+                    
+            elif scooter_option == "3":
+                continue
+            else:
+                print("Invalid option")
+                
         elif option == "3":
             session.logout()
             break

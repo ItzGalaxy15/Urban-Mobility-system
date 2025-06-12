@@ -32,6 +32,8 @@ class Scooter:
         out_of_service: bool = False,
         last_maint_date: Optional[str] = None,  # YYYY-MM-DD
     ) -> None:
+        print(f"[DEBUG] Creating new Scooter with brand={brand}, model={model}, serial={serial_number}")
+        
         # mandatory text checks
         if not all([brand, model, serial_number]):
             raise ValueError("brand, model and serial_number are mandatory")
@@ -44,10 +46,10 @@ class Scooter:
             raise ValueError("serial_number must be 10‑17 alphanum chars")
 
         # numeric range checks
-        if not (TOP_SPEED_MIN < top_speed <= TOP_SPEED_MAX):
-            raise ValueError("top_speed out of range (5‑50)")
-        if not (0 < battery_capacity <= BATTERY_CAP_MAX):
-            raise ValueError("battery_capacity out of range (0‑5000 Wh)")
+        if not (TOP_SPEED_MIN <= top_speed <= TOP_SPEED_MAX):
+            raise ValueError(f"top_speed out of range ({TOP_SPEED_MIN}‑{TOP_SPEED_MAX})")
+        if not (0 <= battery_capacity <= BATTERY_CAP_MAX):
+            raise ValueError(f"battery_capacity out of range (0‑{BATTERY_CAP_MAX} Wh)")
         if not (0 <= state_of_charge <= 100):
             raise ValueError("state_of_charge must be 0‑100")
 
@@ -69,35 +71,64 @@ class Scooter:
         else:
             last_maint_date_obj = None
 
-        in_service_dt =  datetime.now()
+        in_service_dt = datetime.now()
 
         # store(encrypted) -------------------------------------------
-        self.scooter_id       = random.randint(1_000_000, 9_999_999)
-        self.brand            = self._encrypt(brand)
-        self.model            = self._encrypt(model)
-        self.serial_number    = self._encrypt(serial_number)
+        self.scooter_id = random.randint(1_000_000, 9_999_999)
+        print(f"[DEBUG] Generated scooter_id: {self.scooter_id}")
+        
+        try:
+            print(f"[DEBUG] Encrypting brand: {brand}")
+            self.brand = encrypt(brand)  # encrypt() handles encoding
+            print(f"[DEBUG] Encrypting model: {model}")
+            self.model = encrypt(model)  # encrypt() handles encoding
+            print(f"[DEBUG] Encrypting serial_number: {serial_number}")
+            self.serial_number = encrypt(serial_number)  # encrypt() handles encoding
+        except Exception as e:
+            print(f"[ERROR] Encryption failed: {str(e)}")
+            raise
 
-        self.top_speed        = float(top_speed)
+        self.top_speed = float(top_speed)
         self.battery_capacity = float(battery_capacity)
-        self.state_of_charge  = float(state_of_charge)
-        self.target_soc_min   = float(target_soc_min)
-        self.target_soc_max   = float(target_soc_max)
-        self.location_lat     = float(location_lat)
-        self.location_lon     = float(location_lon)
-        self.out_of_service   = int(bool(out_of_service))
-        self.mileage          = float(mileage)
+        self.state_of_charge = float(state_of_charge)
+        self.target_soc_min = float(target_soc_min)
+        self.target_soc_max = float(target_soc_max)
+        self.location_lat = float(location_lat)
+        self.location_lon = float(location_lon)
+        self.out_of_service = int(bool(out_of_service))
+        self.mileage = float(mileage)
 
-        self.last_maint_date  = last_maint_date_obj  # date or None
-        self.in_service_date  = in_service_dt        # datetime
+        self.last_maint_date = last_maint_date_obj  # date or None
+        self.in_service_date = in_service_dt        # datetime
 
     # Encryption helpers
     @staticmethod
     def _encrypt(value: str) -> bytes:
-        return encrypt(value.encode())
+        print(f"[DEBUG] _encrypt called with value type: {type(value)}")
+        if not isinstance(value, str):
+            print(f"[ERROR] Expected str but got {type(value)}")
+            raise TypeError(f"Expected str but got {type(value)}")
+        try:
+            result = encrypt(value)  # encrypt() handles encoding
+            print(f"[DEBUG] Encryption successful, result type: {type(result)}")
+            return result
+        except Exception as e:
+            print(f"[ERROR] Encryption failed: {str(e)}")
+            raise
 
     @staticmethod
     def _decrypt(value: bytes) -> str:
-        return decrypt(value).decode()
+        print(f"[DEBUG] _decrypt called with value type: {type(value)}")
+        if not isinstance(value, bytes):
+            print(f"[ERROR] Expected bytes but got {type(value)}")
+            raise TypeError(f"Expected bytes but got {type(value)}")
+        try:
+            result = decrypt(value)  # decrypt() handles decoding
+            print(f"[DEBUG] Decryption successful, result type: {type(result)}")
+            return result
+        except Exception as e:
+            print(f"[ERROR] Decryption failed: {str(e)}")
+            raise
 
     # Getters (plain text)
     @property

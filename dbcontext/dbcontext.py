@@ -1,6 +1,5 @@
 import sqlite3
 from dbcontext.userdata import add_user_from_params
-from dbcontext.scooterdata import add_scooter_from_params
 
 def create_db():
     conn = sqlite3.connect('urban_mobility.db')
