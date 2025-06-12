@@ -31,8 +31,10 @@ class Scooter:
         mileage: float = 0.0,
         out_of_service: bool = False,
         last_maint_date: Optional[str] = None,  # YYYY-MM-DD
+        scooter_id: Optional[int] = None,  # Added back for database operations
     ) -> None:
-        print(f"[DEBUG] Creating new Scooter with brand={brand}, model={model}, serial={serial_number}")
+        # Store ID if provided (for existing scooters)
+        self.scooter_id = scooter_id if scooter_id is not None else random.randint(1_000_000, 9_999_999)
         
         # mandatory text checks
         if not all([brand, model, serial_number]):
@@ -74,19 +76,12 @@ class Scooter:
         in_service_dt = datetime.now()
 
         # store(encrypted) -------------------------------------------
-        self.scooter_id = random.randint(1_000_000, 9_999_999)
-        print(f"[DEBUG] Generated scooter_id: {self.scooter_id}")
-        
         try:
-            print(f"[DEBUG] Encrypting brand: {brand}")
             self.brand = encrypt(brand)  # encrypt() handles encoding
-            print(f"[DEBUG] Encrypting model: {model}")
             self.model = encrypt(model)  # encrypt() handles encoding
-            print(f"[DEBUG] Encrypting serial_number: {serial_number}")
             self.serial_number = encrypt(serial_number)  # encrypt() handles encoding
         except Exception as e:
-            print(f"[ERROR] Encryption failed: {str(e)}")
-            raise
+            raise ValueError(f"Encryption failed: {str(e)}")
 
         self.top_speed = float(top_speed)
         self.battery_capacity = float(battery_capacity)
@@ -104,31 +99,21 @@ class Scooter:
     # Encryption helpers
     @staticmethod
     def _encrypt(value: str) -> bytes:
-        print(f"[DEBUG] _encrypt called with value type: {type(value)}")
         if not isinstance(value, str):
-            print(f"[ERROR] Expected str but got {type(value)}")
             raise TypeError(f"Expected str but got {type(value)}")
         try:
-            result = encrypt(value)  # encrypt() handles encoding
-            print(f"[DEBUG] Encryption successful, result type: {type(result)}")
-            return result
+            return encrypt(value)  # encrypt() handles encoding
         except Exception as e:
-            print(f"[ERROR] Encryption failed: {str(e)}")
-            raise
+            raise ValueError(f"Encryption failed: {str(e)}")
 
     @staticmethod
     def _decrypt(value: bytes) -> str:
-        print(f"[DEBUG] _decrypt called with value type: {type(value)}")
         if not isinstance(value, bytes):
-            print(f"[ERROR] Expected bytes but got {type(value)}")
             raise TypeError(f"Expected bytes but got {type(value)}")
         try:
-            result = decrypt(value)  # decrypt() handles decoding
-            print(f"[DEBUG] Decryption successful, result type: {type(result)}")
-            return result
+            return decrypt(value)  # decrypt() handles decoding
         except Exception as e:
-            print(f"[ERROR] Decryption failed: {str(e)}")
-            raise
+            raise ValueError(f"Decryption failed: {str(e)}")
 
     # Getters (plain text)
     @property
