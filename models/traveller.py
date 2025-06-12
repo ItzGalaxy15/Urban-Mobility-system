@@ -63,7 +63,7 @@ class Traveller:
             raise ValueError("gender must be male or female")
 
         # store(encrypted)
-        self.customer_id        = random.randint(1_000_000, 9_999_999)       # properly unique ID
+        # self.customer_id        = random.randint(1_000_000, 9_999_999)       # properly unique ID
         self.registration_date  = datetime.now()
         self.first_name         = self._encrypt(first_name)
         self.last_name          = self._encrypt(last_name)
@@ -135,4 +135,4 @@ class Traveller:
         return f"{self.first_name_plain} {self.last_name_plain}"
 
     def __repr__(self):
-        return f"Traveller(id={self.customer_id}, name={self.full_name})"
+        return f"Traveller(name={self.full_name})"

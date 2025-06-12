@@ -31,10 +31,10 @@ class Scooter:
         mileage: float = 0.0,
         out_of_service: bool = False,
         last_maint_date: Optional[str] = None,  # YYYY-MM-DD
-        scooter_id: Optional[int] = None,  # Added back for database operations
+        #  scooter_id: Optional[int] = None,  # Added back for database operations
     ) -> None:
         # Store ID if provided (for existing scooters)
-        self.scooter_id = scooter_id if scooter_id is not None else random.randint(1_000_000, 9_999_999)
+        # self.scooter_id = scooter_id if scooter_id is not None else random.randint(1_000_000, 9_999_999)
         
         # mandatory text checks
         if not all([brand, model, serial_number]):
@@ -134,6 +134,6 @@ class Scooter:
 
     def __repr__(self) -> str:
         return (
-            f"Scooter(id={self.scooter_id}, brand={self.brand_plain}, "
+            f"Scooter(brand={self.brand_plain}, "
             f"model={self.model_plain}, serial={self.serial_number_plain})"
         )
