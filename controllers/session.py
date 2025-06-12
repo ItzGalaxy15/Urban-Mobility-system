@@ -1,4 +1,4 @@
-from dbcontext.userdata import get_user_by_id, verify_user_password
+from dbcontext.userdata import verify_user_password, get_user_by_username
 
 class UserSession:
     def __init__(self):
@@ -8,7 +8,6 @@ class UserSession:
 
     def login(self, username, password):
         # Find user by username (unencrypted search)
-        from dbcontext.dbcontext import get_user_by_username
         user = get_user_by_username(username)
         if not user:
             print("User not found.")

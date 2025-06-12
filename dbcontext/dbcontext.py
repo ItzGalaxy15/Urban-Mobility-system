@@ -1,4 +1,5 @@
 import sqlite3
+from models.user import User
 
 def create_db():
     conn = sqlite3.connect('urban_mobility.db')
@@ -16,6 +17,36 @@ def create_db():
         role TEXT
     )
     ''')
+
+    # Create super admin user
+    super_admin = User(
+        username="super_admin",
+        password_plain="Admin_123?",
+        role="super",
+        first_name="John",
+        last_name="Doe"
+    )
+
+    # Insert super admin if not exists
+    c.execute('''
+    INSERT OR IGNORE INTO User (
+        user_id,
+        username,
+        password_hash,
+        first_name,
+        last_name,
+        registration_date,
+        role
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        super_admin.user_id,
+        super_admin.username,
+        super_admin.password_hash,
+        super_admin.first_name,
+        super_admin.last_name,
+        super_admin.registration_date,
+        super_admin.role
+    ))
 
     # Traveller table
     c.execute('''
