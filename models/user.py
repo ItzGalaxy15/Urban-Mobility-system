@@ -86,4 +86,4 @@ class User:
     def __repr__(self) -> str:
         uname = self.username_plain if self.username else "<unset>"
         date  = self.registration_date or "<N/A>"
-        return f"User(username={uname}, role={self.role}, registration_date={date})"
+        return f"User(username={uname}, role={self.role_plain}, registration_date={date})"
