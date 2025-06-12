@@ -1,10 +1,11 @@
 # um_members.py
 from dbcontext.dbcontext import create_db
-from services.userdata import add_user
+from dbcontext.dbcontext import add_user
 from controllers.usercontroller import change_password
 from controllers.session import UserSession
 from controllers.scootercontroller import ScooterController
 from validation.scooter_validation import validate_scooter_inputs
+import os
 
 def main():
     print("Urban Mobility System Starting...")
@@ -21,6 +22,7 @@ def main():
     scooter_controller = ScooterController("urban_mobility.db")
 
     while True:
+        os.system("cls")
         print(f"\nWelcome, {session.username} ({session.role})")
         print("\nMain Menu:")
         print("1. Change password")
