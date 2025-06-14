@@ -38,7 +38,7 @@ def require_role(*required_roles):
                 return False, "User not found."
             
             user_role = user["role"]
-            print(f"Checking access: user_role={user_role}, required_roles={required_roles}, func={func.__name__}")
+            # print(f"Checking access: user_role={user_role}, required_roles={required_roles}, func={func.__name__}")
             # Exact match: only listed roles can access
             if user_role in required_roles:
                 return func(user_id, *args, **kwargs)
