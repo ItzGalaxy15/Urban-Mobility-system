@@ -54,7 +54,7 @@ class User:
         # Core fields
         self.username: bytes = encrypt(username.lower())  # case‑insensitive store
         self.password_hash: bytes = hash_password(password_plain)
-        self.role: str = role
+        self.role: str = encrypt(role)
 
         # Optional profile (encrypted)
         self.first_name = encrypt(first_name) if first_name else None
@@ -74,6 +74,10 @@ class User:
         return decrypt(self.username)
 
     @property
+    def role_plain(self) -> str:
+        return decrypt(self.role)
+
+    @property
     def full_name(self) -> str:
         first = decrypt(self.first_name) if self.first_name else ""
         last  = decrypt(self.last_name)  if self.last_name  else ""
@@ -82,4 +86,4 @@ class User:
     def __repr__(self) -> str:
         uname = self.username_plain if self.username else "<unset>"
         date  = self.registration_date or "<N/A>"
-        return f"User(username={uname}, role={self.role}, registration_date={date})"
+        return f"User(username={uname}, role={self.role_plain}, registration_date={date})"

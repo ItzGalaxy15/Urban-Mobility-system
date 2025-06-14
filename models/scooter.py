@@ -1,7 +1,7 @@
 import re, random
 from datetime import datetime
 from typing import Optional
-from utils.crypto_utils import get_fernet, encrypt, decrypt
+from utils.crypto_utils import encrypt, decrypt
 
 # Regex & ranges
 BRAND_RE   = re.compile(r"^[A-Za-z0-9\- ]{2,30}$")
@@ -31,10 +31,9 @@ class Scooter:
         mileage: float = 0.0,
         out_of_service: bool = False,
         last_maint_date: Optional[str] = None,  # YYYY-MM-DD
-        scooter_id: Optional[int] = None,  # Added back for database operations
     ) -> None:
         # Store ID if provided (for existing scooters)
-        self.scooter_id = scooter_id if scooter_id is not None else random.randint(1_000_000, 9_999_999)
+        # self.scooter_id = scooter_id if scooter_id is not None else random.randint(1_000_000, 9_999_999)
         
         # mandatory text checks
         if not all([brand, model, serial_number]):
@@ -96,37 +95,19 @@ class Scooter:
         self.last_maint_date = last_maint_date_obj  # date or None
         self.in_service_date = in_service_dt        # datetime
 
-    # Encryption helpers
-    @staticmethod
-    def _encrypt(value: str) -> bytes:
-        if not isinstance(value, str):
-            raise TypeError(f"Expected str but got {type(value)}")
-        try:
-            return encrypt(value)  # encrypt() handles encoding
-        except Exception as e:
-            raise ValueError(f"Encryption failed: {str(e)}")
-
-    @staticmethod
-    def _decrypt(value: bytes) -> str:
-        if not isinstance(value, bytes):
-            raise TypeError(f"Expected bytes but got {type(value)}")
-        try:
-            return decrypt(value)  # decrypt() handles decoding
-        except Exception as e:
-            raise ValueError(f"Decryption failed: {str(e)}")
 
     # Getters (plain text)
     @property
     def brand_plain(self) -> str:
-        return self._decrypt(self.brand)
+        return decrypt(self.brand)
 
     @property
     def model_plain(self) -> str:
-        return self._decrypt(self.model)
+        return decrypt(self.model)
 
     @property
     def serial_number_plain(self) -> str:
-        return self._decrypt(self.serial_number)
+        return decrypt(self.serial_number)
 
     @property
     def is_out_of_service(self) -> bool:
@@ -134,6 +115,6 @@ class Scooter:
 
     def __repr__(self) -> str:
         return (
-            f"Scooter(id={self.scooter_id}, brand={self.brand_plain}, "
+            f"Scooter(brand={self.brand_plain}, "
             f"model={self.model_plain}, serial={self.serial_number_plain})"
         )

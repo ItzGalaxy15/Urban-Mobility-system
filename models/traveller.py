@@ -1,7 +1,7 @@
 # models/traveller.py
 import re, random
 from datetime import datetime, date
-from utils.crypto_utils import fernet
+from utils.crypto_utils import encrypt, decrypt
 
 CITY_CHOICES = {
     "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
@@ -63,76 +63,68 @@ class Traveller:
             raise ValueError("gender must be male or female")
 
         # store(encrypted)
-        self.customer_id        = random.randint(1_000_000, 9_999_999)       # properly unique ID
+        # self.customer_id        = random.randint(1_000_000, 9_999_999)       # properly unique ID
         self.registration_date  = datetime.now()
-        self.first_name         = self._encrypt(first_name)
-        self.last_name          = self._encrypt(last_name)
-        #  self.birthday           = self._encrypt(birthday)
-        self.birthday           = datetime.strptime(birthday, "%Y-%m-%d").date()
-        self.gender             = self._encrypt(gender.lower())
-        self.street_name        = self._encrypt(street_name)
-        self.house_number       = self._encrypt(house_number)
-        self.zip_code           = self._encrypt(zip_code)
-        self.city               = self._encrypt(city)
-        self.email              = self._encrypt(email)
-        self.mobile_phone       = self._encrypt(mobile_phone)
-        self.driving_license_no = self._encrypt(driving_license_no)
+        self.first_name         = encrypt(first_name)
+        self.last_name          = encrypt(last_name)
+        self.birthday           = encrypt(birthday)
+        self.gender             = encrypt(gender.lower())
+        self.street_name        = encrypt(street_name)
+        self.house_number       = encrypt(house_number)
+        self.zip_code           = encrypt(zip_code)
+        self.city               = encrypt(city)
+        self.email              = encrypt(email)
+        self.mobile_phone       = encrypt(mobile_phone)
+        self.driving_license_no = encrypt(driving_license_no)
 
-    @staticmethod
-    def _encrypt(value: str) -> bytes:
-        return fernet.encrypt(value.encode())
-
-    @staticmethod
-    def _decrypt(value: bytes) -> str:
-        return fernet.decrypt(value).decode()
 
     @property
     def first_name_plain(self) -> str:
-        return self._decrypt(self.first_name)
+        return decrypt(self.first_name)
 
     @property
     def last_name_plain(self) -> str:
-        return self._decrypt(self.last_name)
+        return decrypt(self.last_name)
 
     @property
     def birthday_plain(self) -> str:
-        return self.birthday.strftime("%Y-%m-%d")
+        return decrypt(self.birthday)
 
     @property
     def gender_plain(self) -> str:
-        return self._decrypt(self.gender)
+        return decrypt(self.gender)
 
     @property
     def street_name_plain(self) -> str:
-        return self._decrypt(self.street_name)
+        return decrypt(self.street_name)
 
     @property
     def house_number_plain(self) -> str:
-        return self._decrypt(self.house_number)
+        return decrypt(self.house_number)
 
     @property
     def zip_code_plain(self) -> str:
-        return self._decrypt(self.zip_code)
+        return decrypt(self.zip_code)
 
     @property
     def city_plain(self) -> str:
-        return self._decrypt(self.city)
+        return decrypt(self.city)
 
     @property
     def email_plain(self) -> str:
-        return self._decrypt(self.email)
+        return decrypt(self.email)
 
     @property
     def mobile_phone_plain(self) -> str:
-        return self._decrypt(self.mobile_phone)
+        return decrypt(self.mobile_phone)
 
     @property
     def driving_license_no_plain(self) -> str:
-        return self._decrypt(self.driving_license_no)
+        return decrypt(self.driving_license_no)
 
     @property
     def full_name(self) -> str:
         return f"{self.first_name_plain} {self.last_name_plain}"
 
     def __repr__(self):
-        return f"Traveller(id={self.customer_id}, name={self.full_name})"
+        return f"Traveller(name={self.full_name})"
