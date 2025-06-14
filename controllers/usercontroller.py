@@ -3,17 +3,22 @@
 from models.user import User
 from services.userdata import verify_user_password, get_user_by_id, update_password, add_user
 from utils.role_utils import require_role
+from utils.validation_utils import validate_password
 
 class UserController:
     def __init__(self):
         pass
         
-@require_role("service_engineer")
+@require_role("service_engineer", "system_admin")
 def change_password(user_id, old_password, new_password):
     # Special case for super admin
     if user_id == 0:
         if old_password != "Admin_123?":
             return False, "Old password is incorrect."
+        # Validate new password for super admin as well
+        valid, msg = validate_password(new_password)
+        if not valid:
+            return False, msg
         # For super admin, we don't actually change the password since it's hardcoded
         return True, "Password updated successfully."
 
@@ -24,6 +29,10 @@ def change_password(user_id, old_password, new_password):
     # Check old password
     if not verify_user_password(user_id, old_password):
         return False, "Old password is incorrect."
+    # Validate new password
+    valid, msg = validate_password(new_password)
+    if not valid:
+        return False, msg
     # Update password
     update_password(user_id, new_password)
     return True, "Password updated successfully."
