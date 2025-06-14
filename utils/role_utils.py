@@ -29,6 +29,10 @@ def require_role(*required_roles):
         func._required_roles = required_roles  # Attach roles for introspection
         @wraps(func)
         def wrapper(user_id, *args, **kwargs):
+            # Special case for super admin (user_id 0)
+            if user_id == 0:
+                return func(user_id, *args, **kwargs)
+            
             user = user_service.get_user_by_id(user_id)
             if not user:
                 return False, "User not found."

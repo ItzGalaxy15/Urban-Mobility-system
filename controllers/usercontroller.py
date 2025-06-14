@@ -3,7 +3,7 @@
 from models.user import User
 from services.userservice import user_service
 from utils.role_utils import require_role
-from utils.validation_utils import validate_password
+from validation.validation_utils import validate_password, validate_user_inputs
 
 class UserController:
     @staticmethod
@@ -36,9 +36,29 @@ class UserController:
         return True, "Password updated successfully."
 
     @staticmethod
-    @require_role("system_admin")
-    def add_sys_eng_user_controller(user_id, username, password, first_name, last_name, role):
-        # Only system_admin and super_admin can add users
+    @require_role("system_admin", "super")
+    def add_user_controller(user_id, username, password, first_name, last_name, role):
+        # Special case for super admin (user_id 0)
+        if user_id == 0:
+            current_role = "super"
+        else:
+            # Get the current user's role for regular users
+            current_user = user_service.get_user_by_id(user_id)
+            if not current_user:
+                return False, "Current user not found."
+            current_role = current_user["role"]
+        
+        # Check role restrictions
+        if current_role == "system_admin" and role != "service_engineer":
+            return False, "System admin can only add service engineers."
+        elif current_role == "super" and role not in ["service_engineer", "system_admin"]:
+            return False, "Super admin can only add service engineers or system admins."
+        
+        # Validate all inputs
+        valid, message = validate_user_inputs(username, password, first_name, last_name, role)
+        if not valid:
+            return False, message
+        
         try:
             user = User(
                 username=username,
