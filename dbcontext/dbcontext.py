@@ -57,20 +57,6 @@ def create_db():
     )
     ''')
 
-    # LogEntry table
-    c.execute('''
-    CREATE TABLE IF NOT EXISTS LogEntry (
-        log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date DATE,
-        time TIME,
-        username TEXT,
-        description TEXT,
-        is_suspicious BOOLEAN,
-        user_id INTEGER,
-        FOREIGN KEY(user_id) REFERENCES User(user_id)
-    )
-    ''')
-
     # Backup table
     c.execute('''
     CREATE TABLE IF NOT EXISTS Backup (

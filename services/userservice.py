@@ -1,6 +1,7 @@
 import sqlite3
 from utils.crypto_utils import hash_password, decrypt, check_password
-from models.user import User
+from models.user import User, USERNAME_RE, PWD_ALLOWED_RE
+import re
 
 
 class UserService:
@@ -10,46 +11,91 @@ class UserService:
     def _get_connection(self) -> sqlite3.Connection:
         return sqlite3.connect(self.db_path)
 
-    def add_user_from_params(self, username, password, first_name, last_name, role):
-        """
-        Add a user to the database using individual parameters.
-        This is a wrapper around the User model for backward compatibility.
-        """
-        try:
-            user = User(
-                username=username,
-                password_plain=password,
-                role=role,
-                first_name=first_name,
-                last_name=last_name
-            )
-            self.add_user(user)
-            return True
-        except ValueError as e:
-            print(f"Error adding user: {e}")
-            return False
+    def validate_username(self, username: str) -> tuple[bool, str]:
+        """Validate username format and requirements."""
+        if not username:
+            return False, "Username is required"
+        if not USERNAME_RE.fullmatch(username):
+            return False, "Username must be 8-10 characters and start with a letter or underscore"
+        return True, ""
 
-    def add_user(self, user):
+    def validate_password(self, password: str) -> tuple[bool, str]:
+        """Validate password requirements."""
+        if not password:
+            return False, "Password is required"
+        if not PWD_ALLOWED_RE.fullmatch(password):
+            return False, "Password must be 12-30 characters and contain only allowed special characters"
+        if not (re.search(r"[a-z]", password)
+                and re.search(r"[A-Z]", password)
+                and re.search(r"\d", password)
+                and re.search(r"[~!@#$%&\-_+=`|\\(){}\[\]:;'<>,.?/]", password)):
+            return False, "Password must include lowercase, uppercase, digit and special character"
+        return True, ""
+
+    def validate_name(self, name: str, field_name: str) -> tuple[bool, str]:
+        """Validate first/last name requirements."""
+        if not name:
+            return False, f"{field_name} is required"
+        if not name.strip():
+            return False, f"{field_name} cannot be empty"
+        return True, ""
+
+    def add_user(self, username=None, password=None, first_name=None, last_name=None, role=None, user=None):
         """
-        Add a user to the database. The user object should already have encrypted data.
+        Add a user to the database. Can be called with either individual parameters or a User object.
         
         Args:
-            user: User object with encrypted username, password_hash, first_name, and last_name
+            Either:
+            - username, password, first_name, last_name, role: Individual parameters
+            Or:
+            - user: User object with encrypted data
         """
-        conn = self._get_connection()
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO User (username, password_hash, first_name, last_name, registration_date, role)
-            VALUES (?, ?, ?, ?, datetime('now'), ?)
-        ''', (
-            user.username,
-            user.password_hash,
-            user.first_name,
-            user.last_name,
-            user.role
-        ))
-        conn.commit()
-        conn.close()
+        try:
+            if user is None:
+                # Validate all fields first
+                valid, message = self.validate_username(username)
+                if not valid:
+                    return False, message
+
+                valid, message = self.validate_password(password)
+                if not valid:
+                    return False, message
+
+                valid, message = self.validate_name(first_name, "First name")
+                if not valid:
+                    return False, message
+
+                valid, message = self.validate_name(last_name, "Last name")
+                if not valid:
+                    return False, message
+
+                # Create User object
+                user = User(
+                    username=username,
+                    password_plain=password,
+                    role=role,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+
+            # Add to database
+            conn = self._get_connection()
+            c = conn.cursor()
+            c.execute('''
+                INSERT INTO User (username, password_hash, first_name, last_name, registration_date, role)
+                VALUES (?, ?, ?, ?, datetime('now'), ?)
+            ''', (
+                user.username,
+                user.password_hash,
+                user.first_name,
+                user.last_name,
+                user.role
+            ))
+            conn.commit()
+            conn.close()
+            return True, "User added successfully"
+        except ValueError as e:
+            return False, str(e)
 
     def get_user_by_id(self, user_id):
         conn = self._get_connection()
