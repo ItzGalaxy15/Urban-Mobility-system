@@ -1,6 +1,7 @@
 import sqlite3
 from utils.crypto_utils import hash_password, decrypt, check_password
-from models.user import User
+from models.user import User, USERNAME_RE, PWD_ALLOWED_RE
+import re
 
 
 class UserService:
@@ -14,26 +15,21 @@ class UserService:
         """Validate username format and requirements."""
         if not username:
             return False, "Username is required"
-        if not (8 <= len(username) <= 10):
-            return False, "Username must be between 8 and 10 characters"
-        if not (username[0].isalpha() or username[0] == '_'):
-            return False, "Username must start with a letter or underscore"
+        if not USERNAME_RE.fullmatch(username):
+            return False, "Username must be 8-10 characters and start with a letter or underscore"
         return True, ""
 
     def validate_password(self, password: str) -> tuple[bool, str]:
         """Validate password requirements."""
         if not password:
             return False, "Password is required"
-        if not (12 <= len(password) <= 30):
-            return False, "Password must be between 12 and 30 characters"
-        if not any(c.islower() for c in password):
-            return False, "Password must contain at least one lowercase letter"
-        if not any(c.isupper() for c in password):
-            return False, "Password must contain at least one uppercase letter"
-        if not any(c.isdigit() for c in password):
-            return False, "Password must contain at least one digit"
-        if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password):
-            return False, "Password must contain at least one special character"
+        if not PWD_ALLOWED_RE.fullmatch(password):
+            return False, "Password must be 12-30 characters and contain only allowed special characters"
+        if not (re.search(r"[a-z]", password)
+                and re.search(r"[A-Z]", password)
+                and re.search(r"\d", password)
+                and re.search(r"[~!@#$%&\-_+=`|\\(){}\[\]:;'<>,.?/]", password)):
+            return False, "Password must include lowercase, uppercase, digit and special character"
         return True, ""
 
     def validate_name(self, name: str, field_name: str) -> tuple[bool, str]:
