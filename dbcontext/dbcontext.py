@@ -1,5 +1,4 @@
 import sqlite3
-from services.userdata import add_user_from_params
 
 def create_db():
     conn = sqlite3.connect('urban_mobility.db')
@@ -99,15 +98,6 @@ def create_db():
 
     conn.commit()
     conn.close()
-
-def add_user(username, password, first_name, last_name, role):
-    return add_user_from_params(username, password, first_name, last_name, role)
-
-def add_scooter(brand, model, serial_number, top_speed, battery_capacity, state_of_charge, target_soc_min, 
-                target_soc_max, location_lat, location_lon, out_of_service, mileage, last_maint_date, in_service_date):
-    return add_scooter_from_params(brand, model, serial_number, top_speed, battery_capacity, state_of_charge, target_soc_min, 
-                target_soc_max, location_lat, location_lon, out_of_service, mileage, last_maint_date, in_service_date)
-
 
 if __name__ == "__main__":
     create_db()
