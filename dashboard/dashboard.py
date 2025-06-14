@@ -43,19 +43,6 @@ def display_menu(menu_items):
     print("Invalid option.")
     return None
 
-def build_menu_with_permissions(menu_items, user_role):
-    """
-    Filters menu items based on user role permissions.
-    menu_items: list of (label, permission_func, action_func) tuples
-    user_role: str
-    Returns: list of (label, action_func) tuples visible to the user
-    """
-    return [
-        (label, action_func)
-        for (label, perm_func, action_func) in menu_items
-        if perm_func is None or user_can_access(user_role, perm_func)
-    ]
-
 def build_menu_with_roles_and_permissions(menu_items, user_role):
     """
     Filters menu items based on both menu visibility (required_roles) and permission_func.
