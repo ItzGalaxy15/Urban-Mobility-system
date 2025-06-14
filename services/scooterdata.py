@@ -9,6 +9,36 @@ class ScooterData:
 
     def _get_connection(self) -> sqlite3.Connection:
         return sqlite3.connect(self.db_path)
+    
+    def add_scooter_from_params(self, scooter_id, brand, model, serial_number, top_speed, battery_capacity,
+                                state_of_charge, target_soc_min, target_soc_max, location_lat, location_lon,
+                                out_of_service, mileage, last_maint_date, in_service_date):
+        """
+        Add a scooter to the database using individual parameters.
+        This is a wrapper around the Scooter model for backward compatibility.
+        """
+        try:
+            scooter = Scooter(
+                scooter_id=scooter_id,
+                brand=brand,
+                model=model,
+                serial_number=serial_number,
+                top_speed=top_speed,
+                battery_capacity=battery_capacity,
+                state_of_charge=state_of_charge,
+                target_soc_min=target_soc_min,
+                target_soc_max=target_soc_max,
+                location_lat=location_lat,
+                location_lon=location_lon,
+                out_of_service=out_of_service,
+                mileage=mileage,
+                last_maint_date=last_maint_date,
+                in_service_date=in_service_date
+            )
+            return self.add_scooter(scooter)
+        except ValueError as e:
+            print(f"Error adding scooter: {e}")
+            return False
 
     def add_scooter(self, scooter: Scooter) -> bool:
         """Add a new scooter to the database"""

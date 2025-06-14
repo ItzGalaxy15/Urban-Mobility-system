@@ -1,6 +1,6 @@
 # um_members.py
 from dbcontext.dbcontext import create_db
-from dbcontext.dbcontext import add_user
+from dbcontext.dbcontext import add_user, add_scooter
 from controllers.usercontroller import change_password
 from controllers.session import UserSession
 from controllers.scootercontroller import ScooterController
@@ -12,6 +12,8 @@ def main():
     create_db()
     add_user("mike_admin", "StrongPass123!", "Mike", "Jansen", "system_admin")
     add_user("john_eng", "Password123!", "John", "Doe", "service_engineer")
+
+    add_scooter("UrbanScoot", "ModelX", "SN123456789", 25.0, 500.0, 80.0, 20.0, 90.0, 52.5200, 13.4050, 100.0, False, None, None)
 
     session = UserSession()
     while not session.is_authenticated():
@@ -46,9 +48,10 @@ def main():
             print("\nScooter Management:")
             print("1. Add new scooter")
             print("2. View scooter details")
-            print("3. Back to main menu")
+            print("3. Update scooter details")
+            print("4. Back to main menu")
             
-            scooter_option = input("\nChoose an option (1-3): ")
+            scooter_option = input("\nChoose an option (1-4): ")
             
             if scooter_option == "1":
                 scooter_data, success = validate_scooter_inputs()
@@ -81,8 +84,21 @@ def main():
                     print("Invalid scooter ID")
                 except Exception as e:
                     print(f"Error retrieving scooter: {str(e)}")
-                    
             elif scooter_option == "3":
+                try:
+                    scooter_id = int(input("\nEnter scooter ID to update: "))
+                    update_data, success = validate_scooter_inputs(is_service=(session.role == "service_engineer"), scooter_data=scooter_controller.get_scooter(session.user, scooter_id)[0])
+                    if success:
+                        if session.role == "service_engineer":
+                            success, message = scooter_controller.update_scooter_service_engineer(session.user, scooter_id, update_data)
+                        else:
+                            success, message = scooter_controller.update_scooter(session.user, scooter_id, update_data)
+                        print(message)
+                except ValueError:
+                    print("Invalid scooter ID")
+                except Exception as e:
+                    print(f"Error updating scooter: {str(e)}")
+            elif scooter_option == "4":
                 continue
             else:
                 print("Invalid option")

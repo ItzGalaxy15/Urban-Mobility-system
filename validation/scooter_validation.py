@@ -3,6 +3,7 @@ from models.scooter import (
     BRAND_RE, MODEL_RE, SERIAL_RE, DATE_RE,
     TOP_SPEED_MIN, TOP_SPEED_MAX, BATTERY_CAP_MAX, MILEAGE_MAX
 )
+from models.user import User
 
 def validate_float_input(prompt: str, min_val: float, max_val: float) -> float:
     """
@@ -61,7 +62,7 @@ def validate_date_input(prompt: str) -> Optional[str]:
             return value
         print("Date must be in YYYY-MM-DD format")
 
-def validate_scooter_inputs() -> Tuple[dict, bool]:
+def validate_scooter_inputs(is_service: bool = False, scooter_data: dict = None ) -> Tuple[dict, bool]:
     """
     Validates all scooter input fields according to the model requirements.
     
@@ -69,65 +70,155 @@ def validate_scooter_inputs() -> Tuple[dict, bool]:
         Tuple[dict, bool]: (scooter_data dictionary, success status)
     """
     try:
-        scooter_data = {
-            "brand": validate_text_input(
-                "Brand (2-30 alphanumeric chars): ",
-                BRAND_RE,
-                "Brand must be 2-30 alphanumeric characters"
-            ),
-            "model": validate_text_input(
-                "Model (1-30 alphanumeric chars): ",
-                MODEL_RE,
-                "Model must be 1-30 alphanumeric characters"
-            ),
-            "serial_number": validate_text_input(
-                "Serial Number (10-17 alphanumeric chars): ",
-                SERIAL_RE,
-                "Serial number must be 10-17 alphanumeric characters"
-            ),
-            "top_speed": validate_float_input(
-                f"Top Speed ({TOP_SPEED_MIN}-{TOP_SPEED_MAX} km/h): ",
-                TOP_SPEED_MIN,
-                TOP_SPEED_MAX
-            ),
-            "battery_capacity": validate_float_input(
-                f"Battery Capacity (0-{BATTERY_CAP_MAX} Wh): ",
-                0,
-                BATTERY_CAP_MAX
-            ),
-            "state_of_charge": validate_float_input(
-                "State of Charge (0-100%): ",
-                0,
-                100
-            ),
-            "target_soc_min": validate_float_input(
-                "Target SOC Min (0-100%): ",
-                0,
-                100
-            ),
-            "target_soc_max": validate_float_input(
-                "Target SOC Max (0-100%): ",
-                0,
-                100
-            ),
-            "location_lat": validate_float_input(
-                "Location Lat (-90 to 90): ",
-                -90,
-                90
-            ),
-            "location_lon": validate_float_input(
-                "Location Lon (-180 to 180): ",
-                -180,
-                180
-            ),
-            "mileage": validate_float_input(
-                f"Mileage (0-{MILEAGE_MAX} km): ",
-                0,
-                MILEAGE_MAX
-            ),
-            "out_of_service": input("Out of Service (y/n): ").lower() == 'y',
-            "last_maint_date": validate_date_input("Last Maintenance Date (YYYY-MM-DD, optional): ")
-        }
+        if scooter_data is None:
+            scooter_data = {}
+
+        if is_service:
+            # Service Engineer can only edit: state_of_charge, location, out_of_service, last_maint_date
+            scooter_data = {
+                "state_of_charge": validate_float_input(
+                    f"\nOld value: {scooter_data['state_of_charge']}\nState of Charge (0-100%): "
+                        if scooter_data != {}
+                    else "State of Charge (0-100%): ",
+                    0,
+                    100
+                ),
+                "target_soc_min": validate_float_input(
+                    f"\nOld value: {scooter_data['target_soc_min']}\nTarget SOC Min (0-100%): "
+                        if scooter_data != {}
+                    else "Target SOC Min (0-100%): ",
+                    0,
+                    100
+                ),
+                "target_soc_max": validate_float_input(
+                    f"\nOld value: {scooter_data['target_soc_max']}\nTarget SOC Max (0-100%): "
+                        if scooter_data != {}
+                    else "Target SOC Max (0-100%): ",
+                    0,
+                    100
+                ),
+                "location_lat": validate_float_input(
+                    f"\nOld value: {scooter_data['location_lat']}\nLocation Lat (-90 to 90): "
+                        if scooter_data != {}
+                    else "Location Lat (-90 to 90): ",
+                    -90,
+                    90
+                ),
+                "location_lon": validate_float_input(
+                    f"\nOld value: {scooter_data['location_lon']}\nLocation Lon (-180 to 180): "
+                        if scooter_data != {}
+                    else "Location Lon (-180 to 180): ",
+                    -180,
+                    180
+                ),
+                "mileage": validate_float_input(
+                    f"\nOld value: {scooter_data['mileage']}\nMileage (0-{MILEAGE_MAX} km): "
+                        if scooter_data != {}
+                    else f"Mileage (0-{MILEAGE_MAX} km): ",
+                    0,
+                    MILEAGE_MAX
+                ),
+                "out_of_service": input(
+                    f"\nOld value: {scooter_data['out_of_service']}\nOut of Service (y/n): "
+                        if scooter_data != {}
+                    else "Out of Service (y/n): "
+                ).lower() == 'y',
+                "last_maint_date": validate_date_input(
+                    f"\nOld value: {scooter_data['last_maint_date']}\nLast Maintenance Date (YYYY-MM-DD, optional): "
+                        if scooter_data != {}
+                    else "Last Maintenance Date (YYYY-MM-DD, optional): "
+                )
+            }
+        else:
+            scooter_data = {
+                "brand": validate_text_input(
+                    f"\nOld value: {scooter_data['state_of_charge']}\nState of Charge (0-100%): "
+                        if scooter_data != {}
+                    else "Brand (2-30 alphanumeric chars): ",
+                    BRAND_RE,
+                    "Brand must be 2-30 alphanumeric characters"
+                ),
+                "model": validate_text_input(
+                    f"\nOld value: {scooter_data['model']}\nModel (1-30 alphanumeric chars): "
+                        if scooter_data != {}
+                    else "Model (1-30 alphanumeric chars): ",
+                    MODEL_RE,
+                    "Model must be 1-30 alphanumeric characters"
+                ),
+                "serial_number": validate_text_input(
+                    f"\nOld value: {scooter_data['serial_number']}\nSerial Number (10-17 alphanumeric chars): "
+                        if scooter_data != {}
+                    else "Serial Number (10-17 alphanumeric chars): ",
+                    SERIAL_RE,
+                    "Serial number must be 10-17 alphanumeric characters"
+                ),
+                "top_speed": validate_float_input(
+                    f"\nOld value: {scooter_data['top_speed']}\nTop Speed ({TOP_SPEED_MIN}-{TOP_SPEED_MAX} km/h): "
+                        if scooter_data != {}
+                    else f"Top Speed ({TOP_SPEED_MIN}-{TOP_SPEED_MAX} km/h): ",
+                    TOP_SPEED_MIN,
+                    TOP_SPEED_MAX
+                ),
+                "battery_capacity": validate_float_input(
+                    f"\nOld value: {scooter_data['battery_capacity']}\nBattery Capacity (0-{BATTERY_CAP_MAX} Wh): "
+                        if scooter_data != {}
+                    else f"Battery Capacity (0-{BATTERY_CAP_MAX} Wh): ",
+                    0,
+                    BATTERY_CAP_MAX
+                ),
+                "state_of_charge": validate_float_input(
+                    f"\nOld value: {scooter_data['state_of_charge']}\nState of Charge (0-100%): "
+                        if scooter_data != {}
+                    else "State of Charge (0-100%): ",
+                    0,
+                    100
+                ),
+                "target_soc_min": validate_float_input(
+                    f"\nOld value: {scooter_data['target_soc_min']}\nTarget SOC Min (0-100%): "
+                        if scooter_data != {}
+                    else "Target SOC Min (0-100%): ",
+                    0,
+                    100
+                ),
+                "target_soc_max": validate_float_input(
+                    f"\nOld value: {scooter_data['target_soc_max']}\nTarget SOC Max (0-100%): "
+                        if scooter_data != {}
+                    else "Target SOC Max (0-100%): ",
+                    0,
+                    100
+                ),
+                "location_lat": validate_float_input(
+                    f"\nOld value: {scooter_data['location_lat']}\nLocation Lat (-90 to 90): "
+                        if scooter_data != {}
+                    else "Location Lat (-90 to 90): ",
+                    -90,
+                    90
+                ),
+                "location_lon": validate_float_input(
+                    f"\nOld value: {scooter_data['location_lon']}\nLocation Lon (-180 to 180): "
+                        if scooter_data != {}
+                    else "Location Lon (-180 to 180): ",
+                    -180,
+                    180
+                ),
+                "mileage": validate_float_input(
+                    f"\nOld value: {scooter_data['mileage']}\nMileage (0-{MILEAGE_MAX} km): "
+                        if scooter_data != {}
+                    else f"Mileage (0-{MILEAGE_MAX} km): ",
+                    0,
+                    MILEAGE_MAX
+                ),
+                "out_of_service": input(
+                    f"\nOld value: {scooter_data['out_of_service']}\nOut of Service (y/n): "
+                        if scooter_data != {}
+                    else "Out of Service (y/n): "
+                ).lower() == 'y',
+                "last_maint_date": validate_date_input(
+                    f"\nOld value: {scooter_data['last_maint_date']}\nLast Maintenance Date (YYYY-MM-DD, optional): "
+                        if scooter_data != {}
+                    else "Last Maintenance Date (YYYY-MM-DD, optional): "
+                )
+            }
         
         # Validate target SOC range
         if scooter_data["target_soc_min"] >= scooter_data["target_soc_max"]:

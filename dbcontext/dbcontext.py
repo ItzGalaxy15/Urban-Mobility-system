@@ -1,5 +1,6 @@
 import sqlite3
 from services.userdata import add_user_from_params
+from services.scooterdata import add_scooter_from_params
 
 def create_db():
     conn = sqlite3.connect('urban_mobility.db')

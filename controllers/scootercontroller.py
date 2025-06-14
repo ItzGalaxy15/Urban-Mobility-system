@@ -71,3 +71,92 @@ class ScooterController:
         if scooter:
             return scooter, "Scooter retrieved successfully"
         return None, "Scooter not found"
+    
+    # Version 1: Only service engineer can call
+    @require_role("service_engineer")
+    def update_scooter_service_engineer(self, user: User, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
+        """
+        Update specific scooter attributes.
+        Only service engineer can perform this action, and only certain fields are editable.
+        """
+        if user.role != "service_engineer":
+            return False, "Unauthorized: Only service engineer can use this function"
+
+        # Only allow these fields to be updated by service engineer
+        allowed_fields = {
+            "state_of_charge",
+            "mileage",
+            "out_of_service",
+            "last_maint_date"
+        }
+
+        try:
+            scooter = self.scooter_data.get_scooter_by_id(scooter_id)
+            if not scooter:
+                return False, "Scooter not found"
+
+            for key, value in update_data.items():
+                if key in allowed_fields and hasattr(scooter, key):
+                    setattr(scooter, key, value)
+
+            if self.scooter_data.update_scooter(scooter):
+                return True, f"Scooter {scooter_id} updated successfully"
+            return False, "Failed to update scooter in database"
+
+        except KeyError as e:
+            return False, f"Invalid field: {str(e)}"
+        except ValueError as e:
+            return False, f"Invalid input: {str(e)}"
+        except Exception as e:
+            return False, f"Unexpected error: {str(e)}"
+
+    # Version 2: Everyone except service engineer can call
+    @require_role("system_admin")
+    def update_scooter(self, user: User, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
+        """
+        Update an existing scooter's information.
+        All roles except service engineer can perform this action.
+        """
+        if user.role == "service_engineer":
+            return False, "Unauthorized: Service engineer cannot use this function"
+
+        try:
+            scooter = self.scooter_data.get_scooter_by_id(scooter_id)
+            if not scooter:
+                return False, "Scooter not found"
+
+            for key, value in update_data.items():
+                if hasattr(scooter, key):
+                    setattr(scooter, key, value)
+
+            if self.scooter_data.update_scooter(scooter):
+                return True, f"Scooter {scooter_id} updated successfully"
+            return False, "Failed to update scooter in database"
+
+        except KeyError as e:
+            return False, f"Invalid field: {str(e)}"
+        except ValueError as e:
+            return False, f"Invalid input: {str(e)}"
+        except Exception as e:
+            return False, f"Unexpected error: {str(e)}"
+        
+    @require_role("system_admin")
+    def delete_scooter(self, user: User, scooter_id: int) -> tuple[bool, str]:
+        """
+        Delete a scooter from the system.
+        Only super admin and system admin can perform this action.
+        
+        Args:
+            user: The user attempting to delete the scooter
+            scooter_id: The ID of the scooter to delete
+            
+        Returns:
+            tuple[bool, str]: (success, message)
+        """
+        # Role-based access control
+        if user.role not in {"super", "system_admin"}:
+            return False, "Unauthorized: Only super admin and system admin can delete scooters"
+
+        if self.scooter_data.delete_scooter(scooter_id):
+            return True, f"Scooter {scooter_id} deleted successfully"
+        return False, "Failed to delete scooter from database"
