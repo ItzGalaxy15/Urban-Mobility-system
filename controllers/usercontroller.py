@@ -1,10 +1,9 @@
 # namespace: controllers
 
 from models.user import User
-from services.userservice import verify_user_password, get_user_by_id, update_password, add_user
+from services.userservice import verify_user_password, get_user_by_id, update_password, add_user, add_user_from_params
 from utils.role_utils import require_role
 from utils.validation_utils import validate_password
-
 
 class UserController:
 
@@ -53,6 +52,12 @@ class UserController:
             return True, "User added successfully."
         except ValueError as e:
             return False, str(e)
+        
+
+    @staticmethod
+    def add_user(username, password, first_name, last_name, role):
+        return add_user_from_params(username, password, first_name, last_name, role)
+
 
 
 

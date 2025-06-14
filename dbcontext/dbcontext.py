@@ -1,5 +1,4 @@
 import sqlite3
-from services.userservice import add_user_from_params
 
 def create_db():
     conn = sqlite3.connect('urban_mobility.db')
@@ -99,9 +98,6 @@ def create_db():
 
     conn.commit()
     conn.close()
-
-def add_user(username, password, first_name, last_name, role):
-    return add_user_from_params(username, password, first_name, last_name, role)
 
 if __name__ == "__main__":
     create_db()

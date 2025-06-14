@@ -1,6 +1,6 @@
 # um_members.py
 from dbcontext.dbcontext import create_db
-from dbcontext.dbcontext import add_user
+from services.userservice import add_user
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
@@ -18,17 +18,16 @@ def main():
     if not get_user_by_username("john_eng"):
         add_user("john_eng", "Password123!", "John", "Doe", "service_engineer")
 
-    session = UserSession()
-    while not session.is_authenticated():
+    while not UserSession.is_authenticated():
         username = input("Username: ")
         password = input("Password: ")
-        session.login(username, password)
+        UserSession.login(username, password)
 
     while True:
         os.system("cls")
-        print(f"\nWelcome, {session.username} ({session.role})")
-        menu_items = get_menu(session)
-        visible_menu = build_menu_with_roles_and_permissions(menu_items, session.role)
+        print(f"\nWelcome, {UserSession.get_current_username()} ({UserSession.get_current_role()})")
+        menu_items = get_menu(UserSession)
+        visible_menu = build_menu_with_roles_and_permissions(menu_items, UserSession.get_current_role())
         print("Visible menu:", visible_menu)
         choice = display_menu(visible_menu)
         if choice is None:
