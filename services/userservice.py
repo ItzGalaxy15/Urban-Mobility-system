@@ -40,62 +40,62 @@ class UserService:
             return False, f"{field_name} cannot be empty"
         return True, ""
 
-    def add_user_from_params(self, username, password, first_name, last_name, role):
+    def add_user(self, username=None, password=None, first_name=None, last_name=None, role=None, user=None):
         """
-        Add a user to the database using individual parameters.
-        This is a wrapper around the User model for backward compatibility.
+        Add a user to the database. Can be called with either individual parameters or a User object.
+        
+        Args:
+            Either:
+            - username, password, first_name, last_name, role: Individual parameters
+            Or:
+            - user: User object with encrypted data
         """
-        # Validate all fields first
-        valid, message = self.validate_username(username)
-        if not valid:
-            return False, message
-
-        valid, message = self.validate_password(password)
-        if not valid:
-            return False, message
-
-        valid, message = self.validate_name(first_name, "First name")
-        if not valid:
-            return False, message
-
-        valid, message = self.validate_name(last_name, "Last name")
-        if not valid:
-            return False, message
-
         try:
-            user = User(
-                username=username,
-                password_plain=password,
-                role=role,
-                first_name=first_name,
-                last_name=last_name
-            )
-            self.add_user(user)
+            if user is None:
+                # Validate all fields first
+                valid, message = self.validate_username(username)
+                if not valid:
+                    return False, message
+
+                valid, message = self.validate_password(password)
+                if not valid:
+                    return False, message
+
+                valid, message = self.validate_name(first_name, "First name")
+                if not valid:
+                    return False, message
+
+                valid, message = self.validate_name(last_name, "Last name")
+                if not valid:
+                    return False, message
+
+                # Create User object
+                user = User(
+                    username=username,
+                    password_plain=password,
+                    role=role,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+
+            # Add to database
+            conn = self._get_connection()
+            c = conn.cursor()
+            c.execute('''
+                INSERT INTO User (username, password_hash, first_name, last_name, registration_date, role)
+                VALUES (?, ?, ?, ?, datetime('now'), ?)
+            ''', (
+                user.username,
+                user.password_hash,
+                user.first_name,
+                user.last_name,
+                user.role
+            ))
+            conn.commit()
+            conn.close()
             return True, "User added successfully"
         except ValueError as e:
             return False, str(e)
-
-    def add_user(self, user):
-        """
-        Add a user to the database. The user object should already have encrypted data.
-        
-        Args:
-            user: User object with encrypted username, password_hash, first_name, and last_name
-        """
-        conn = self._get_connection()
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO User (username, password_hash, first_name, last_name, registration_date, role)
-            VALUES (?, ?, ?, ?, datetime('now'), ?)
-        ''', (
-            user.username,
-            user.password_hash,
-            user.first_name,
-            user.last_name,
-            user.role
-        ))
-        conn.commit()
-        conn.close()
 
     def get_user_by_id(self, user_id):
         conn = self._get_connection()

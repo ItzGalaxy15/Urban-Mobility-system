@@ -55,9 +55,8 @@ class UserSession:
         UserSession._current_username = None
         UserSession._current_role = None
         print("Logged out successfully.")
-        # Exit to login by restarting the program
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
+        # Return to login by raising a special exception
+        raise SystemExit(0)  # This will exit the current loop and return to main()
 
     @staticmethod
     def is_authenticated():

@@ -54,34 +54,17 @@ class UserController:
         if role == "service_engineer" and current_role not in ["super", "system_admin"]:
             return False, "Only super admins and system admins can add service engineers"
         
-        # Validate all fields first
-        valid, message = user_service.validate_username(username)
-        if not valid:
-            return False, message
-
-        valid, message = user_service.validate_password(password)
-        if not valid:
-            return False, message
-
-        valid, message = user_service.validate_name(first_name, "First name")
-        if not valid:
-            return False, message
-
-        valid, message = user_service.validate_name(last_name, "Last name")
-        if not valid:
-            return False, message
-
         # Check if username already exists
         if user_service.get_user_by_username(username):
             return False, "Username already exists"
         
         # Add the user
-        success, message = user_service.add_user_from_params(username, password, first_name, last_name, role)
-        return success, message
+        return user_service.add_user(username, password, first_name, last_name, role)
 
     @staticmethod
     def add_user(username, password, first_name, last_name, role):
-        return user_service.add_user_from_params(username, password, first_name, last_name, role)
+        """Direct wrapper for adding a user without role checks."""
+        return user_service.add_user(username, password, first_name, last_name, role)
 
     @staticmethod
     def change_password_controller(current_user_id, current_password, new_password):
