@@ -1,19 +1,23 @@
 # um_members.py
 from dbcontext.dbcontext import create_db
+from services.userservice import UserService
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 from dashboard.menu_config import get_menu
-from services.userservice import get_user_by_username
 import os
 
 def main():
     print("Urban Mobility System Starting...")
     create_db()
+    
+    # Create a UserService instance for initial user checks
+    user_service = UserService("urban_mobility.db")
+    
     # Only add user if username does not exist
-    if not get_user_by_username("mike_admin"):
+    if not user_service.get_user_by_username("mike_admin"):
         UserController.add_user("mike_admin", "StrongPass123!", "Mike", "Jansen", "system_admin")
-    if not get_user_by_username("john_eng"):
+    if not user_service.get_user_by_username("john_eng"):
         UserController.add_user("john_eng", "Password123!", "John", "Doe", "service_engineer")
 
     while not UserSession.is_authenticated():

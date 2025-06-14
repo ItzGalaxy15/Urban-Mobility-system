@@ -1,5 +1,8 @@
 from functools import wraps
-from services.userservice import get_user_by_id
+from services.userservice import UserService
+
+# Create a single instance of UserService
+_user_service = UserService("urban_mobility.db")
 
 # Role hierarchy defines the permission levels for different roles
 # Higher numbers indicate higher permission levels
@@ -29,11 +32,12 @@ def require_role(*required_roles):
         func._required_roles = required_roles  # Attach roles for introspection
         @wraps(func)
         def wrapper(user_id, *args, **kwargs):
-            user = get_user_by_id(user_id)
+            user = _user_service.get_user_by_id(user_id)
             if not user:
                 return False, "User not found."
             
             user_role = user["role"]
+            print(f"Checking access: user_role={user_role}, required_roles={required_roles}, func={func.__name__}")
             # Exact match: only listed roles can access
             if user_role in required_roles:
                 return func(user_id, *args, **kwargs)
@@ -58,7 +62,7 @@ def has_permission(user_id, required_role):
             # Perform admin-only operation
             pass
     """
-    user = get_user_by_id(user_id)
+    user = _user_service.get_user_by_id(user_id)
     if not user:
         return False
     user_role = user["role"]
