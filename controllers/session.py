@@ -1,4 +1,4 @@
-from services.userservice import UserService
+from services.userservice import user_service
 from models.user import User
 import sys
 import os
@@ -8,7 +8,6 @@ class UserSession:
     _current_user_id = None
     _current_username = None
     _current_role = None
-    _user_service = UserService("urban_mobility.db")
 
     @staticmethod
     def login(username, password):
@@ -27,11 +26,11 @@ class UserSession:
             return True
 
         # Regular user login
-        user_data = UserSession._user_service.get_user_by_username(username)
+        user_data = user_service.get_user_by_username(username)
         if not user_data:
             print("Username or password incorrect.")
             return False
-        if not UserSession._user_service.verify_user_password(user_data["user_id"], password):
+        if not user_service.verify_user_password(user_data["user_id"], password):
             print("Password incorrect.")
             return False
             

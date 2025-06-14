@@ -101,3 +101,6 @@ class UserService:
         c.execute('UPDATE User SET password_hash = ? WHERE user_id = ?', (hashed, user_id))
         conn.commit()
         conn.close()
+
+# Create a single instance of UserService
+user_service = UserService("urban_mobility.db")
