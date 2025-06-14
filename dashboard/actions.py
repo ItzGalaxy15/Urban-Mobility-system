@@ -1,8 +1,6 @@
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
-from models.user import User, USERNAME_RE, PWD_ALLOWED_RE
-import re
-from validation.validation_utils import validate_username, validate_password, validate_name
+from services.userservice import user_service
 
 def change_password_flow(session):
     while True:
@@ -21,16 +19,22 @@ def add_user_flow(session):
         # Username validation
         while True:
             username = input("Enter the username (8-10 chars, starts with letter/underscore): ")
-            valid, message = validate_username(username)
+            # First validate format
+            valid, message = user_service.validate_username(username)
             if not valid:
                 print(message)
+                continue
+            
+            # Then check if username exists
+            if user_service.get_user_by_username(username):
+                print("Username already exists. Please choose a different one.")
                 continue
             break
 
         # Password validation
         while True:
             password = input("Enter the password (12-30 chars, must include lowercase, uppercase, digit, and special char): ")
-            valid, message = validate_password(password)
+            valid, message = user_service.validate_password(password)
             if not valid:
                 print(message)
                 continue
@@ -39,7 +43,7 @@ def add_user_flow(session):
         # First name validation
         while True:
             first_name = input("Enter the first name: ")
-            valid, message = validate_name(first_name, "First name")
+            valid, message = user_service.validate_name(first_name, "First name")
             if not valid:
                 print(message)
                 continue
@@ -48,7 +52,7 @@ def add_user_flow(session):
         # Last name validation
         while True:
             last_name = input("Enter the last name: ")
-            valid, message = validate_name(last_name, "Last name")
+            valid, message = user_service.validate_name(last_name, "Last name")
             if not valid:
                 print(message)
                 continue
