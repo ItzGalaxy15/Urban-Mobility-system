@@ -1,13 +1,12 @@
 # um_members.py
 from dbcontext.dbcontext import create_db
 from dbcontext.dbcontext import add_user
-from controllers.usercontroller import change_password
+from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 from dashboard.menu_config import get_menu
 from dashboard.actions import change_password_flow
-from services.userdata import get_user_by_username
-
+from services.userservice import get_user_by_username
 import os
 
 def main():

@@ -1,4 +1,4 @@
-from controllers.usercontroller import change_password
+from controllers.usercontroller import UserController
 
 def change_password_flow(session):
     while True:
@@ -7,7 +7,7 @@ def change_password_flow(session):
         if not new_pw:
             print("Password change cancelled.")
             break
-        success, message = change_password(session.user_id, old_pw, new_pw)
+        success, message = UserController.change_password(session.user_id, old_pw, new_pw)
         print(message)
         if success:
             break 
