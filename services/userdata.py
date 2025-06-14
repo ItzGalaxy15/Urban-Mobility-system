@@ -57,7 +57,7 @@ def get_user_by_id(user_id):
             "username": decrypt(row[1]),
             "first_name": decrypt(row[2]),
             "last_name": decrypt(row[3]),
-            "role": decrypt(row[4])
+            "role": row[4]
         }
     return None
     
@@ -84,7 +84,7 @@ def get_user_by_username(username):
                 "username": decrypt(row[1]),
                 "first_name": decrypt(row[2]),
                 "last_name": decrypt(row[3]),
-                "role": decrypt(row[4])
+                "role": row[4]
             }
     return None
 
