@@ -13,8 +13,6 @@ from models.traveller import (
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from services.userservice import user_service
-import os
-import json
 
 #--------------------------------------------------------------------------------------
 #                                  User Management
@@ -494,47 +492,15 @@ def search_traveller_flow(session):
             print(row)
         input("Press Enter to continue...")
 
+
 #--------------------------------------------------------------------------------------
 #                                The End of Traveller Management
 #--------------------------------------------------------------------------------------
 
-
-#--------------------------------------------------------------------------------------
-#                                Edit Profile/Account
-#--------------------------------------------------------------------------------------
-
- 
-## not sure if super admin is needed here/should have this permission
-
-SUPER_ADMIN_JSON = os.path.join(os.path.dirname(__file__), 'super_admin.json')
-
-def load_super_admin():
-    if not os.path.exists(SUPER_ADMIN_JSON):
-        # Default super admin info
-        data = {
-            "user_id": 0,
-            "username": "super_admin",
-            "first_name": "Super",
-            "last_name": "Admin",
-            "role": "super"
-        }
-        with open(SUPER_ADMIN_JSON, 'w') as f:
-            json.dump(data, f)
-        return data
-    with open(SUPER_ADMIN_JSON, 'r') as f:
-        return json.load(f)
-
-def save_super_admin(data):
-    with open(SUPER_ADMIN_JSON, 'w') as f:
-        json.dump(data, f)
-
 def edit_account_flow(session):
     while True:
         user_id = UserSession.get_current_user_id()
-        if user_id == 0:
-            user = load_super_admin()
-        else:
-            user = user_service.get_user_by_id(user_id)
+        user = user_service.get_user_by_id(user_id)
         if not user:
             print("User not found.")
             return
@@ -547,21 +513,21 @@ def edit_account_flow(session):
         updates = {}
         if choice == "1":
             username = input("Enter the new username: ")
-            valid, message = user_service.validate_username(username) if user_id != 0 else (True, "")
+            valid, message = user_service.validate_username(username)
             if not valid:
                 print(message)
                 continue
             updates["username"] = username
         elif choice == "2":
             first_name = input("Enter the new first name: ")
-            valid, message = user_service.validate_name(first_name, "First name") if user_id != 0 else (True, "")
+            valid, message = user_service.validate_name(first_name, "First name")
             if not valid:
                 print(message)
                 continue
             updates["first_name"] = first_name
         elif choice == "3":
             last_name = input("Enter the new last name: ")
-            valid, message = user_service.validate_name(last_name, "Last name") if user_id != 0 else (True, "")
+            valid, message = user_service.validate_name(last_name, "Last name")
             if not valid:
                 print(message)
                 continue
@@ -572,28 +538,17 @@ def edit_account_flow(session):
             print("Invalid choice")
             continue
         if updates:
-            if user_id == 0:
-                user.update(updates)
-                save_super_admin(user)
-                print("Super admin profile updated.")
-                # Optionally update session info
+            success, message = UserController.update_user(
+                user_id,
+                user_id,
+                **updates
+            )
+            print(message)
+            if success:
+                # Optionally refresh session info if username was changed
                 if "username" in updates:
                     UserSession._current_username = updates["username"]
                 if "first_name" in updates:
                     UserSession._current_user.first_name = updates["first_name"]
                 if "last_name" in updates:
                     UserSession._current_user.last_name = updates["last_name"]
-            else:
-                success, message = UserController.update_user(
-                    user_id,
-                    user_id,
-                    **updates
-                )
-                print(message)
-                if success:
-                    if "username" in updates:
-                        UserSession._current_username = updates["username"]
-                    if "first_name" in updates:
-                        UserSession._current_user.first_name = updates["first_name"]
-                    if "last_name" in updates:
-                        UserSession._current_user.last_name = updates["last_name"]
