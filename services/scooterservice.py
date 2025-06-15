@@ -102,6 +102,39 @@ class ScooterService:
         except Exception as e:
             return []
 
+    def search_for_scooters(self, search_term: str, field: Optional[str] = None) -> list[Scooter]:
+        """
+        Search for scooters by any field.
+        Accepts partial keys and allows optional field-specific queries.
+        If 'field' is provided, search is limited to that field.
+        Otherwise, all fields are searched.
+        """
+        # List all fields in the Scooter table
+        all_fields = [
+            "brand", "model", "serial_number", "top_speed", "battery_capacity",
+            "state_of_charge", "target_soc_min", "target_soc_max", "location_lat",
+            "location_lon", "out_of_service", "mileage", "last_maint_date", "in_service_date"
+        ]
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                like_term = f"%{search_term}%"
+                if field and field in all_fields:
+                    query = f"SELECT * FROM Scooter WHERE {field} LIKE ?"
+                    params = (like_term,)
+                else:
+                    # Build a query that searches all fields using LIKE
+                    or_clauses = " OR ".join([f"{f} LIKE ?" for f in all_fields])
+                    query = f"SELECT * FROM Scooter WHERE {or_clauses}"
+                    params = tuple(like_term for _ in all_fields)
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                return [self._row_to_scooter(row) for row in rows]
+        except sqlite3.Error:
+            return []
+        except Exception:
+            return []
+
     def _row_to_scooter(self, row: tuple) -> Scooter:
         """Convert a database row to a Scooter object"""
         try:

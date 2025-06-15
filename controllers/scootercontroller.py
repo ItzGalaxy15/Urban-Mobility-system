@@ -12,9 +12,6 @@ class ScooterController:
     def add_scooter(user: User, new_scooter: Scooter) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
 
-        if user._current_role not in {"super", "system_admin"}:
-            return False, "Unauthorized: Only super admin and system admin can add scooters"
-
         try:
             if _scooterservice.add_scooter(scooter=new_scooter):
                 return True, f"Scooter {new_scooter.serial_number_plain} added successfully"
@@ -99,11 +96,19 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
+    @require_role("super", "system_admin", "service_engineer")
+    def search_for_scooters(user: User, search_term: str, field: str) -> tuple[Optional[Scooter], str]:
+        _scooterservice = ScooterService("urban_mobility.db")
+
+        scooters = _scooterservice.search_for_scooters(search_term, field)
+        if scooters:
+            return scooters, f"Scooter(s) found for {field}='{search_term}'"
+        return None, f"No scooters found for {field}='{search_term}'"
+
+    @staticmethod
     @require_role("super", "system_admin")
     def delete_scooter(user: User, scooter_id: int) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
-        if user._current_role not in {"super", "system_admin"}:
-            return False, "Unauthorized: Only super admin and system admin can delete scooters"
 
         if _scooterservice.delete_scooter(scooter_id):
             return True, f"Scooter {scooter_id} deleted successfully"
@@ -122,7 +127,7 @@ class ScooterController:
             Scooter: A new Scooter instance.
         """
         # Clear a row for readability
-        print("\n")
+        print("")
         if old_scooter is None and is_service:
             raise ValueError("Cannot service a scooter without old scooter data.")
 
@@ -132,7 +137,7 @@ class ScooterController:
                 brand = old_scooter.brand
                 break
 
-            print("\n")
+            print("")
             if old_scooter != None:
                 print(f"Old scooter brand: {old_scooter.brand}")
 
@@ -149,7 +154,7 @@ class ScooterController:
                 model = old_scooter.model
                 break
             
-            print("\n")
+            print("")
             if old_scooter != None:
                 print(f"Old scooter model: {old_scooter.model}")
 
@@ -166,7 +171,7 @@ class ScooterController:
                 serial_number = old_scooter.serial_number
                 break
             
-            print("\n")
+            print("")
             if old_scooter != None:
                 print(f"Old scooter serial number: {old_scooter.serial_number}")
 
@@ -183,7 +188,7 @@ class ScooterController:
                 top_speed = old_scooter.top_speed
                 break
             try:
-                print("\n")
+                print("")
                 if old_scooter != None:
                     print(f"Old scooter top speed: {old_scooter.top_speed} km/h")
 
@@ -203,7 +208,7 @@ class ScooterController:
                 battery_capacity = old_scooter.battery_capacity
                 break
             try:
-                print("\n")
+                print("")
                 if old_scooter != None:
                     print(f"Old scooter battery capacity: {old_scooter.battery_capacity} Wh")
 
@@ -220,7 +225,7 @@ class ScooterController:
         # State of Charge
         while True:
             try:
-                print("\n")
+                print("")
                 if old_scooter != None:
                     print(f"Old scooter state of charge: {old_scooter.state_of_charge}%")
 
@@ -237,7 +242,7 @@ class ScooterController:
         # Target SOC Min
         while True:
             try:
-                print("\n")
+                print("")
                 if old_scooter != None:
                     print(f"Old scooter target SOC min: {old_scooter.target_soc_min}%")
 
@@ -254,7 +259,7 @@ class ScooterController:
         # Target SOC Max
         while True:
             try:
-                print("\n")
+                print("")
                 if old_scooter != None:
                     print(f"Old scooter target SOC max: {old_scooter.target_soc_max}%")
 
@@ -271,7 +276,7 @@ class ScooterController:
         # Location Latitude
         while True:
             try:
-                print("\n")
+                print("")
                 if old_scooter != None:
                     print(f"Old scooter location latitude: {old_scooter.location_lat}")
 
@@ -288,7 +293,7 @@ class ScooterController:
         # Location Longitude
         while True:
             try:
-                print("\n")
+                print("")
                 if old_scooter != None:
                     print(f"Old scooter location longitude: {old_scooter.location_lon}")
 
@@ -304,7 +309,7 @@ class ScooterController:
         
         # Optional: Mileage
         while True:
-            print("\n")
+            print("")
             if old_scooter != None:
                 print(f"Old scooter mileage: {old_scooter.mileage} km")
 
@@ -325,7 +330,7 @@ class ScooterController:
 
         # Optional: Out of Service
         while True:
-            print("\n")
+            print("")
             if old_scooter != None:
                 print(f"Old scooter out of service: {'Yes' if old_scooter.out_of_service else 'No'}")
 
@@ -337,11 +342,11 @@ class ScooterController:
             print("Invalid format (y/n).")
 
         # Optional: Last Maintenance Date
-        print("\n")
+        print("")
         if old_scooter != None:
             print(f"Old scooter last maintenance date: {old_scooter.last_maint_date}")
 
-        print("\n")
+        print("")
         last_maint_date = input("Enter last maintenance date (YYYY-MM-DD, optional): ")
         if last_maint_date == "" and not DATE_RE.match(last_maint_date):
             print("\033[2A", end="")
