@@ -1,14 +1,31 @@
 import os
 from controllers.session import UserSession
 from controllers.usercontroller import UserController
-from dashboard.actions import add_user_flow, update_user_flow, delete_user_flow, list_users_flow
-from dashboard.actions import change_password_flow, manage_user_flow, edit_account_flow
 
-from controllers.scootercontroller import ScooterController
-from dashboard.actions import add_scooter_flow, update_scooter_flow, view_scooters_flow, search_scooters_flow, delete_scooter_flow
+# Import menu flows from their respective files
+from dashboard.menus.usermenu import (
+    add_user_flow,
+    update_user_flow,
+    delete_user_flow,
+    list_users_flow,
+    change_password_flow,
+    edit_account_flow
+)
 
-from controllers.traveller_controller import TravellerController
-from dashboard.actions import add_traveller_flow, update_traveller_flow, delete_traveller_flow, search_traveller_flow, manage_traveller_flow
+from dashboard.menus.scootermenu import (
+    add_scooter_flow,
+    update_scooter_flow,
+    view_scooters_flow,
+    search_scooters_flow,
+    delete_scooter_flow
+)
+
+from dashboard.menus.travellermenu import (
+    add_traveller_flow,
+    update_traveller_flow,
+    delete_traveller_flow,
+    search_traveller_flow
+)
 
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 
