@@ -16,7 +16,7 @@ def get_menu(session):
         ("Manage travellers", ("system_admin", "super"),
         None, lambda: manage_traveller_flow(session)),
 
-        ("Edit profile/account", ("system_admin", "super"), None, lambda: edit_account_flow(session)),
+        ("Edit profile/account", ("system_admin"), None, lambda: edit_account_flow(session)),
 
         ("Logout", None, None, session.logout)
     ]
