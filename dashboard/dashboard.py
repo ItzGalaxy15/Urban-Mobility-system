@@ -6,7 +6,7 @@ def user_can_access(user_role, func):
     Checks if a user with the given role can access the function based on its required roles.
     """
     required_roles = getattr(func, '_required_roles', None)
-    print(f"Checking access: user_role={user_role}, required_roles={required_roles}, func={func.__name__}")
+    # print(f"Checking access: user_role={user_role}, required_roles={required_roles}, func={func.__name__}")
     if not required_roles:
         return True  # No restriction
     user_level = ROLE_HIERARCHY.get(user_role, 0)
@@ -27,17 +27,19 @@ def display_menu(menu_items):
     menu_items: list of (label, function) tuples
     Returns: index of selected item (or None if invalid)
     """
-    print("\nMain Menu:")
+    print("\n--------------------------------")
+    print("Main Menu:")
     for idx, (label, _) in enumerate(menu_items, 1):
         print(f"{idx}. {label}")
     print(f"{len(menu_items)+1}. Exit")
+    print("--------------------------------")
     try:
         option = int(input("\nChoose an option: "))
         if 1 <= option <= len(menu_items):
             return option - 1
         elif option == len(menu_items) + 1:
             print("Exiting...")
-            sys.exit(0)
+            sys.exit()
     except Exception:
         pass
     print("Invalid option.")

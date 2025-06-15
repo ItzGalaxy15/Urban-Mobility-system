@@ -14,6 +14,10 @@ from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from services.userservice import user_service
 
+#--------------------------------------------------------------------------------------
+#                                  User Management
+#--------------------------------------------------------------------------------------
+
 def change_password_flow(session):
     while True:
         old_pw = input("Enter your old password: ")
@@ -24,8 +28,31 @@ def change_password_flow(session):
         success, message = UserController.change_password(UserSession.get_current_user_id(), old_pw, new_pw)
         print(message)
         if success:
-            break 
+            break
         
+def manage_user_flow(session):
+    while True:
+        print("\n--- Manage Users ---")
+        print("1. Add user")
+        print("2. Update user")
+        print("3. Delete user")
+        print("4. List users")
+        print("5. Back")
+        choice = input("Choose an option: ").strip()
+
+        if choice == "1":
+            add_user_flow(session)
+        elif choice == "2":
+            update_user_flow(session)
+        elif choice == "3":
+            delete_user_flow(session)
+        elif choice == "4":
+            list_users_flow(session)
+        elif choice == "5":
+            break
+        else:
+            print("Invalid choice")
+
 def add_user_flow(session):
     while True:
         # Username validation
@@ -101,6 +128,122 @@ def add_user_flow(session):
         print(message)
         if success:
             break
+
+def update_user_flow(session):
+    while True:
+        print("\n--- Update User ---")
+        print("Enter 'back' or 'exit' to go back to user management")
+        print("Enter the user id or username to update: ")
+        update_user = input("Enter the user id or username: ")
+        if update_user == "":
+            print("Invalid input")
+            continue
+        elif update_user == "back" or update_user == "exit":
+            break
+        # Try username first, then user ID
+        user = user_service.get_user_by_username(update_user)
+        if not user and update_user.isdigit():
+            user = user_service.get_user_by_id(int(update_user))
+        if not user:
+            print("User not found")
+            continue
+        while True:
+            print(f"\n--- Updating User: {user['user_id']} | {user['username']} | {user['role']} ---")
+            print("1. Update username (8-10 chars, starts with letter/underscore)")
+            print("2. Update first name (2-20 chars)")
+            print("3. Update last name (2-20 chars)")
+            # print("4. Update role (service_engineer/system_admin)")
+            print("4. Back")
+            choice = input("Choose an option: ").strip()
+            updates = {}
+            if choice == "1":
+                username = input("Enter the new username: ")
+                valid, message = user_service.validate_username(username)
+                if not valid:
+                    print(message)
+                    break
+                updates["username"] = username
+            elif choice == "2":
+                first_name = input("Enter the new first name: ")
+                valid, message = user_service.validate_name(first_name, "First name")
+                if not valid:
+                    print(message)
+                    break
+                updates["first_name"] = first_name
+            elif choice == "3":
+                last_name = input("Enter the new last name: ")
+                valid, message = user_service.validate_name(last_name, "Last name")
+                if not valid:
+                    print(message)
+                    break
+                updates["last_name"] = last_name
+            # elif choice == "4":
+            #     role = input("Enter the new role: ")
+            #     valid, message = user_service.validate_role(role)
+            #     if not valid:
+            #         print(message)
+            #         break
+            #     updates["role"] = role
+            elif choice == "4":
+                break
+            else:
+                print("Invalid choice")
+                continue
+            if updates:
+                success, message = UserController.update_user(
+                    UserSession.get_current_user_id(),
+                    user["user_id"],
+                    **updates
+                )
+                print(message)
+                if success:
+                    break
+
+def delete_user_flow(session):
+    while True:
+        print("\n--- Delete User ---")
+        print("Enter 'back' or 'exit' to go back to user management")
+        print("Enter the user id or username to delete: ")
+        delete_user = input("Enter the user id or username: ")
+        if delete_user == "":
+            print("Invalid input")
+            continue
+        elif delete_user == "back" or delete_user == "exit":
+            break
+        # Try username first, then user ID
+        user = user_service.get_user_by_username(delete_user)
+        if not user and delete_user.isdigit():
+            user = user_service.get_user_by_id(int(delete_user))
+        if not user:
+            print("User not found")
+            continue
+        user_id = user["user_id"]
+        success, message = UserController.delete_user(
+            UserSession.get_current_user_id(), user_id, user["username"]
+        )
+        print(message)
+        if success:
+            # If the deleted user is the currently logged-in user, log out immediately
+            if user_id == UserSession.get_current_user_id():
+                print("You have deleted your own account. Logging out...")
+                session.logout()
+            break
+
+def list_users_flow(session):
+    users = UserController.list_users(UserSession.get_current_user_id())
+    print("\n--- User List ---")
+    print("ID | Username | First Name | Last Name | Role")
+    print("-" * 50)
+    if not users:
+        print("No users found.")
+    else:
+        for user in users:
+            print(f"{user['user_id']} | {user['username']} | {user['first_name']} | {user['last_name']} | {user['role']}")
+    input("\nPress Enter to continue...")
+
+#--------------------------------------------------------------------------------------
+#                                The End of User Management
+#--------------------------------------------------------------------------------------
 
 
 #--------------------------------------------------------------------------------------
@@ -353,3 +496,97 @@ def search_traveller_flow(session):
 #--------------------------------------------------------------------------------------
 #                                The End of Traveller Management
 #--------------------------------------------------------------------------------------
+
+def edit_account_flow(session):
+    while True:
+        user_id = UserSession.get_current_user_id()
+        user = user_service.get_user_by_id(user_id)
+        if not user:
+            print("User not found.")
+            return
+        
+        # Get user's role
+        role = UserSession.get_current_role()
+        
+        # Display profile based on role
+        if role in ["service_engineer", "system_admin"]:
+            print(f"\n--- Profile Information ---")
+            print(f"First Name: {user['first_name']}")
+            print(f"Last Name: {user['last_name']}")
+            print(f"Registration Date: {user['registration_date']}")
+            print("\n1. Change first name")
+            print("2. Change last name")
+            print("3. Back/Exit to main menu")
+        else:
+            print(f"\n--- Edit Profile/Account: {user['user_id']} | {user['username']} ---")
+            print("1. Change username")
+            print("2. Change first name")
+            print("3. Change last name")
+            print("4. Back/Exit to main menu")
+        
+        choice = input("Choose an option: ").strip()
+        updates = {}
+        
+        if role in ["service_engineer", "system_admin"]:
+            if choice == "1":
+                first_name = input("Enter the new first name: ")
+                valid, message = user_service.validate_name(first_name, "First name")
+                if not valid:
+                    print(message)
+                    continue
+                updates["first_name"] = first_name
+            elif choice == "2":
+                last_name = input("Enter the new last name: ")
+                valid, message = user_service.validate_name(last_name, "Last name")
+                if not valid:
+                    print(message)
+                    continue
+                updates["last_name"] = last_name
+            elif choice == "3":
+                break
+            else:
+                print("Invalid choice")
+                continue
+        else:
+            if choice == "1":
+                username = input("Enter the new username: ")
+                valid, message = user_service.validate_username(username)
+                if not valid:
+                    print(message)
+                    continue
+                updates["username"] = username
+            elif choice == "2":
+                first_name = input("Enter the new first name: ")
+                valid, message = user_service.validate_name(first_name, "First name")
+                if not valid:
+                    print(message)
+                    continue
+                updates["first_name"] = first_name
+            elif choice == "3":
+                last_name = input("Enter the new last name: ")
+                valid, message = user_service.validate_name(last_name, "Last name")
+                if not valid:
+                    print(message)
+                    continue
+                updates["last_name"] = last_name
+            elif choice == "4":
+                break
+            else:
+                print("Invalid choice")
+                continue
+        
+        if updates:
+            success, message = UserController.update_user(
+                user_id,
+                user_id,
+                **updates
+            )
+            print(message)
+            if success:
+                # Optionally refresh session info if username was changed
+                if "username" in updates:
+                    UserSession._current_username = updates["username"]
+                if "first_name" in updates:
+                    UserSession._current_user.first_name = updates["first_name"]
+                if "last_name" in updates:
+                    UserSession._current_user.last_name = updates["last_name"]
