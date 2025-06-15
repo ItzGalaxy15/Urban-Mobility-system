@@ -17,22 +17,29 @@ def main():
     if not user_service.get_user_by_username("john_eng"):
         UserController.add_user("john_eng", "Password123!", "John", "Doe", "service_engineer")
 
-    while not UserSession.is_authenticated():
-        username = input("Username: ")
-        password = input("Password: ")
-        UserSession.login(username, password)
-
     while True:
-        os.system("cls")
-        print(f"\nWelcome, {UserSession.get_current_username()} ({UserSession.get_current_role()})")
-        menu_items = get_menu(UserSession)
-        visible_menu = build_menu_with_roles_and_permissions(menu_items, UserSession.get_current_role())
-        # print("Visible menu:", visible_menu)
-        choice = display_menu(visible_menu)
-        if choice is None:
-            continue
-        label, action = visible_menu[choice]
-        action()
+        # Login loop
+        while not UserSession.is_authenticated():
+            username = input("Username: ")
+            password = input("Password: ")
+            UserSession.login(username, password)
+
+        # Main menu loop
+        try:
+            while True:
+                os.system("cls")
+                print(f"\nWelcome, {UserSession.get_current_username()} ({UserSession.get_current_role()})")
+                menu_items = get_menu(UserSession)
+                visible_menu = build_menu_with_roles_and_permissions(menu_items, UserSession.get_current_role())
+                # print("Visible menu:", visible_menu)
+                choice = display_menu(visible_menu)
+                if choice is None:
+                    continue
+                label, action = visible_menu[choice]
+                action()
+        except SystemExit:
+            # This will be caught when logout is called
+            continue  # Return to login loop
 
 if __name__ == "__main__":
     main()

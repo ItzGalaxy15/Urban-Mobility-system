@@ -20,7 +20,7 @@ def create_db():
     # Traveller table
     c.execute('''
     CREATE TABLE IF NOT EXISTS Traveller (
-        customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        traveller_id INTEGER PRIMARY KEY AUTOINCREMENT,
         registration_date DATETIME,
         first_name TEXT,
         last_name TEXT,
@@ -30,7 +30,7 @@ def create_db():
         house_number TEXT,
         zip_code TEXT,
         city TEXT,
-        email_address TEXT,
+        email TEXT,
         mobile_phone TEXT,
         driving_license_no TEXT
     )
@@ -54,20 +54,6 @@ def create_db():
         mileage REAL,
         last_maint_date DATE,
         in_service_date DATETIME
-    )
-    ''')
-
-    # LogEntry table
-    c.execute('''
-    CREATE TABLE IF NOT EXISTS LogEntry (
-        log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date DATE,
-        time TIME,
-        username TEXT,
-        description TEXT,
-        is_suspicious BOOLEAN,
-        user_id INTEGER,
-        FOREIGN KEY(user_id) REFERENCES User(user_id)
     )
     ''')
 

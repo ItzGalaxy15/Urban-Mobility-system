@@ -10,7 +10,7 @@ CITY_CHOICES = {
 
 ZIP_RE      = re.compile(r"^\d{4}[A-Z]{2}$")
 PHONE_RE    = re.compile(r"^\+31-6-\d{8}$")
-LICENSE_RE  = re.compile(r"^[A-Z]{1,2}\d{8}$")
+LICENSE_RE  = re.compile(r"^(?:[A-Z]{2}\d{7}|[A-Z]\d{8})$")
 BIRTH_RE    = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # yyyy-mm-dd
 EMAIL_RE    = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 HOUSE_RE    = re.compile(r"^\d+$") 
