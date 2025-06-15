@@ -504,39 +504,77 @@ def edit_account_flow(session):
         if not user:
             print("User not found.")
             return
-        print(f"\n--- Edit Profile/Account: {user['user_id']} | {user['username']} ---")
-        print("1. Change username")
-        print("2. Change first name")
-        print("3. Change last name")
-        print("4. Back/Exit to main menu")
+        
+        # Get user's role
+        role = UserSession.get_current_role()
+        
+        # Display profile based on role
+        if role in ["service_engineer", "system_admin"]:
+            print(f"\n--- Profile Information ---")
+            print(f"First Name: {user['first_name']}")
+            print(f"Last Name: {user['last_name']}")
+            print(f"Registration Date: {user['registration_date']}")
+            print("\n1. Change first name")
+            print("2. Change last name")
+            print("3. Back/Exit to main menu")
+        else:
+            print(f"\n--- Edit Profile/Account: {user['user_id']} | {user['username']} ---")
+            print("1. Change username")
+            print("2. Change first name")
+            print("3. Change last name")
+            print("4. Back/Exit to main menu")
+        
         choice = input("Choose an option: ").strip()
         updates = {}
-        if choice == "1":
-            username = input("Enter the new username: ")
-            valid, message = user_service.validate_username(username)
-            if not valid:
-                print(message)
+        
+        if role in ["service_engineer", "system_admin"]:
+            if choice == "1":
+                first_name = input("Enter the new first name: ")
+                valid, message = user_service.validate_name(first_name, "First name")
+                if not valid:
+                    print(message)
+                    continue
+                updates["first_name"] = first_name
+            elif choice == "2":
+                last_name = input("Enter the new last name: ")
+                valid, message = user_service.validate_name(last_name, "Last name")
+                if not valid:
+                    print(message)
+                    continue
+                updates["last_name"] = last_name
+            elif choice == "3":
+                break
+            else:
+                print("Invalid choice")
                 continue
-            updates["username"] = username
-        elif choice == "2":
-            first_name = input("Enter the new first name: ")
-            valid, message = user_service.validate_name(first_name, "First name")
-            if not valid:
-                print(message)
-                continue
-            updates["first_name"] = first_name
-        elif choice == "3":
-            last_name = input("Enter the new last name: ")
-            valid, message = user_service.validate_name(last_name, "Last name")
-            if not valid:
-                print(message)
-                continue
-            updates["last_name"] = last_name
-        elif choice == "4":
-            break
         else:
-            print("Invalid choice")
-            continue
+            if choice == "1":
+                username = input("Enter the new username: ")
+                valid, message = user_service.validate_username(username)
+                if not valid:
+                    print(message)
+                    continue
+                updates["username"] = username
+            elif choice == "2":
+                first_name = input("Enter the new first name: ")
+                valid, message = user_service.validate_name(first_name, "First name")
+                if not valid:
+                    print(message)
+                    continue
+                updates["first_name"] = first_name
+            elif choice == "3":
+                last_name = input("Enter the new last name: ")
+                valid, message = user_service.validate_name(last_name, "Last name")
+                if not valid:
+                    print(message)
+                    continue
+                updates["last_name"] = last_name
+            elif choice == "4":
+                break
+            else:
+                print("Invalid choice")
+                continue
+        
         if updates:
             success, message = UserController.update_user(
                 user_id,

@@ -223,7 +223,7 @@ class UserService:
     def get_user_by_id(self, user_id):
         conn = self._get_connection()
         c = conn.cursor()
-        c.execute('SELECT user_id, username, first_name, last_name, role FROM User WHERE user_id=?', (user_id,))
+        c.execute('SELECT user_id, username, first_name, last_name, role, registration_date FROM User WHERE user_id=?', (user_id,))
         row = c.fetchone()
         conn.close()
         if row:
@@ -232,7 +232,8 @@ class UserService:
                 "username": decrypt(row[1]),
                 "first_name": decrypt(row[2]),
                 "last_name": decrypt(row[3]),
-                "role": decrypt(row[4])
+                "role": decrypt(row[4]),
+                "registration_date": row[5]
             }
         return None
     
@@ -242,7 +243,7 @@ class UserService:
     def get_user_by_username(self, username):
         conn = self._get_connection()
         c = conn.cursor()
-        c.execute('SELECT user_id, username, first_name, last_name, role FROM User')
+        c.execute('SELECT user_id, username, first_name, last_name, role, registration_date FROM User')
         users = c.fetchall()
         conn.close()
         for row in users:
@@ -252,7 +253,8 @@ class UserService:
                     "username": decrypt(row[1]),
                     "first_name": decrypt(row[2]),
                     "last_name": decrypt(row[3]),
-                    "role": decrypt(row[4])
+                    "role": decrypt(row[4]),
+                    "registration_date": row[5]
                 }
         return None
         
