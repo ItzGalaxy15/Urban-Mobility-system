@@ -1,6 +1,6 @@
 # um_members.py
 from dbcontext.dbcontext import create_db
-from services.userservice import user_service #, add_scooter
+from services.userservice import user_service
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
@@ -16,8 +16,6 @@ def main():
         UserController.add_user("mike_admin", "StrongPass123!", "Mike", "Jansen", "system_admin")
     if not user_service.get_user_by_username("john_eng"):
         UserController.add_user("john_eng", "Password123!", "John", "Doe", "service_engineer")
-
-    # add_scooter("UrbanScoot", "ModelX", "SN123456789", 25.0, 500.0, 80.0, 20.0, 90.0, 52.5200, 13.4050, 100.0, False, None, None)
 
     while not UserSession.is_authenticated():
         username = input("Username: ")
