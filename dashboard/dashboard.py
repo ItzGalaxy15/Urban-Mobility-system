@@ -59,4 +59,4 @@ def build_menu_with_roles_and_permissions(menu_items, user_role):
         if perm_func is not None and not user_can_access(user_role, perm_func):
             continue
         visible.append((label, action_func))
-    return visible 
+    return visible

@@ -1,9 +1,9 @@
-from typing import List, Optional
+from typing import Optional
 import sqlite3
 from models.scooter import Scooter
 from utils.crypto_utils import decrypt
 
-class ScooterData:
+class ScooterService:
     def __init__(self, db_path: str):
         self.db_path = db_path
 
@@ -19,7 +19,6 @@ class ScooterData:
         """
         try:
             scooter = Scooter(
-                scooter_id=scooter_id,
                 brand=brand,
                 model=model,
                 serial_number=serial_number,
@@ -47,13 +46,12 @@ class ScooterData:
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO Scooter (
-                        scooter_id, brand, model, serial_number, top_speed,
+                        brand, model, serial_number, top_speed,
                         battery_capacity, state_of_charge, target_soc_min,
                         target_soc_max, location_lat, location_lon,
                         out_of_service, mileage, last_maint_date, in_service_date
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
-                    scooter.scooter_id,
                     scooter.brand,  # Already encrypted by model
                     scooter.model,  # Already encrypted by model
                     scooter.serial_number,  # Already encrypted by model

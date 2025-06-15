@@ -21,18 +21,14 @@ class UserController:
             return True, "Password updated successfully."
 
         # Regular user password change
-        user = user_service.get_user_by_id(user_id)
+        user = get_user_by_id(user_id)
         if not user:
             return False, "User not found."
         # Check old password
-        if not user_service.verify_user_password(user_id, old_password):
+        if not verify_user_password(user_id, old_password):
             return False, "Old password is incorrect."
-        # Validate new password
-        valid, msg = validate_password(new_password)
-        if not valid:
-            return False, msg
         # Update password
-        user_service.update_password(user_id, new_password)
+        update_password(user_id, new_password)
         return True, "Password updated successfully."
 
     @staticmethod

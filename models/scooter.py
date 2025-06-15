@@ -28,6 +28,7 @@ class Scooter:
         location_lat: float,
         location_lon: float,
         *,
+        scooter_id: int = None,
         mileage: float = 0.0,
         out_of_service: bool = False,
         last_maint_date: Optional[str] = None,  # YYYY-MM-DD
@@ -92,6 +93,7 @@ class Scooter:
         self.out_of_service = int(bool(out_of_service))
         self.mileage = float(mileage)
 
+        self.scooter_id = scooter_id
         self.last_maint_date = last_maint_date_obj  # date or None
         self.in_service_date = in_service_dt        # datetime
 
