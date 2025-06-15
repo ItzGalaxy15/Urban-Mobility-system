@@ -5,11 +5,12 @@ from models.user import User
 from services.scooterservice import ScooterService
 from utils.role_utils import require_role
 from models.scooter import BATTERY_CAP_MAX, BRAND_RE, DATE_RE, MILEAGE_MAX, MODEL_RE, SERIAL_RE, TOP_SPEED_MAX, TOP_SPEED_MIN
+from controllers.session import UserSession
 
 class ScooterController:
     @staticmethod
     @require_role("super", "system_admin")
-    def add_scooter(user: User, new_scooter: Scooter) -> tuple[bool, str]:
+    def add_scooter(current_user_id: int, new_scooter: Scooter) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
 
         try:
@@ -25,7 +26,7 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
-    def get_scooter(user: User, scooter_id: int | None = None) -> tuple[Optional[Scooter], str]:
+    def get_scooter(user_id: int, scooter_id: int | None = None) -> tuple[Optional[Scooter], str]:
         _scooter_service = ScooterService("urban_mobility.db")
         if scooter_id is None:
             scooters = _scooter_service.get_all_scooters()
@@ -39,9 +40,10 @@ class ScooterController:
 
     @staticmethod
     @require_role("service_engineer")
-    def service_scooter(user: User, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
+    def service_scooter(user_id: int, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
-        if user.role != "service_engineer":
+        user = user_service.get_user_by_id(user_id)
+        if user["role"] != "service_engineer":
             return False, "Unauthorized: Only service engineer can use this function"
 
         allowed_fields = {
@@ -73,7 +75,7 @@ class ScooterController:
 
     @staticmethod
     @require_role("super", "system_admin")
-    def update_scooter(user: User, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
+    def update_scooter(user_id: int, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
         try:
             scooter = _scooterservice.get_scooter_by_id(scooter_id)
@@ -97,7 +99,7 @@ class ScooterController:
 
     @staticmethod
     @require_role("super", "system_admin", "service_engineer")
-    def search_for_scooters(user: User, search_term: str, field: str) -> tuple[Optional[Scooter], str]:
+    def search_for_scooters(user_id: int, search_term: str, field: str) -> tuple[Optional[Scooter], str]:
         _scooterservice = ScooterService("urban_mobility.db")
 
         scooters = _scooterservice.search_for_scooters(search_term, field)
@@ -107,7 +109,7 @@ class ScooterController:
 
     @staticmethod
     @require_role("super", "system_admin")
-    def delete_scooter(user: User, scooter_id: int) -> tuple[bool, str]:
+    def delete_scooter(user_id: int, scooter_id: int) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
 
         if _scooterservice.delete_scooter(scooter_id):
@@ -356,7 +358,7 @@ class ScooterController:
         
         # Create new scooter instance
         return Scooter(
-            scooter_id=old_scooter.scooter_id or None,  # If no old_scooter, will be set by the database
+            scooter_id=None if old_scooter is None else old_scooter.scooter_id,  # If no old_scooter, will be set by the database
             brand=brand,
             model=model,
             serial_number=serial_number,

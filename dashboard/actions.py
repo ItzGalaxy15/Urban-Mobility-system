@@ -26,7 +26,7 @@ from models.traveller import (
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from services.userservice import user_service
-
+current_user_id = UserSession.get_current_user_id()
 
 #--------------------------------------------------------------------------------------
 #                                  Scooter Management
@@ -37,7 +37,7 @@ def add_scooter_flow(session):
     
     new_scooter = ScooterController.create_scooter()
 
-    success, message = ScooterController.add_scooter(session, new_scooter)
+    success, message = ScooterController.add_scooter(current_user_id, new_scooter)
     print(message)
     if success:
         print("Scooter added successfully.")
@@ -48,7 +48,7 @@ def add_scooter_flow(session):
 def update_scooter_flow(session):
     print("\nUpdate Scooter")
     scooter_id = input("Enter the ID of the scooter to update: ")
-    scooter = ScooterController.get_scooter(session, scooter_id)
+    scooter = ScooterController.get_scooter(current_user_id, scooter_id)
     if not scooter:
         print("Scooter not found.")
         return
@@ -57,9 +57,9 @@ def update_scooter_flow(session):
 
     # Call the service method if the user is a service engineer otherwise call update method
     if UserSession.get_current_role() == "service_engineer":
-        success, message = ScooterController.service_scooter(session, scooter_id=scooter_id, update_data=new_scooter)
+        success, message = ScooterController.service_scooter(current_user_id, scooter_id=scooter_id, update_data=new_scooter)
     else:
-        success, message = ScooterController.update_scooter(scooter)
+        success, message = ScooterController.update_scooter(current_user_id, scooter_id, new_scooter)
 
     print(message)
     if success:
@@ -74,9 +74,9 @@ def view_scooters_flow(session):
     choice = input("Do you want to view all scooters? (y/n): ")
     if choice.lower() == 'n':
         scooter_id = input("Enter the ID of the scooter to view: ")
-        scooters = ScooterController.get_scooter(session, scooter_id)
+        scooters = ScooterController.get_scooter(current_user_id, scooter_id)
     elif choice.lower() == 'y':
-        scooters = ScooterController.get_scooter(session)
+        scooters = ScooterController.get_scooter(current_user_id)
     else:
         print("Invalid choice.")
         return
@@ -121,7 +121,7 @@ def search_scooters_flow(session):
     search_term = input("Enter search term: ")
 
     # Call the search method
-    results = ScooterController.search_for_scooters(session, search_term, field)
+    results = ScooterController.search_for_scooters(current_user_id, search_term, field)
     if results:
         print(f"\nFound {len(results[0])} scooter(s):")
         for idx, scooter in enumerate(results[0], 1):
@@ -135,7 +135,7 @@ def search_scooters_flow(session):
 
 def delete_scooter_flow(session):
     scooter_id = input("Enter the ID of the scooter to delete: ")
-    success, message = ScooterController.delete_scooter(session, scooter_id)
+    success, message = ScooterController.delete_scooter(UserSession.get_current_user_id(), scooter_id)
     print(message)
     if success:
         print("Scooter deleted successfully.")
@@ -159,34 +159,34 @@ def change_password_flow(session):
         if not new_pw:
             print("Password change cancelled.")
             break
-        success, message = UserController.change_password(UserSession.get_current_user_id(), old_pw, new_pw)
+        success, message = UserController.change_password(current_user_id, old_pw, new_pw)
         print(message)
         if success:
             break
     input("Press Enter to continue...")
         
-# def manage_user_flow(session):
-#     while True:
-#         print("\n--- Manage Users ---")
-#         print("1. Add user")
-#         print("2. Update user")
-#         print("3. Delete user")
-#         print("4. List users")
-#         print("5. Back")
-#         choice = input("Choose an option: ").strip()
+def manage_user_flow(session):
+    while True:
+        print("\n--- Manage Users ---")
+        print("1. Add user")
+        print("2. Update user")
+        print("3. Delete user")
+        print("4. List users")
+        print("5. Back")
+        choice = input("Choose an option: ").strip()
 
-#         if choice == "1":
-#             add_user_flow(session)
-#         elif choice == "2":
-#             update_user_flow(session)
-#         elif choice == "3":
-#             delete_user_flow(session)
-#         elif choice == "4":
-#             list_users_flow(session)
-#         elif choice == "5":
-#             break
-#         else:
-#             print("Invalid choice")
+        if choice == "1":
+            add_user_flow(session)
+        elif choice == "2":
+            update_user_flow(session)
+        elif choice == "3":
+            delete_user_flow(session)
+        elif choice == "4":
+            list_users_flow(session)
+        elif choice == "5":
+            break
+        else:
+            print("Invalid choice")
 
 def add_user_flow(session):
     while True:
@@ -253,7 +253,7 @@ def add_user_flow(session):
                 continue
         
         success, message = UserController.add_user_controller(
-            UserSession.get_current_user_id(), 
+            current_user_id, 
             username, 
             password, 
             first_name, 
@@ -326,7 +326,7 @@ def update_user_flow(session):
                 continue
             if updates:
                 success, message = UserController.update_user(
-                    UserSession.get_current_user_id(),
+                    current_user_id,
                     user["user_id"],
                     **updates
                 )
@@ -354,7 +354,7 @@ def delete_user_flow(session):
             continue
         user_id = user["user_id"]
         success, message = UserController.delete_user(
-            UserSession.get_current_user_id(), user_id, user["username"]
+            current_user_id, user_id, user["username"]
         )
         print(message)
         if success:
@@ -365,7 +365,7 @@ def delete_user_flow(session):
             break
 
 def list_users_flow(session):
-    users = UserController.list_users(UserSession.get_current_user_id())
+    users = UserController.list_users(current_user_id)
     print("\n--- User List ---")
     print("ID | Username | First Name | Last Name | Role")
     print("-" * 50)
@@ -384,29 +384,29 @@ def list_users_flow(session):
 #--------------------------------------------------------------------------------------
 #                                Traveller Management
 #--------------------------------------------------------------------------------------
-# def manage_traveller_flow(session):
-#     """Nested menu for all traveller CRUD actions."""
-#     while True:
-#         print("\n--- Manage Travellers ---")
-#         print("1. Add traveller")
-#         print("2. Update traveller")
-#         print("3. Delete traveller")
-#         print("4. Search travellers")
-#         print("5. Back")
-#         choice = input("Choose an option: ").strip()
+def manage_traveller_flow(session):
+    """Nested menu for all traveller CRUD actions."""
+    while True:
+        print("\n--- Manage Travellers ---")
+        print("1. Add traveller")
+        print("2. Update traveller")
+        print("3. Delete traveller")
+        print("4. Search travellers")
+        print("5. Back")
+        choice = input("Choose an option: ").strip()
 
-#         if choice == "1":
-#             add_traveller_flow(session)
-#         elif choice == "2":
-#             update_traveller_flow(session)
-#         elif choice == "3":
-#             delete_traveller_flow(session)
-#         elif choice == "4":
-#             search_traveller_flow(session)
-#         elif choice == "5":
-#             break
-#         else:
-#             print("Invalid choice")
+        if choice == "1":
+            add_traveller_flow(session)
+        elif choice == "2":
+            update_traveller_flow(session)
+        elif choice == "3":
+            delete_traveller_flow(session)
+        elif choice == "4":
+            search_traveller_flow(session)
+        elif choice == "5":
+            break
+        else:
+            print("Invalid choice")
 
 
 # -----------------------------------------------------------
@@ -480,7 +480,7 @@ def add_traveller_flow(session):
 
         # ------- save -------
         success, message = TravellerController.add_traveller_controller(
-            UserSession.get_current_user_id(),      # role-check needs this
+            current_user_id,      # role-check needs this
             first_name=first_name,
             last_name=last_name,
             birthday=birthday,
@@ -581,7 +581,7 @@ def update_traveller_flow(session):
         return
 
     ok, msg = TravellerController.update_traveller_controller(
-        session.get_current_user_id(), traveller_id, **updates
+        current_user_id, traveller_id, **updates
     )
     print(msg)
     input("Press Enter to continue...")
@@ -599,7 +599,7 @@ def delete_traveller_flow(session):
     confirm = input("Type YES to confirm: ")
     if confirm.strip().lower() == "yes":
         ok, msg = TravellerController.delete_traveller_controller(
-            UserSession.get_current_user_id(), traveller_id
+            current_user_id, traveller_id
         )
         if not ok:
             print("Error:", msg)
@@ -618,7 +618,7 @@ def delete_traveller_flow(session):
 def search_traveller_flow(session):
     key = input("\nSearch key (name / e-mail / phone): ")
     results = TravellerController.search_travellers_controller(
-        UserSession.get_current_user_id(), key
+        current_user_id, key
     )
     if not results:
         print("No matches.")
