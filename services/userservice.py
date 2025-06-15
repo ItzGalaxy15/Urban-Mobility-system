@@ -73,6 +73,16 @@ class UserService:
                 if not valid:
                     return False, message
 
+                # Check if username already exists by comparing decrypted usernames
+                conn = self._get_connection()
+                c = conn.cursor()
+                c.execute('SELECT username FROM User')
+                rows = c.fetchall()
+                conn.close()
+                for row in rows:
+                    if decrypt(row[0]).lower() == username.lower():
+                        return False, "Username already exists. Please choose a different one."
+
                 # Create User object
                 user = User(
                     username=username,
@@ -133,13 +143,19 @@ class UserService:
         # Check for username uniqueness if username is being updated
         if "username" in updates:
             new_username = updates["username"].lower()
+            # First check if the new username is different from current username
+            if new_username == current_user["username"].lower():
+                return False, "New username must be different from current username"
+            
+            # Then check if the new username exists for any other user by comparing decrypted usernames
             conn = self._get_connection()
             c = conn.cursor()
-            c.execute('SELECT user_id FROM User WHERE username = ?', (encrypt(new_username),))
-            row = c.fetchone()
+            c.execute('SELECT user_id, username FROM User')
+            rows = c.fetchall()
             conn.close()
-            if row and row[0] != user_id:
-                return False, "Username already exists. Please choose a different one."
+            for row in rows:
+                if row[0] != user_id and decrypt(row[1]).lower() == new_username:
+                    return False, "Username already exists. Please choose a different one."
 
         # Update database directly instead of creating a User object
         conn = self._get_connection()
