@@ -28,8 +28,13 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
-    def get_scooter(user: User, scooter_id: int) -> tuple[Optional[Scooter], str]:
+    def get_scooter(user: User, scooter_id: int | None = None) -> tuple[Optional[Scooter], str]:
         _scooter_service = ScooterService("urban_mobility.db")
+        if scooter_id is None:
+            scooters = _scooter_service.get_all_scooters()
+            if scooters != []:
+                return scooters, "All scooters retrieved successfully"
+            return None, "No scooters found"
         scooter = _scooter_service.get_scooter_by_id(scooter_id)
         if scooter:
             return scooter, "Scooter retrieved successfully"
@@ -38,6 +43,7 @@ class ScooterController:
     @staticmethod
     @require_role("service_engineer")
     def service_scooter(user: User, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
+        _scooterservice = ScooterService("urban_mobility.db")
         if user.role != "service_engineer":
             return False, "Unauthorized: Only service engineer can use this function"
 
@@ -49,7 +55,7 @@ class ScooterController:
         }
 
         try:
-            scooter = ScooterController.scooter_data.get_scooter_by_id(scooter_id)
+            scooter = _scooterservice.get_scooter_by_id(scooter_id)
             if not scooter:
                 return False, "Scooter not found"
 
@@ -57,7 +63,7 @@ class ScooterController:
                 if key in allowed_fields and hasattr(scooter, key):
                     setattr(scooter, key, value)
 
-            if ScooterController.scooter_data.update_scooter(scooter):
+            if _scooterservice.update_scooter(scooter):
                 return True, f"Scooter {scooter_id} updated successfully"
             return False, "Failed to update scooter in database"
 
@@ -71,8 +77,9 @@ class ScooterController:
     @staticmethod
     @require_role("super", "system_admin")
     def update_scooter(user: User, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
+        _scooterservice = ScooterService("urban_mobility.db")
         try:
-            scooter = ScooterController.scooter_data.get_scooter_by_id(scooter_id)
+            scooter = _scooterservice.get_scooter_by_id(scooter_id)
             if not scooter:
                 return False, "Scooter not found"
 
@@ -80,7 +87,7 @@ class ScooterController:
                 if hasattr(scooter, key):
                     setattr(scooter, key, value)
 
-            if ScooterController.scooter_data.update_scooter(scooter):
+            if _scooterservice.update_scooter(scooter):
                 return True, f"Scooter {scooter_id} updated successfully"
             return False, "Failed to update scooter in database"
 
@@ -92,19 +99,20 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
-    @require_role("system_admin")
+    @require_role("super", "system_admin")
     def delete_scooter(user: User, scooter_id: int) -> tuple[bool, str]:
-        if user.role not in {"super", "system_admin"}:
+        _scooterservice = ScooterService("urban_mobility.db")
+        if user._current_role not in {"super", "system_admin"}:
             return False, "Unauthorized: Only super admin and system admin can delete scooters"
 
-        if ScooterController.scooter_data.delete_scooter(scooter_id):
+        if _scooterservice.delete_scooter(scooter_id):
             return True, f"Scooter {scooter_id} deleted successfully"
         return False, "Failed to delete scooter from database"
 
     @staticmethod
     def create_scooter(old_scooter: Scooter | None = None, is_service: bool = False) -> Scooter:
         """
-        Create a new scooter instance from the provided data.
+        Create a new scooter instance from the provided data. Or update an existing scooter's data.
         
         Args:
             old_scooter (Scooter | None): Existing scooter to prefill values from, or None.

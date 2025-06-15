@@ -88,6 +88,19 @@ class ScooterService:
             return None
         except Exception as e:
             return None
+    
+    def get_all_scooters(self) -> list[Scooter]:
+        """Retrieve all scooters from the database"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM Scooter")
+                rows = cursor.fetchall()
+                return [self._row_to_scooter(row) for row in rows]
+        except sqlite3.Error as e:
+            return []
+        except Exception as e:
+            return []
 
     def _row_to_scooter(self, row: tuple) -> Scooter:
         """Convert a database row to a Scooter object"""
@@ -116,3 +129,52 @@ class ScooterService:
             )
         except Exception as e:
             raise
+
+    def update_scooter(self, scooter: Scooter) -> bool:
+        """Update an existing scooter in the database"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE Scooter SET
+                        brand = ?, model = ?, serial_number = ?,
+                        top_speed = ?, battery_capacity = ?, state_of_charge = ?,
+                        target_soc_min = ?, target_soc_max = ?,
+                        location_lat = ?, location_lon = ?,
+                        out_of_service = ?, mileage = ?, last_maint_date = ?
+                    WHERE scooter_id = ?
+                """, (
+                    scooter.brand,  # Already encrypted by model
+                    scooter.model,  # Already encrypted by model
+                    scooter.serial_number,  # Already encrypted by model
+                    scooter.top_speed,
+                    scooter.battery_capacity,
+                    scooter.state_of_charge,
+                    scooter.target_soc_min,
+                    scooter.target_soc_max,
+                    scooter.location_lat,
+                    scooter.location_lon,
+                    scooter.out_of_service,
+                    scooter.mileage,
+                    scooter.last_maint_date,
+                    scooter.scooter_id
+                ))
+                conn.commit()
+                return True
+        except sqlite3.Error as e:
+            return False
+        except Exception as e:
+            return False
+    
+    def delete_scooter(self, scooter_id: int) -> bool:
+        """Delete a scooter from the database by its ID"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM Scooter WHERE scooter_id = ?", (scooter_id,))
+                conn.commit()
+                return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            return False
+        except Exception as e:
+            return False

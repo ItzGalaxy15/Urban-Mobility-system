@@ -18,6 +18,7 @@ def change_password_flow(session):
         print(message)
         if success:
             break
+    input("Press Enter to continue...")
 
 # Scooter Management Menu Actions #
 def add_scooter_flow(session):
@@ -44,28 +45,48 @@ def update_scooter_flow(session):
     new_scooter = ScooterController.create_scooter(scooter[0], session._current_role == "service_engineer")
 
     # Call the service method if the user is a service engineer otherwise call update method
-    success, message = ScooterController.service_scooter(session, scooter_id=scooter_id, update_data=new_scooter) if UserSession.get_current_role() == "service_engineer" else ScooterController.update_scooter(scooter)
+    if UserSession.get_current_role() == "service_engineer":
+        success, message = ScooterController.service_scooter(session, scooter_id=scooter_id, update_data=new_scooter)
+    else:
+        success, message = ScooterController.update_scooter(scooter)
 
     print(message)
     if success:
         print("Scooter updated successfully.")
     else:
         print("Failed to update scooter.")
+    input("Press Enter to continue...")
 
 def view_scooters_flow(session):
-    scooters = ScooterController.view_scooters_flow(session)
-    if scooters:
-        print("\nScooters:")
-        for scooter in scooters:
-            print(f"{scooter.scooter_id}: {scooter.name} - {scooter.model} (State of Charge: {scooter.state_of_charge}%)")
+    print("\nView Scooters")
+
+    choice = input("Do you want to view all scooters? (y/n): ")
+    if choice.lower() == 'n':
+        scooter_id = input("Enter the ID of the scooter to view: ")
+        scooters = ScooterController.get_scooter(session, scooter_id)
+    elif choice.lower() == 'y':
+        scooters = ScooterController.get_scooter(session)
+    else:
+        print("Invalid choice.")
+        return
+
+    if scooters[0]:
+        print("\nScooter(s):")
+        for scooter_id, scooter in enumerate(scooters[0]):
+            print(f"\nScooter #{scooter_id + 1}:")
+            for attr, value in vars(scooter).items():
+                print(f"  {attr}: {value}")
+            print("\n" + ("-" * 30))
     else:
         print("No scooters found.")
+    input("Press Enter to continue...")
 
 def delete_scooter_flow(session):
     scooter_id = input("Enter the ID of the scooter to delete: ")
-    success, message = ScooterController.delete_scooter_flow(session, scooter_id)
+    success, message = ScooterController.delete_scooter(session, scooter_id)
     print(message)
     if success:
         print("Scooter deleted successfully.")
     else:
         print("Failed to delete scooter.")
+    input("Press Enter to continue...")
