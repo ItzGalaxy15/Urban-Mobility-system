@@ -21,18 +21,19 @@ def build_menu(menu_items, user_role):
     """
     return [item for item in menu_items if user_can_access(user_role, item[1])]
 
-def display_menu(menu_items):
+def display_menu(menu_items, title="Main Menu"):
     """
     Displays the menu and returns the user's choice (1-based index).
     menu_items: list of (label, function) tuples
     Returns: index of selected item (or None if invalid)
     """
-    print("\n--------------------------------")
-    print("Main Menu:")
+    print(f"\n-----=== {title} ===-----")
     for idx, (label, _) in enumerate(menu_items, 1):
+        if idx == menu_items.__len__():
+            print()
         print(f"{idx}. {label}")
     print(f"{len(menu_items)+1}. Exit")
-    print("--------------------------------")
+    print("------------------" + "-" * len(title))
     try:
         option = int(input("\nChoose an option: "))
         if 1 <= option <= len(menu_items):
@@ -61,4 +62,4 @@ def build_menu_with_roles_and_permissions(menu_items, user_role):
         if perm_func is not None and not user_can_access(user_role, perm_func):
             continue
         visible.append((label, action_func))
-    return visible 
+    return visible

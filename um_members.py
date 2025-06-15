@@ -31,7 +31,7 @@ def main():
                 print(f"\nWelcome, {UserSession.get_current_username()} ({UserSession.get_current_role()})")
                 menu_items = get_menu(UserSession)
                 visible_menu = build_menu_with_roles_and_permissions(menu_items, UserSession.get_current_role())
-                print("Visible menu:", visible_menu)
+                # print("Visible menu:", visible_menu)
                 choice = display_menu(visible_menu)
                 if choice is None:
                     continue

@@ -16,6 +16,7 @@ class UserController:
         if user_id == 0:
             if old_password != "Admin_123?":
                 return False, "Old password is incorrect."
+
             # Validate new password for super admin
             try:
                 User(username="dummy", password_plain=new_password, role="super")
@@ -28,14 +29,17 @@ class UserController:
         user = user_service.get_user_by_id(user_id)
         if not user:
             return False, "User not found."
+
         # Check old password
         if not user_service.verify_user_password(user_id, old_password):
             return False, "Old password is incorrect."
+
         # Validate new password using User model
         try:
             User(username=user["username"], password_plain=new_password, role=user["role"])
         except ValueError as e:
             return False, str(e)
+
         # Update password
         user_service.update_password(user_id, new_password)
         return True, "Password updated successfully."
