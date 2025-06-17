@@ -1,6 +1,7 @@
 import os
 from controllers.session import UserSession
 from controllers.usercontroller import UserController
+from services.backup_service import backup_service
 
 # Import menu flows from their respective files
 from dashboard.menus.usermenu import (
@@ -38,6 +39,12 @@ from dashboard.dashboard import build_menu_with_roles_and_permissions, display_m
 #                                Main Menu Management
 #--------------------------------------------------------------------------------------
 
+def create_backup_flow(session):
+    user_id = session.get_current_user_id()
+    success, msg = backup_service.create_backup(user_id)
+    print(msg)
+    input("\nPress Enter to continue...")
+
 def get_menu(session):
     return [
         ("Scooter Management", ("service_engineer", "system_admin", "super"),
@@ -53,6 +60,8 @@ def get_menu(session):
          None, lambda: traveller_menu(session)),
 
         ("Edit profile/account", ("system_admin"), None, lambda: edit_account_flow(session)),
+
+        ("Create database backup", ("system_admin", "super"), None, lambda: create_backup_flow(session)),
 
         ("Logout", None, None, session.logout)
     ]
