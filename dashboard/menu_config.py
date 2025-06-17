@@ -27,6 +27,11 @@ from dashboard.menus.travellermenu import (
     search_traveller_flow
 )
 
+from dashboard.menus.password_reset_menu import (
+    reset_password_flow,
+    use_reset_code_flow
+)
+
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 
 #--------------------------------------------------------------------------------------
@@ -118,6 +123,9 @@ def get_menu_user_management(session):
 
         ("List Users", ("system_admin", "super"),
          None, lambda: list_users_flow(session)),
+
+        ("Reset User Password", ("system_admin", "super"),
+         None, lambda: reset_password_flow(session)),
 
         ("Back", None, None, lambda: None)
     ]
