@@ -33,6 +33,9 @@ from dashboard.menus.password_reset_menu import (
     use_reset_code_flow
 )
 
+from dashboard.menus.backup_src_menu import backup_src_menu
+from dashboard.menus.backup_db_menu import backup_db_menu
+
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 
 #--------------------------------------------------------------------------------------
@@ -61,7 +64,9 @@ def get_menu(session):
 
         ("Edit profile/account", ("system_admin"), None, lambda: edit_account_flow(session)),
 
-        ("Create database backup", ("system_admin", "super"), None, lambda: create_backup_flow(session)),
+        ("Create Full System (src) Backup", ("system_admin", "super"), None, lambda: backup_src_menu(session)),
+
+        ("Create Database Backup", ("system_admin", "super"), None, lambda: backup_db_menu(session)),
 
         ("Logout", None, None, session.logout)
     ]

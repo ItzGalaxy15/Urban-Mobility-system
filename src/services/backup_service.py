@@ -68,4 +68,38 @@ class BackupService:
 
         return True, f'Backup created successfully'
 
+    def create_db_backup(self, user_id):
+        # Check permissions
+        user = user_service.get_user_by_id(user_id) if user_id != 0 else {'role': 'super'}
+        if not user or user['role'] not in ('system_admin', 'super'):
+            return False, 'Only system admin or super admin can create database backups.'
+
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        backup_filename = f'db_backup_{timestamp}.zip'
+        backup_path = os.path.join(BACKUP_DIR, backup_filename)
+
+        try:
+            with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                arcname = os.path.basename(DB_FILE)
+                zipf.write(DB_FILE, arcname=arcname)
+        except Exception as e:
+            return False, f'Failed to create DB zip: {e}'
+
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        if user_id == 0:
+            c.execute('''
+                INSERT INTO Backup (backup_date, file_path, created_by_user_id)
+                VALUES (datetime('now'), ?, NULL)
+            ''', (backup_path,))
+        else:
+            c.execute('''
+                INSERT INTO Backup (backup_date, file_path, created_by_user_id)
+                VALUES (datetime('now'), ?, ?)
+            ''', (backup_path, user_id))
+        conn.commit()
+        conn.close()
+
+        return True, f'Database backup created successfully'
+
 backup_service = BackupService() 
