@@ -4,6 +4,13 @@ from controllers.usercontroller import UserController
 from services.backup_service import backup_service
 from dashboard.menus.backup_src_menu import backup_src_menu
 from dashboard.menus.backup_db_menu import backup_db_menu
+from dashboard.menus.backup_management_menu import (
+    request_backup_restore_menu,
+    generate_restore_code_menu,
+    restore_with_code_menu,
+    restore_direct_menu,
+    view_my_codes_menu
+)
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 
 # Import menu flows from their respective files
@@ -66,6 +73,16 @@ def get_menu(session):
         ("Create Full System (src) Backup", ("system_admin", "super"), None, lambda: backup_src_menu(session)),
 
         ("Create Database Backup", ("system_admin", "super"), None, lambda: backup_db_menu(session)),
+
+        ("Request Backup Restore", ("system_admin"), None, lambda: request_backup_restore_menu(session)),
+
+        ("Generate Restore Code", ("super"), None, lambda: generate_restore_code_menu(session)),
+
+        ("Restore Backup with Code", ("system_admin"), None, lambda: restore_with_code_menu(session)),
+
+        ("Direct Backup Restore", ("super"), None, lambda: restore_direct_menu(session)),
+
+        ("View My Restore Codes", ("system_admin"), None, lambda: view_my_codes_menu(session)),
 
         ("Logout", None, None, session.logout),
 
