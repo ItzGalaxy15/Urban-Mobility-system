@@ -21,7 +21,7 @@ class BackupService:
     def create_backup(self, user_id):
         # Check permissions
         user = user_service.get_user_by_id(user_id) if user_id != 0 else {'role': 'super'}
-        if not user or user['role'] not in ('system_admin', 'super'):
+        if not user or user.role_plain not in ('system_admin', 'super'):
             return False, 'Only system admin or super admin can create backups.'
 
         # Create timestamped backup filename
@@ -74,7 +74,7 @@ class BackupService:
     def create_db_backup(self, user_id):
         # Check permissions
         user = user_service.get_user_by_id(user_id) if user_id != 0 else {'role': 'super'}
-        if not user or user['role'] not in ('system_admin', 'super'):
+        if not user or user.role_plain not in ('system_admin', 'super'):
             return False, 'Only system admin or super admin can create database backups.'
 
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -112,7 +112,7 @@ class BackupService:
         """
         # Check if user is a system admin
         user = user_service.get_user_by_id(system_admin_user_id)
-        if not user or user['role'] != 'system_admin':
+        if not user or user.role_plain != 'system_admin':
             return False, "Only system admins can restore backups with codes."
 
         # Verify the code and get backup_id
@@ -135,7 +135,7 @@ class BackupService:
         """
         # Check if user is a super admin
         user = user_service.get_user_by_id(user_id) if user_id != 0 else {'role': 'super'}
-        if not user or user['role'] != 'super':
+        if not user or user.role_plain != 'super':
             return False, "Only super admins can restore backups directly."
 
         # Perform the restore
