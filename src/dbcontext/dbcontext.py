@@ -92,6 +92,14 @@ def create_db():
     )
     ''')
 
+    # table LogStatus to track “last seen” ID per user
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS LogStatus (
+        user_id INTEGER PRIMARY KEY,
+        last_seen_log_id INTEGER
+    )
+    ''')
+
     conn.commit()
     conn.close()
 
