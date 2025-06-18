@@ -4,8 +4,11 @@ from models.log_entry import LogEntry
 from utils.crypto_utils import decrypt, encrypt
 from collections import defaultdict
 from models.log_entry import LogEntry
+import sqlite3
+from pathlib import Path
 
 LOG_FILE = "activity.log"
+DB_PATH = "urban_mobility.db" 
 _failed_counter = defaultdict(int)   # username -> consecutive fails
 
 def get_next_log_id() -> int:
@@ -65,7 +68,6 @@ def log_login_attempt(username: str, success: bool):
     ))
 
 
-
 def read_logs(limit: int | None = None) -> list[LogEntry]:
     """
     Decrypts log file and returns LogEntry objects (newest first).
@@ -123,3 +125,36 @@ def read_logs(limit: int | None = None) -> list[LogEntry]:
         entries = entries[:limit]
     return entries
 
+
+def _conn():
+    return sqlite3.connect(DB_PATH)
+
+def unread_suspicious_count(user_id: int) -> int:
+    """
+    Returns how many suspicious logs have appeared
+    since this admin's last_seen_log_id.
+    """
+    last_seen = 0
+    with _conn() as conn:
+        c = conn.cursor()
+        c.execute('SELECT last_seen_log_id FROM LogStatus WHERE user_id=?', (user_id,))
+        row = c.fetchone()
+        if row:
+            last_seen = row[0]
+
+    # read newest logs
+    logs = read_logs()               # already returns newest→oldest
+    unseen = [e for e in logs if e.suspicious and e.log_id > last_seen]
+    return len(unseen)
+
+def mark_logs_read(user_id: int) -> None:
+    """Store highest log_id as last seen for this admin."""
+    logs = read_logs(limit=1)        # latest only
+    if not logs:
+        return
+    top_id = logs[0].log_id
+    with _conn() as conn:
+        c = conn.cursor()
+        c.execute('INSERT OR REPLACE INTO LogStatus (user_id,last_seen_log_id) VALUES (?,?)',
+                  (user_id, top_id))
+        conn.commit()
