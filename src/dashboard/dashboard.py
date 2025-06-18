@@ -32,15 +32,11 @@ def display_menu(menu_items, title="Main Menu"):
         if idx == menu_items.__len__():
             print()
         print(f"{idx}. {label}")
-    print(f"{len(menu_items)+1}. Exit")
     print("------------------" + "-" * len(title))
     try:
         option = int(input("\nChoose an option: "))
         if 1 <= option <= len(menu_items):
             return option - 1
-        elif option == len(menu_items) + 1:
-            print("Exiting...")
-            sys.exit()
     except Exception:
         pass
     print("Invalid option.")

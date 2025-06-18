@@ -82,6 +82,16 @@ def create_db():
     )
     ''')
 
+    # Temporary password reset code table
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS TempCodes (
+        user_id INTEGER PRIMARY KEY,
+        code TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES User(user_id)
+    )
+    ''')
+
     conn.commit()
     conn.close()
 

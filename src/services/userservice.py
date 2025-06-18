@@ -3,6 +3,9 @@ from utils.crypto_utils import hash_password, decrypt, check_password, encrypt
 from models.user import User, USERNAME_RE, PWD_ALLOWED_RE
 import re
 from typing import Tuple
+import random
+import string
+from datetime import datetime, timedelta
 
 class UserService:
     def __init__(self, db_path: str):
@@ -298,6 +301,129 @@ class UserService:
         c.execute('UPDATE User SET password_hash = ? WHERE user_id = ?', (hashed, user_id))
         conn.commit()
         conn.close()
+
+    def generate_temp_code(self, admin_id: int, target_user_id: int) -> Tuple[bool, str]:
+        """
+        Generate a temporary code for password reset.
+        Only system admin can reset service engineer passwords.
+        Super admin can reset both system admin and service engineer passwords.
+        """
+        # Special-case for hardcoded super admin
+        if admin_id == 0:
+            admin = {'role': 'super'}
+        else:
+            admin = self.get_user_by_id(admin_id)
+        target = self.get_user_by_id(target_user_id)
+        
+        if not admin or not target:
+            return False, "User not found"
+            
+        # Check permissions
+        if admin["role"] == "system_admin":
+            if target["role"] != "service_engineer":
+                return False, "System admin can only reset service engineer passwords"
+        elif admin["role"] == "super":
+            if target["role"] not in ("system_admin", "service_engineer"):
+                return False, "Super admin can only reset system admin or service engineer passwords"
+        else:
+            return False, "Only system admin or super admin can reset passwords"
+
+        # Generate a 5-digit code
+        code = ''.join(random.choices(string.digits, k=5))
+        
+        # Store the code
+        conn = self._get_connection()
+        c = conn.cursor()
+        
+        try:
+            # Remove any existing code for this user
+            c.execute('DELETE FROM TempCodes WHERE user_id = ?', (target_user_id,))
+            # Set the user's password_hash to NULL
+            c.execute('UPDATE User SET password_hash = NULL WHERE user_id = ?', (target_user_id,))
+            
+            # Insert new code
+            c.execute('INSERT INTO TempCodes (user_id, code) VALUES (?, ?)',
+                     (target_user_id, encrypt(code)))
+            conn.commit()
+            
+            # Verify the code was stored correctly
+            c.execute('SELECT code FROM TempCodes WHERE user_id = ?', (target_user_id,))
+            stored = c.fetchone()
+            if not stored or decrypt(stored[0]) != code:
+                return False, "Failed to store reset code properly"
+                
+            return True, code
+        except Exception as e:
+            conn.rollback()
+            return False, f"Error storing reset code: {str(e)}"
+        finally:
+            conn.close()
+
+    def verify_temp_code(self, user_id: int, code: str) -> bool:
+        """Verify if the temporary code is valid for the user."""
+        conn = self._get_connection()
+        c = conn.cursor()
+        
+        try:
+            # Get the stored code
+            c.execute('SELECT code, created_at FROM TempCodes WHERE user_id = ?', (user_id,))
+            row = c.fetchone()
+            
+            if not row:
+                print("No reset code found for user")  # Debug
+                return False
+                
+            stored_code, created_at = row
+            created_at = datetime.strptime(created_at, '%Y-%m-%d %H:%M:%S')
+            
+            # Check if code is expired (10 minutes)
+            # if datetime.now() - created_at > timedelta(minutes=10):
+            #     print("Reset code has expired")  # Debug
+            #     return False
+                
+            # Compare codes - decrypt the stored code before comparing
+            decrypted_code = decrypt(stored_code)
+            # print(f"Comparing codes - Input: {code}, Stored: {decrypted_code}")  # Debug
+            return decrypted_code == code
+        except Exception as e:
+            print(f"Error verifying code: {str(e)}")  # Debug
+            return False
+        finally:
+            conn.close()
+
+    def reset_password_with_code(self, user_id: int, code: str, new_password: str) -> Tuple[bool, str]:
+        """Reset password using temporary code."""
+        # Verify code
+        if not self.verify_temp_code(user_id, code):
+            return False, "Invalid or expired code"
+            
+        # Validate new password
+        valid, message = self.validate_password(new_password)
+        if not valid:
+            return False, message
+            
+        # Update password
+        conn = self._get_connection()
+        c = conn.cursor()
+        c.execute('UPDATE User SET password_hash = ? WHERE user_id = ?',
+                 (hash_password(new_password), user_id))
+        conn.commit()
+        
+        # Remove used code
+        c.execute('DELETE FROM TempCodes WHERE user_id = ?', (user_id,))
+        conn.commit()
+        conn.close()
+        
+        return True, "Password reset successfully"
+
+    def has_pending_reset(self, user_id: int) -> bool:
+        """Check if user has a pending password reset."""
+        conn = self._get_connection()
+        c = conn.cursor()
+        c.execute('SELECT 1 FROM TempCodes WHERE user_id = ?', (user_id,))
+        has_reset = c.fetchone() is not None
+        conn.close()
+        return has_reset
 
 # Create a single instance of UserService
 user_service = UserService("urban_mobility.db")
