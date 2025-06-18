@@ -12,6 +12,8 @@ from dashboard.menus.backup_management_menu import (
     view_my_codes_menu
 )
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
+from dashboard.menus.logmenu import view_logs_flow
+
 
 # Import menu flows from their respective files
 from dashboard.menus.usermenu import (
@@ -83,6 +85,8 @@ def get_menu(session):
         ("Direct Backup Restore", ("super"), None, lambda: restore_direct_menu(session)),
 
         ("View My Restore Codes", ("system_admin"), None, lambda: view_my_codes_menu(session)),
+
+        ("View system logs", ("system_admin", "super"), None, lambda: view_logs_flow(session)),
 
         ("Logout", None, None, session.logout),
 

@@ -4,12 +4,14 @@ from models.user import User
 from services.userservice import user_service
 from utils.role_utils import require_role
 from controllers.session import UserSession
+from utils.log_decorator import log_action
 
 class UserController:
     #--------------------------------------------------------------------------------------
     #                   Change Password
     #--------------------------------------------------------------------------------------
     @staticmethod
+    @log_action("Change password → {msg}")
     @require_role("service_engineer", "system_admin")
     def change_password(user_id, old_password, new_password):
         # Special case for super admin
@@ -48,6 +50,7 @@ class UserController:
     #                   Add User
     #--------------------------------------------------------------------------------------
     @staticmethod
+    @log_action("Add user → {msg}")
     @require_role("system_admin", "super")
     def add_user_controller(current_user_id, username, password, first_name, last_name, role):
         """
@@ -80,6 +83,7 @@ class UserController:
     #                   Update User
     #--------------------------------------------------------------------------------------
     @staticmethod
+    @log_action("Update user → {msg}")
     @require_role("system_admin", "super")
     def update_user(current_user_id, user_id, **updates):
         """
@@ -106,6 +110,7 @@ class UserController:
     #                   Delete User
     #--------------------------------------------------------------------------------------
     @staticmethod
+    @log_action("Delete user → {msg}")
     @require_role("system_admin", "super")
     def delete_user(current_user_id, user_id, username):
         """
@@ -132,6 +137,7 @@ class UserController:
     #--------------------------------------------------------------------------------------
     @staticmethod
     @require_role("system_admin", "super")
+    @log_action("List users → {msg}")
     def list_users(user_id):
         """List all users in the system."""
         return user_service.list_users()
@@ -140,6 +146,7 @@ class UserController:
     #                   Change Password
     #--------------------------------------------------------------------------------------
     @staticmethod
+    @log_action("Change own password → {msg}")
     def change_password_controller(current_user_id, current_password, new_password):
         """
         Change the password for a user.
