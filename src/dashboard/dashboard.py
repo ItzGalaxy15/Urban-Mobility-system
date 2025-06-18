@@ -21,7 +21,7 @@ def build_menu(menu_items, user_role):
     """
     return [item for item in menu_items if user_can_access(user_role, item[1])]
 
-def display_menu(menu_items, title="Main Menu"):
+def display_menu(menu_items, title="Main Menu") -> int | None:
     """
     Displays the menu and returns the user's choice (1-based index).
     menu_items: list of (label, function) tuples
@@ -29,16 +29,18 @@ def display_menu(menu_items, title="Main Menu"):
     """
     print(f"\n-----=== {title} ===-----")
     for idx, (label, _) in enumerate(menu_items, 1):
-        if idx == menu_items.__len__():
+        if label == "Logout" or label == "Back":
             print()
         print(f"{idx}. {label}")
     print("------------------" + "-" * len(title))
     try:
         option = int(input("\nChoose an option: "))
+        print(option)
         if 1 <= option <= len(menu_items):
             return option - 1
     except Exception:
         pass
+    
     print("Invalid option.")
     return None
 

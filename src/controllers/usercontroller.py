@@ -38,7 +38,7 @@ class UserController:
 
         # Validate new password using User model
         try:
-            User(username=user["username"], password_plain=new_password, role=user["role"])
+            User(username=user.username_plain, password_plain=new_password, role=user.role_plain)
         except ValueError as e:
             return False, str(e)
 
@@ -99,7 +99,7 @@ class UserController:
             target_user = user_service.get_user_by_id(user_id)
             if not target_user:
                 return False, "User not found."
-            if target_user["role"] == "service_engineer" or user_id == current_user_id:
+            if target_user.role_plain == "service_engineer" or user_id == current_user_id:
                 return user_service.update_user(user_id, **updates)
             else:
                 return False, "System admins can only update service engineers or themselves."
@@ -125,7 +125,7 @@ class UserController:
             target_user = user_service.get_user_by_id(user_id)
             if not target_user:
                 return False, "User not found."
-            if target_user["role"] == "service_engineer" or user_id == current_user_id:
+            if target_user.role_plain == "service_engineer" or user_id == current_user_id:
                 return user_service.delete_user(user_id, username)
             else:
                 return False, "System admins can only delete service engineers or themselves."

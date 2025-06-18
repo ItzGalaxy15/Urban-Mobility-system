@@ -201,3 +201,7 @@ secret.key
 
 # Database
 urban_mobility.db
+
+# Backup files
+backups/
+backups/*.zip

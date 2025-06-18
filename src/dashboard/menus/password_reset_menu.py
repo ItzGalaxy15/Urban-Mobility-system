@@ -30,15 +30,15 @@ def reset_password_flow(session):
             current_role = 'super'
         else:
             current_user = user_service.get_user_by_id(current_user_id)
-            current_role = current_user['role'] if current_user else None
+            current_role = current_user.role_plain if current_user else None
 
         # Permission logic
         if current_role == 'system_admin':
-            if user['role'] != 'service_engineer':
+            if user.role_plain != 'service_engineer':
                 print("System admin can only reset passwords for service engineers")
                 continue
         elif current_role == 'super':
-            if user['role'] not in ('system_admin', 'service_engineer'):
+            if user.role_plain not in ('system_admin', 'service_engineer'):
                 print("Super admin can only reset passwords for system admins or service engineers")
                 continue
         else:
@@ -47,9 +47,9 @@ def reset_password_flow(session):
         break
     
     # Debug print
-    # print(f"[DEBUG] Generating reset code for user_id: {user['user_id']}, username: {user['username']}")
+    # print(f"[DEBUG] Generating reset code for user_id: {user.user_id}, username: {user.username_plain}")
     # print(f"[DEBUG] Current admin user_id: {current_user_id}")
-    success, reset_code = user_service.generate_temp_code(current_user_id, user['user_id'])
+    success, reset_code = user_service.generate_temp_code(current_user_id, user.user_id)
     
     if not success:
         print(reset_code)  # The message is returned in the second tuple element

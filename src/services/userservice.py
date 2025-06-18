@@ -47,7 +47,7 @@ class UserService:
 #-------------------------------------------------
 #                   Add User
 #-------------------------------------------------
-    def add_user(self, username=None, password=None, first_name=None, last_name=None, role=None, user=None):
+    def add_user(self, username=None, password=None, first_name=None, last_name=None, role=None, user=None) -> Tuple[bool, str]:
         """
         Add a user to the database. Can be called with either individual parameters or a User object.
         
@@ -201,7 +201,7 @@ class UserService:
 #-------------------------------------------------
 #                   List Users
 #-------------------------------------------------
-    def list_users(self):
+    def list_users(self) -> list[User]:
         """List all users in the system."""
         conn = self._get_connection()
         c = conn.cursor()
@@ -209,13 +209,13 @@ class UserService:
         rows = c.fetchall()
         conn.close()
         return [
-            {
-                "user_id": row[0],
-                "username": decrypt(row[1]),
-                "first_name": decrypt(row[2]),
-                "last_name": decrypt(row[3]),
-                "role": decrypt(row[4])
-            } for row in rows
+            User(
+                user_id=row[0],
+                username=decrypt(row[1]),
+                first_name=decrypt(row[2]),
+                last_name=decrypt(row[3]),
+                role=decrypt(row[4])
+            ) for row in rows
         ]
         
     
@@ -239,48 +239,58 @@ class UserService:
 #-------------------------------------------------
 #                   Get User
 #-------------------------------------------------
-    def get_user_by_id(self, user_id):
+    def get_user_by_id(self, user_id) -> User:
+        """Get user details by user_id."""
         conn = self._get_connection()
         c = conn.cursor()
         c.execute('SELECT user_id, username, first_name, last_name, role, registration_date FROM User WHERE user_id=?', (user_id,))
         row = c.fetchone()
         conn.close()
         if row:
-            return {
-                "user_id": row[0],
-                "username": decrypt(row[1]),
-                "first_name": decrypt(row[2]),
-                "last_name": decrypt(row[3]),
-                "role": decrypt(row[4]),
-                "registration_date": row[5]
-            }
+            try:
+                return User(
+                    user_id=row[0],
+                    username=decrypt(row[1]),
+                    first_name=decrypt(row[2]),
+                    last_name=decrypt(row[3]),
+                    role=decrypt(row[4]),
+                    registration_date=row[5]
+                )
+            except Exception as e:
+                # Optionally log the error here
+                return None
         return None
     
 #-------------------------------------------------
 #                   Get User by Username
 #-------------------------------------------------
-    def get_user_by_username(self, username):
+    def get_user_by_username(self, username) -> User:
+        """Get user details by username."""
         conn = self._get_connection()
         c = conn.cursor()
         c.execute('SELECT user_id, username, first_name, last_name, role, registration_date FROM User')
         users = c.fetchall()
         conn.close()
         for row in users:
-            if decrypt(row[1]) == username:
-                return {
-                    "user_id": row[0],
-                    "username": decrypt(row[1]),
-                    "first_name": decrypt(row[2]),
-                    "last_name": decrypt(row[3]),
-                    "role": decrypt(row[4]),
-                    "registration_date": row[5]
-                }
+            try:
+                if decrypt(row[1]) == username:
+                    return User(
+                        user_id=row[0],
+                        username=decrypt(row[1]),
+                        first_name=decrypt(row[2]),
+                        last_name=decrypt(row[3]),
+                        role=decrypt(row[4]),
+                        registration_date=row[5]
+                    )
+            except Exception as e:
+                # Optionally log the error here
+                continue
         return None
         
 #-------------------------------------------------
 #                   Verify User Password
 #-------------------------------------------------
-    def verify_user_password(self, user_id, password):
+    def verify_user_password(self, user_id, password) -> bool:
         conn = self._get_connection()
         c = conn.cursor()
         c.execute('SELECT password_hash FROM User WHERE user_id=?', (user_id,))
@@ -294,7 +304,7 @@ class UserService:
 #-------------------------------------------------
 #                   Update Password
 #-------------------------------------------------
-    def update_password(self, user_id, new_password):
+    def update_password(self, user_id, new_password) -> None:
         conn = self._get_connection()
         c = conn.cursor()
         hashed = hash_password(new_password)
