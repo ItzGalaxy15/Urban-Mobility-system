@@ -6,10 +6,12 @@ from services.scooterservice import ScooterService
 from utils.role_utils import require_role
 from models.scooter import BATTERY_CAP_MAX, BRAND_RE, DATE_RE, MILEAGE_MAX, MODEL_RE, SERIAL_RE, TOP_SPEED_MAX, TOP_SPEED_MIN
 from controllers.session import UserSession
+from utils.log_decorator import log_action 
 
 class ScooterController:
     @staticmethod
     @require_role("super", "system_admin")
+    @log_action("Add scooter → {msg}")
     def add_scooter(current_user_id: int, new_scooter: Scooter) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
 
@@ -26,6 +28,7 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
+    @log_action("Get scooter(s) → {msg}")
     def get_scooter(user_id: int, scooter_id: int | None = None) -> tuple[Optional[Scooter], str]:
         _scooter_service = ScooterService("urban_mobility.db")
         if scooter_id is None:
@@ -39,6 +42,7 @@ class ScooterController:
         return None, "Scooter not found"
 
     @staticmethod
+    @log_action("Service scooter → {msg}") 
     @require_role("service_engineer")
     def service_scooter(user_id: int, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
@@ -74,6 +78,7 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
+    @log_action("Update scooter → {msg}")
     @require_role("super", "system_admin")
     def update_scooter(user_id: int, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
@@ -98,6 +103,7 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
+    @log_action("Search scooters → {msg}")
     @require_role("super", "system_admin", "service_engineer")
     def search_for_scooters(user_id: int, search_term: str, field: str) -> tuple[Optional[Scooter], str]:
         _scooterservice = ScooterService("urban_mobility.db")
@@ -108,6 +114,7 @@ class ScooterController:
         return None, f"No scooters found for {field}='{search_term}'"
 
     @staticmethod
+    @log_action("Delete scooter → {msg}")
     @require_role("super", "system_admin")
     def delete_scooter(user_id: int, scooter_id: int) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
