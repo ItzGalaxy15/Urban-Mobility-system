@@ -1,6 +1,7 @@
 # dashboard/menus/logmenu.py
 from services.log_service import read_logs
 from controllers.session import UserSession
+from services.log_service import mark_logs_read
 
 def view_logs_flow(session):
     print("\n=== System Logs (latest 100) ===")
@@ -15,5 +16,7 @@ def view_logs_flow(session):
             flag = "⚠" if e.suspicious else " "
             print(f"{e.log_id:>3} | {e.date} | {e.time} | {e.username:<12} |  {flag:<1}  | {e.description}")
 
+    if UserSession.get_current_role() in ("system_admin", "super"):
+        mark_logs_read(UserSession.get_current_user_id())
 
     input("\nPress Enter to continue...")
