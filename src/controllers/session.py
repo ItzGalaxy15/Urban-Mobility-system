@@ -90,7 +90,7 @@ class UserSession:
         UserSession._current_role = None
         print("Logged out successfully.")
         # Return to login by raising a special exception
-        raise SystemExit(0)  # This will exit the current loop and return to main()
+        raise SystemError("User logged out")  # This will exit the current loop and return to main()
 
     @staticmethod
     def is_authenticated():

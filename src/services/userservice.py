@@ -258,7 +258,6 @@ class UserService:
                 )
             except Exception as e:
                 # Optionally log the error here
-                print(f"Invalid user data in DB: {e}")
                 return None
         return None
     
@@ -285,7 +284,6 @@ class UserService:
                     )
             except Exception as e:
                 # Optionally log the error here
-                print(f"Error decrypting user data: {e}")
                 continue
         return None
         
