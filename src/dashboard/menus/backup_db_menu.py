@@ -1,10 +1,10 @@
-import sys
-sys.path.append('../../')
-from services.backup_service import backup_service
+from controllers.session import UserSession
+from controllers.backupcontroller import BackupController
 
-def backup_db_menu(session):
-    user_id = session.get_current_user_id()
+def backup_db_flow(session):
+    """Flow for creating database backups"""
     print("\n=== Create Database Backup ===")
-    success, message = backup_service.create_db_backup(user_id)
+    user_id = UserSession.get_current_user_id()
+    success, message = BackupController.create_database_backup(user_id)
     print(message)
     input("\nPress Enter to continue...") 

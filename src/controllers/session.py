@@ -86,8 +86,8 @@ class UserSession:
             username=user_data.username_plain,
             password_plain=password,  # We already verified it's correct
             role=user_data.role_plain,
-            first_name=user_data.first_name,
-            last_name=user_data.last_name
+            first_name=decrypt(user_data.first_name) if user_data.first_name else None,
+            last_name=decrypt(user_data.last_name) if user_data.last_name else None
         )
         UserSession._current_user_id = user_data.user_id
         UserSession._current_username = user_data.username_plain

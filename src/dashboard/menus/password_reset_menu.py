@@ -114,10 +114,10 @@ def use_reset_code_flow(user_id):
             print("Password reset successful. You are now logged in with your new password.")
             # Set session for user
             user_data = user_service.get_user_by_id(user_id)
-            UserSession._current_user = user_data  # This may need to be a User object, see below
-            UserSession._current_user_id = user_data["user_id"]
-            UserSession._current_username = user_data["username"]
-            UserSession._current_role = user_data["role"]
+            UserSession._current_user = user_data  # This is now a User object
+            UserSession._current_user_id = user_data.user_id
+            UserSession._current_username = user_data.username_plain
+            UserSession._current_role = user_data.role_plain
             return True
         else:
             print(msg)

@@ -3,11 +3,13 @@ sys.path.append('../../')
 from services.backup_service import backup_service
 from services.restore_code_service import restore_code_service
 from services.userservice import user_service
+from controllers.session import UserSession
+from controllers.backupcontroller import BackupController
 
-def request_backup_restore_menu(session):
+def request_backup_restore_flow(session):
     """Display list of all backups and allow system admins to request restore codes."""
-    user_id = session.get_current_user_id()
-    user = session.get_current_user()
+    user_id = UserSession.get_current_user_id()
+    user = UserSession.get_current_user()
     
     if user.role_plain not in ('system_admin', 'super'):
         print("Only system admins and super admins can view backups.")
@@ -15,7 +17,7 @@ def request_backup_restore_menu(session):
         return
     
     print("\n=== Available Backups ===")
-    backups = backup_service.get_backup_list()
+    backups = BackupController.get_backup_list(user_id)
     
     if not backups:
         print("No backups found.")
@@ -52,7 +54,7 @@ def request_backup_restore_menu(session):
                 return
             
             # Create the restore request
-            success, message = backup_service.create_restore_request(backup_id, user_id)
+            success, message = BackupController.create_restore_request(backup_id, user_id)
             print(f"\n{message}")
             if success:
                 print("Your request has been submitted to the super admin.")
@@ -65,10 +67,11 @@ def request_backup_restore_menu(session):
     
     input("\nPress Enter to continue...")
 
-def list_backups_menu(session):
+def list_backups_flow(session):
     """Display list of all backups."""
     print("\n=== Available Backups ===")
-    backups = backup_service.get_backup_list()
+    user_id = UserSession.get_current_user_id()
+    backups = BackupController.get_backup_list(user_id)
     
     if not backups:
         print("No backups found.")
@@ -84,10 +87,10 @@ def list_backups_menu(session):
     
     input("\nPress Enter to continue...")
 
-def generate_restore_code_menu(session):
+def generate_restore_code_flow(session):
     """Generate a restore code for a specific backup (super admin only)."""
-    user_id = session.get_current_user_id()
-    user = session.get_current_user()
+    user_id = UserSession.get_current_user_id()
+    user = UserSession.get_current_user()
     
     if user.role_plain != 'super':
         print("Only super admins can generate restore codes.")
@@ -97,7 +100,7 @@ def generate_restore_code_menu(session):
     print("\n=== Generate Restore Code ===")
     
     # Get pending requests
-    pending_requests = backup_service.get_pending_requests()
+    pending_requests = BackupController.get_pending_requests(user_id)
     
     if not pending_requests:
         print("No pending restore code requests found.")
@@ -133,7 +136,7 @@ def generate_restore_code_menu(session):
         return
     
     # Generate code for the selected request
-    success, result = backup_service.generate_restore_code(
+    success, result = BackupController.generate_restore_code(
         selected_request['backup_id'], 
         user_id, 
         selected_request['system_admin_user_id']
@@ -147,17 +150,17 @@ def generate_restore_code_menu(session):
         print("This code can only be used once by that specific system admin.")
         
         # Mark request as completed
-        backup_service.mark_request_completed(request_id)
+        BackupController.mark_request_completed(request_id, user_id)
         print("Request marked as completed.")
     else:
         print(f"Failed to generate code: {result}")
     
     input("\nPress Enter to continue...")
 
-def restore_with_code_menu(session):
+def restore_with_code_flow(session):
     """Restore a backup using a restore code (system admin only)."""
-    user_id = session.get_current_user_id()
-    user = session.get_current_user()
+    user_id = UserSession.get_current_user_id()
+    user = UserSession.get_current_user()
     
     if user.role_plain != 'system_admin':
         print("Only system admins can restore backups with codes.")
@@ -167,7 +170,7 @@ def restore_with_code_menu(session):
     print("\n=== Restore Backup with Code ===")
     
     # Show user's available restore codes
-    codes = backup_service.get_user_restore_codes(user_id)
+    codes = BackupController.get_user_restore_codes(user_id)
     if codes:
         print("Your available restore codes:")
         print(f"{'Code ID':<8} {'Backup ID':<10} {'Backup Date':<20} {'Used':<5}")
@@ -195,15 +198,15 @@ def restore_with_code_menu(session):
         return
     
     # Perform restore
-    success, message = backup_service.restore_backup_with_code(code, user_id)
+    success, message = BackupController.restore_backup_with_code(code, user_id)
     print(f"\n{message}")
     
     input("\nPress Enter to continue...")
 
-def restore_direct_menu(session):
+def restore_direct_flow(session):
     """Restore a backup directly (super admin only)."""
-    user_id = session.get_current_user_id()
-    user = session.get_current_user()
+    user_id = UserSession.get_current_user_id()
+    user = UserSession.get_current_user()
     
     if user.role_plain != 'super':
         print("Only super admins can restore backups directly.")
@@ -213,7 +216,7 @@ def restore_direct_menu(session):
     print("\n=== Direct Backup Restore (Super Admin) ===")
     
     # List available backups
-    backups = backup_service.get_backup_list()
+    backups = BackupController.get_backup_list(user_id)
     if not backups:
         print("No backups found.")
         input("\nPress Enter to continue...")
@@ -254,15 +257,15 @@ def restore_direct_menu(session):
         return
     
     # Perform restore
-    success, message = backup_service.restore_backup_direct(backup_id, user_id)
+    success, message = BackupController.restore_backup_direct(backup_id, user_id)
     print(f"\n{message}")
     
     input("\nPress Enter to continue...")
 
-def view_my_codes_menu(session):
+def view_my_codes_flow(session):
     """View restore codes for the current user (system admin only)."""
-    user_id = session.get_current_user_id()
-    user = session.get_current_user()
+    user_id = UserSession.get_current_user_id()
+    user = UserSession.get_current_user()
     
     if user.role_plain != 'system_admin':
         print("Only system admins have restore codes.")
@@ -271,7 +274,7 @@ def view_my_codes_menu(session):
     
     print("\n=== My Restore Codes ===")
     
-    codes = backup_service.get_user_restore_codes(user_id)
+    codes = BackupController.get_user_restore_codes(user_id)
     if not codes:
         print("You have no restore codes.")
         input("\nPress Enter to continue...")

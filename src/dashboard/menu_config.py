@@ -1,15 +1,15 @@
 import os
 from controllers.session import UserSession
 from controllers.usercontroller import UserController
-from services.backup_service import backup_service
-from dashboard.menus.backup_src_menu import backup_src_menu
-from dashboard.menus.backup_db_menu import backup_db_menu
+from controllers.backupcontroller import BackupController
+from dashboard.menus.backup_src_menu import backup_src_flow
+from dashboard.menus.backup_db_menu import backup_db_flow
 from dashboard.menus.backup_management_menu import (
-    request_backup_restore_menu,
-    generate_restore_code_menu,
-    restore_with_code_menu,
-    restore_direct_menu,
-    view_my_codes_menu
+    request_backup_restore_flow,
+    generate_restore_code_flow,
+    restore_with_code_flow,
+    restore_direct_flow,
+    view_my_codes_flow
 )
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 from dashboard.menus.logmenu import view_logs_flow
@@ -50,12 +50,6 @@ from dashboard.menus.password_reset_menu import (
 #                                Main Menu Management
 #--------------------------------------------------------------------------------------
 
-def create_backup_flow(session):
-    user_id = session.get_current_user_id()
-    success, msg = backup_service.create_backup(user_id)
-    print(msg)
-    input("\nPress Enter to continue...")
-
 def get_menu(session):
     return [
         ("Manage scooters", ("service_engineer", "system_admin", "super"),
@@ -72,19 +66,19 @@ def get_menu(session):
 
         ("Edit profile/account", ("system_admin"), None, lambda: edit_account_flow(session)),
 
-        ("Create Full System (src) Backup", ("system_admin", "super"), None, lambda: backup_src_menu(session)),
+        ("Create Full System (src) Backup", ("system_admin", "super"), None, lambda: backup_src_flow(session)),
 
-        ("Create Database Backup", ("system_admin", "super"), None, lambda: backup_db_menu(session)),
+        ("Create Database Backup", ("system_admin", "super"), None, lambda: backup_db_flow(session)),
 
-        ("Request Backup Restore", ("system_admin"), None, lambda: request_backup_restore_menu(session)),
+        ("Request Backup Restore", ("system_admin"), None, lambda: request_backup_restore_flow(session)),
 
-        ("Generate Restore Code", ("super"), None, lambda: generate_restore_code_menu(session)),
+        ("Generate Restore Code", ("super"), None, lambda: generate_restore_code_flow(session)),
 
-        ("Restore Backup with Code", ("system_admin"), None, lambda: restore_with_code_menu(session)),
+        ("Restore Backup with Code", ("system_admin"), None, lambda: restore_with_code_flow(session)),
 
-        ("Direct Backup Restore", ("super"), None, lambda: restore_direct_menu(session)),
+        ("Direct Backup Restore", ("super"), None, lambda: restore_direct_flow(session)),
 
-        ("View My Restore Codes", ("system_admin"), None, lambda: view_my_codes_menu(session)),
+        ("View My Restore Codes", ("system_admin"), None, lambda: view_my_codes_flow(session)),
 
         ("View system logs", ("system_admin", "super"), None, lambda: view_logs_flow(session)),
 

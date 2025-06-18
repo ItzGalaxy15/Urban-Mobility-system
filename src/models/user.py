@@ -13,17 +13,22 @@ class User:
     def __init__(
         self,
         username: str,
-        password_plain: str,
         role: str,
         *,
+        password_plain: Optional[str] = None,
+        password_hash: Optional[bytes] = None,
         user_id: Optional[int] = None,
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
     ) -> None:
         
         # Basic presence checks
-        if not username or not password_plain or not role:
-            raise ValueError("username, password and role are mandatory")
+        if not username or not role:
+            raise ValueError("username and role are mandatory")
+        
+        # Either password_plain or password_hash must be provided
+        if password_plain is None and password_hash is None:
+            raise ValueError("Either password_plain or password_hash must be provided")
 
         role = role.lower()
         if role not in {"super", "system_admin", "service_engineer"}:
@@ -34,27 +39,31 @@ class User:
             # Username rules
             if not USERNAME_RE.fullmatch(username):
                 raise ValueError("username does not meet format/length rules")
-            # Password rules
-            if not PWD_ALLOWED_RE.fullmatch(password_plain):
-                raise ValueError("password contains invalid characters or length")
-            # complexity check
-            if not (re.search(r"[a-z]", password_plain)
-                    and re.search(r"[A-Z]", password_plain)
-                    and re.search(r"\d",   password_plain)
-                    and re.search(r"[~!@#$%&\-_+=`|\\(){}\[\]:;'<>,.?/]", password_plain)):
-                raise ValueError("password must include lowercase, uppercase, digit and special char")
+            # Password rules (only validate if password_plain is provided)
+            if password_plain is not None:
+                if not PWD_ALLOWED_RE.fullmatch(password_plain):
+                    raise ValueError("password contains invalid characters or length")
+                # complexity check
+                if not (re.search(r"[a-z]", password_plain)
+                        and re.search(r"[A-Z]", password_plain)
+                        and re.search(r"\d",   password_plain)
+                        and re.search(r"[~!@#$%&\-_+=`|\\(){}\[\]:;'<>,.?/]", password_plain)):
+                    raise ValueError("password must include lowercase, uppercase, digit and special char")
 
         # extra profile requirement
         if role in {"system_admin", "service_engineer"}:
             if first_name is None or last_name is None:
                 raise ValueError("first_name and last_name are required for this role")
 
-        # Make random id
-        # self.user_id = random.randint(1_000_000, 9_999_999)
-
         # Core fields
         self.username: bytes = encrypt(username.lower())  # case‑insensitive store
-        self.password_hash: bytes = hash_password(password_plain)
+        
+        # Handle password - either use provided hash or create hash from plain text
+        if password_hash is not None:
+            self.password_hash: bytes = password_hash
+        else:
+            self.password_hash: bytes = hash_password(password_plain)
+            
         self.role: str = encrypt(role)
 
         # Optional profile (encrypted)

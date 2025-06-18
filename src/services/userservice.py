@@ -147,7 +147,7 @@ class UserService:
         if "username" in updates:
             new_username = updates["username"].lower()
             # First check if the new username is different from current username
-            if new_username == current_user["username"].lower():
+            if new_username == current_user.username_plain.lower():
                 return False, "New username must be different from current username"
             
             # Then check if the new username exists for any other user by comparing decrypted usernames
@@ -205,18 +205,29 @@ class UserService:
         """List all users in the system."""
         conn = self._get_connection()
         c = conn.cursor()
-        c.execute('SELECT user_id, username, first_name, last_name, role FROM User')
+        c.execute('SELECT user_id, username, first_name, last_name, role, registration_date, password_hash FROM User')
         rows = c.fetchall()
         conn.close()
-        return [
-            User(
-                user_id=row[0],
-                username=decrypt(row[1]),
-                first_name=decrypt(row[2]),
-                last_name=decrypt(row[3]),
-                role=decrypt(row[4])
-            ) for row in rows
-        ]
+        
+        users = []
+        for row in rows:
+            try:
+                user = User(
+                    user_id=row[0],
+                    username=decrypt(row[1]),
+                    first_name=decrypt(row[2]),
+                    last_name=decrypt(row[3]),
+                    role=decrypt(row[4]),
+                    password_hash=row[6]  # Use the stored password hash
+                )
+                # Set the registration_date from database if it exists
+                if row[5]:
+                    user.registration_date = row[5]
+                users.append(user)
+            except Exception as e:
+                print(f"Error processing user row {row[0]}: {e}")
+                continue
+        return users
         
     
         
@@ -243,21 +254,26 @@ class UserService:
         """Get user details by user_id."""
         conn = self._get_connection()
         c = conn.cursor()
-        c.execute('SELECT user_id, username, first_name, last_name, role, registration_date FROM User WHERE user_id=?', (user_id,))
+        c.execute('SELECT user_id, username, first_name, last_name, role, registration_date, password_hash FROM User WHERE user_id=?', (user_id,))
         row = c.fetchone()
         conn.close()
         if row:
             try:
-                return User(
+                user = User(
                     user_id=row[0],
                     username=decrypt(row[1]),
                     first_name=decrypt(row[2]),
                     last_name=decrypt(row[3]),
                     role=decrypt(row[4]),
-                    registration_date=row[5]
+                    password_hash=row[6]  # Use the stored password hash
                 )
+                # Set the registration_date from database if it exists
+                if row[5]:
+                    user.registration_date = row[5]
+                return user
             except Exception as e:
                 # Optionally log the error here
+                print(f"Invalid user data in DB: {e}")
                 return None
         return None
     
@@ -268,22 +284,32 @@ class UserService:
         """Get user details by username."""
         conn = self._get_connection()
         c = conn.cursor()
-        c.execute('SELECT user_id, username, first_name, last_name, role, registration_date FROM User')
+        c.execute('SELECT user_id, username, first_name, last_name, role, registration_date, password_hash FROM User')
         users = c.fetchall()
         conn.close()
+        
+        # Normalize input username to lowercase for comparison
+        username_lower = username.lower()
+        
         for row in users:
             try:
-                if decrypt(row[1]) == username:
-                    return User(
+                decrypted_username = decrypt(row[1])
+                if decrypted_username.lower() == username_lower:
+                    user = User(
                         user_id=row[0],
                         username=decrypt(row[1]),
                         first_name=decrypt(row[2]),
                         last_name=decrypt(row[3]),
                         role=decrypt(row[4]),
-                        registration_date=row[5]
+                        password_hash=row[6]  # Use the stored password hash
                     )
+                    # Set the registration_date from database if it exists
+                    if row[5]:
+                        user.registration_date = row[5]
+                    return user
             except Exception as e:
                 # Optionally log the error here
+                print(f"Error decrypting user data: {e}")
                 continue
         return None
         
@@ -320,20 +346,23 @@ class UserService:
         """
         # Special-case for hardcoded super admin
         if admin_id == 0:
-            admin = {'role': 'super'}
+            admin_role = 'super'
         else:
             admin = self.get_user_by_id(admin_id)
+            if not admin:
+                return False, "Admin user not found"
+            admin_role = admin.role_plain
+            
         target = self.get_user_by_id(target_user_id)
-        
-        if not admin or not target:
-            return False, "User not found"
+        if not target:
+            return False, "Target user not found"
             
         # Check permissions
-        if admin["role"] == "system_admin":
-            if target["role"] != "service_engineer":
+        if admin_role == "system_admin":
+            if target.role_plain != "service_engineer":
                 return False, "System admin can only reset service engineer passwords"
-        elif admin["role"] == "super":
-            if target["role"] not in ("system_admin", "service_engineer"):
+        elif admin_role == "super":
+            if target.role_plain not in ("system_admin", "service_engineer"):
                 return False, "Super admin can only reset system admin or service engineer passwords"
         else:
             return False, "Only system admin or super admin can reset passwords"

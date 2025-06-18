@@ -1,10 +1,10 @@
-import sys
-sys.path.append('../../')
-from services.backup_service import backup_service
+from controllers.session import UserSession
+from controllers.backupcontroller import BackupController
 
-def backup_src_menu(session):
-    user_id = session.get_current_user_id()
-    print("\n=== Create Full System (src) Backup ===")
-    success, message = backup_service.create_backup(user_id)
+def backup_src_flow(session):
+    """Flow for creating source code backups"""
+    print("\n=== Create Source Code Backup ===")
+    user_id = UserSession.get_current_user_id()
+    success, message = BackupController.create_source_backup(user_id)
     print(message)
     input("\nPress Enter to continue...") 

@@ -11,7 +11,7 @@ from utils.log_decorator import log_action
 class ScooterController:
     @staticmethod
     @require_role("super", "system_admin")
-    @log_action("Add scooter → {msg}")
+    @log_action("Add scooter -> {msg}")
     def add_scooter(current_user_id: int, new_scooter: Scooter) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
 
@@ -23,31 +23,36 @@ class ScooterController:
         except KeyError as e:
             return False, f"Missing required field: {str(e)}"
         except ValueError as e:
-            return False, f"Invalid input: {str(e)}"
+            return False, f"Invalid scooter data: {str(e)}"
         except Exception as e:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
-    @log_action("Get scooter(s) → {msg}")
+    @log_action("Get scooter(s) -> {msg}")
+    @require_role("super", "system_admin", "service_engineer")
     def get_scooter(user_id: int, scooter_id: int | None = None) -> tuple[Optional[Scooter], str]:
-        _scooter_service = ScooterService("urban_mobility.db")
-        if scooter_id is None:
-            scooters = _scooter_service.get_all_scooters()
-            if scooters != []:
-                return scooters, "All scooters retrieved successfully"
-            return None, "No scooters found"
-        scooter = _scooter_service.get_scooter_by_id(scooter_id)
-        if scooter:
-            return scooter, "Scooter retrieved successfully"
-        return None, "Scooter not found"
+        _scooterservice = ScooterService("urban_mobility.db")
+        try:
+            if scooter_id is None:
+                scooters = _scooterservice.get_all_scooters()
+                if scooters:
+                    return scooters, f"Retrieved {len(scooters)} scooters successfully"
+                return None, "No scooters found"
+            else:
+                scooter = _scooterservice.get_scooter_by_id(scooter_id)
+                if scooter:
+                    return scooter, "Scooter retrieved successfully"
+                return None, "Scooter not found"
+        except Exception as e:
+            return None, f"Error retrieving scooter(s): {str(e)}"
 
     @staticmethod
-    @log_action("Service scooter → {msg}") 
+    @log_action("Service scooter -> {msg}") 
     @require_role("service_engineer")
     def service_scooter(user_id: int, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
         user = user_service.get_user_by_id(user_id)
-        if user["role"] != "service_engineer":
+        if user.role_plain != "service_engineer":
             return False, "Unauthorized: Only service engineer can use this function"
 
         allowed_fields = {
@@ -78,7 +83,7 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
-    @log_action("Update scooter → {msg}")
+    @log_action("Update scooter -> {msg}")
     @require_role("super", "system_admin")
     def update_scooter(user_id: int, scooter_id: int, update_data: Dict[str, Any]) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
@@ -103,7 +108,7 @@ class ScooterController:
             return False, f"Unexpected error: {str(e)}"
 
     @staticmethod
-    @log_action("Search scooters → {msg}")
+    @log_action("Search scooters -> {msg}")
     @require_role("super", "system_admin", "service_engineer")
     def search_for_scooters(user_id: int, search_term: str, field: str) -> tuple[Optional[Scooter], str]:
         _scooterservice = ScooterService("urban_mobility.db")
@@ -114,7 +119,7 @@ class ScooterController:
         return None, f"No scooters found for {field}='{search_term}'"
 
     @staticmethod
-    @log_action("Delete scooter → {msg}")
+    @log_action("Delete scooter -> {msg}")
     @require_role("super", "system_admin")
     def delete_scooter(user_id: int, scooter_id: int) -> tuple[bool, str]:
         _scooterservice = ScooterService("urban_mobility.db")
