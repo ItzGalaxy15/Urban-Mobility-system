@@ -1,4 +1,5 @@
 from services.log_service import log_login_attempt
+from services.log_service import unread_suspicious_count
 from services.userservice import user_service
 from models.user import User
 import sys
@@ -26,7 +27,15 @@ class UserSession:
             UserSession._current_username = "super_admin"
             UserSession._current_role = "super"
             print(f"Logged in as {UserSession._current_username} ({UserSession._current_role})")
-            log_login_attempt(username, True)          # successful login
+
+            # ---- unread-suspicious alert ----
+            cnt = unread_suspicious_count(UserSession._current_user_id)
+            if cnt:
+                print(f"\n⚠  There are {cnt} unread suspicious activities in the log!"
+                    "  Open 'View system logs' to review.\n")
+            # ---------------------------------
+
+            log_login_attempt(username, True)  # successful login
             return True
 
         # Regular user login
@@ -84,6 +93,14 @@ class UserSession:
         UserSession._current_username = user_data.username_plain
         UserSession._current_role = user_data.role_plain
         print(f"Logged in as {UserSession._current_username} ({UserSession._current_role})")
+
+        # ---- unread-suspicious alert (only for sys/super) ----
+        if UserSession._current_role in ("system_admin", "super"):
+            cnt = unread_suspicious_count(UserSession._current_user_id)
+            if cnt:
+                print(f"\n⚠  There are {cnt} unread suspicious activities in the log!"
+                    "  Open 'View system logs' to review.\n")
+        # ------------------------------------------------------
         log_login_attempt(username, True)              # successful login
         return True
 
