@@ -1,6 +1,10 @@
 import os
 from controllers.session import UserSession
 from controllers.usercontroller import UserController
+from services.backup_service import backup_service
+from dashboard.menus.backup_src_menu import backup_src_menu
+from dashboard.menus.backup_db_menu import backup_db_menu
+from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 
 # Import menu flows from their respective files
 from dashboard.menus.usermenu import (
@@ -32,11 +36,16 @@ from dashboard.menus.password_reset_menu import (
     use_reset_code_flow
 )
 
-from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 
 #--------------------------------------------------------------------------------------
 #                                Main Menu Management
 #--------------------------------------------------------------------------------------
+
+def create_backup_flow(session):
+    user_id = session.get_current_user_id()
+    success, msg = backup_service.create_backup(user_id)
+    print(msg)
+    input("\nPress Enter to continue...")
 
 def get_menu(session):
     return [
@@ -53,6 +62,10 @@ def get_menu(session):
          None, lambda: traveller_menu(session)),
 
         ("Edit profile/account", ("system_admin"), None, lambda: edit_account_flow(session)),
+
+        ("Create Full System (src) Backup", ("system_admin", "super"), None, lambda: backup_src_menu(session)),
+
+        ("Create Database Backup", ("system_admin", "super"), None, lambda: backup_db_menu(session)),
 
         ("Logout", None, None, session.logout)
     ]
