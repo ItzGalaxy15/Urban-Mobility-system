@@ -1,3 +1,4 @@
+from services.log_service import log_login_attempt
 from services.userservice import user_service
 from models.user import User
 import sys
@@ -23,12 +24,14 @@ class UserSession:
             UserSession._current_username = "super_admin"
             UserSession._current_role = "super"
             print(f"Logged in as {UserSession._current_username} ({UserSession._current_role})")
+            log_login_attempt(username, True)          # successful login
             return True
 
         # Regular user login
         user_data = user_service.get_user_by_username(username)
         if not user_data:
             print("Username or password incorrect.")
+            log_login_attempt(username, False)         # failed login
             return False
 
         # Check if password_hash is NULL (no password set)
@@ -64,6 +67,7 @@ class UserSession:
             password = input("Password: ")
         if not user_service.verify_user_password(user_data["user_id"], password):
             print("Password incorrect.")
+            log_login_attempt(username, False)         # failed login
             return False
         
         # Create User object for regular users
@@ -78,6 +82,7 @@ class UserSession:
         UserSession._current_username = user_data["username"]
         UserSession._current_role = user_data["role"]
         print(f"Logged in as {UserSession._current_username} ({UserSession._current_role})")
+        log_login_attempt(username, True)              # successful login
         return True
 
     @staticmethod
