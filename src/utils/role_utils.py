@@ -38,7 +38,7 @@ def require_role(*required_roles):
             if not user:
                 return False, "User not found."
             
-            user_role = user["role"]
+            user_role = user.role_plain
             # print(f"Checking access: user_role={user_role}, required_roles={required_roles}, func={func.__name__}")
             # Exact match: only listed roles can access
             if user_role in required_roles:
@@ -71,5 +71,5 @@ def has_permission(user_id, required_role):
     ) if user_id == 0 else user_service.get_user_by_id(user_id)
     if not user:
         return False
-    user_role = user["role"]
+    user_role = user.role_plain
     return user_role == required_role

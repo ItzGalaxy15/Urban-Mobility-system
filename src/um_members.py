@@ -43,10 +43,14 @@ def main():
                 if choice is None:
                     continue
                 label, action = visible_menu[choice]
-                action()
-        except SystemExit:
-            # This will be caught when logout is called
+                is_exiting = action()
+                if is_exiting:
+                    raise SystemExit("Exiting application...")
+        except SystemError: # Logout return
             continue  # Return to login loop
+        except SystemExit: # Exiting return
+            print("Exiting...")
+            break
 
 if __name__ == "__main__":
     main()

@@ -98,7 +98,7 @@ def update_user_flow(session):
             print("User not found")
             continue
         while True:
-            print(f"\n--- Updating User: {user['user_id']} | {user['username']} | {user['role']} ---")
+            print(f"\n--- Updating User: {user.user_id} | {user.username_plain} | {user.role_plain} ---")
             print("1. Update username (8-10 chars, starts with letter/underscore)")
             print("2. Update first name (2-20 chars)")
             print("3. Update last name (2-20 chars)")
@@ -135,7 +135,7 @@ def update_user_flow(session):
                 current_user_id = UserSession.get_current_user_id()
                 success, message = UserController.update_user(
                     current_user_id,
-                    user["user_id"],
+                    user.user_id,
                     **updates
                 )
                 print(message)
@@ -160,10 +160,10 @@ def delete_user_flow(session):
         if not user:
             print("User not found")
             continue
-        user_id = user["user_id"]
+        user_id = user.user_id
         current_user_id = UserSession.get_current_user_id()
         success, message = UserController.delete_user(
-            current_user_id, user_id, user["username"]
+            current_user_id, user_id, user.username
         )
         print(message)
         if success:
@@ -183,7 +183,7 @@ def list_users_flow(session):
         print("No users found.")
     else:
         for user in users:
-            print(f"{user['user_id']} | {user['username']} | {user['first_name']} | {user['last_name']} | {user['role']}")
+            print(f"{user.user_id} | {user.username_plain} | {user.first_name} | {user.last_name} | {user.role_plain}")
     input("\nPress Enter to continue...")
 
 def change_password_flow(session):
@@ -214,14 +214,14 @@ def edit_account_flow(session):
         # Display profile based on role
         if role in ["service_engineer", "system_admin"]:
             print(f"\n--- Profile Information ---")
-            print(f"First Name: {user['first_name']}")
-            print(f"Last Name: {user['last_name']}")
-            print(f"Registration Date: {user['registration_date']}")
+            print(f"First Name: {user.first_name}")
+            print(f"Last Name: {user.last_name}")
+            print(f"Registration Date: {user.registration_date}")
             print("\n1. Change first name")
             print("2. Change last name")
             print("3. Back/Exit to main menu")
         else:
-            print(f"\n--- Edit Profile/Account: {user['user_id']} | {user['username']} ---")
+            print(f"\n--- Edit Profile/Account: {user.user_id} | {user.username} ---")
             print("1. Change username")
             print("2. Change first name")
             print("3. Change last name")

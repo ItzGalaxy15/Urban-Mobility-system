@@ -56,17 +56,17 @@ def create_backup_flow(session):
 
 def get_menu(session):
     return [
-        ("Scooter Management", ("service_engineer", "system_admin", "super"),
+        ("Manage scooters", ("service_engineer", "system_admin", "super"),
          None, lambda: scooter_menu(session)),
-
-        ("Change password", ("service_engineer", "system_admin"),
-         UserController.change_password, lambda: change_password_flow(session)),
 
         ("Manage users", ("system_admin", "super"),
          None, lambda: user_menu(session)),
 
         ("Manage travellers", ("system_admin", "super"),
          None, lambda: traveller_menu(session)),
+
+        ("Change password", ("service_engineer", "system_admin"),
+         UserController.change_password, lambda: change_password_flow(session)),
 
         ("Edit profile/account", ("system_admin"), None, lambda: edit_account_flow(session)),
 
@@ -84,7 +84,9 @@ def get_menu(session):
 
         ("View My Restore Codes", ("system_admin"), None, lambda: view_my_codes_menu(session)),
 
-        ("Logout", None, None, session.logout)
+        ("Logout", None, None, session.logout),
+
+        ("Exit", None, None, lambda: -1)
     ]
 
 #--------------------------------------------------------------------------------------
