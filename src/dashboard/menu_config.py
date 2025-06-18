@@ -2,6 +2,9 @@ import os
 from controllers.session import UserSession
 from controllers.usercontroller import UserController
 from services.backup_service import backup_service
+from dashboard.menus.backup_src_menu import backup_src_menu
+from dashboard.menus.backup_db_menu import backup_db_menu
+from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 
 # Import menu flows from their respective files
 from dashboard.menus.usermenu import (
@@ -33,10 +36,6 @@ from dashboard.menus.password_reset_menu import (
     use_reset_code_flow
 )
 
-from dashboard.menus.backup_src_menu import backup_src_menu
-from dashboard.menus.backup_db_menu import backup_db_menu
-
-from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 
 #--------------------------------------------------------------------------------------
 #                                Main Menu Management
