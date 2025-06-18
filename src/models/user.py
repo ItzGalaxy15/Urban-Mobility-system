@@ -16,6 +16,7 @@ class User:
         password_plain: str,
         role: str,
         *,
+        user_id: Optional[int] = None,
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
     ) -> None:
@@ -57,6 +58,7 @@ class User:
         self.role: str = encrypt(role)
 
         # Optional profile (encrypted)
+        self.user_id = user_id
         self.first_name = encrypt(first_name) if first_name else None
         self.last_name  = encrypt(last_name)  if last_name  else None
 

@@ -231,7 +231,7 @@ class TravellerService:
         return False, "Traveller not found"
 
 
-    def search_travellers(self, key: str, limit: int = 50) -> list[dict]:
+    def search_travellers(self, key: str, limit: int = 50) -> list[Traveller]:
         """
         Search (partial, case-insensitive) for Travellers on the most common fields.
         Returns a list of decrypted dicts; empty list = no match.
@@ -258,32 +258,37 @@ class TravellerService:
 
         results: list[dict] = []
         for row in rows:
-            traveller = {
-                "traveller_id"      : row[0],
-                "first_name"        : decrypt(row[1]),
-                "last_name"         : decrypt(row[2]),
-                "birthday"          : decrypt(row[3]),
-                "gender"            : decrypt(row[4]),
-                "street_name"       : decrypt(row[5]),
-                "house_number"      : decrypt(row[6]),
-                "zip_code"          : decrypt(row[7]),
-                "city"              : decrypt(row[8]),
-                "email"             : decrypt(row[9]),
-                "mobile_phone"      : decrypt(row[10]),
-                "driving_license_no": decrypt(row[11]),
-                "registration_date" : row[12],   # remains plaintext
-            }
+            try:
+                traveller = Traveller(
+                    traveller_id=row[0],
+                    first_name=decrypt(row[1]),
+                    last_name=decrypt(row[2]),
+                    birthday=decrypt(row[3]),
+                    gender=decrypt(row[4]),
+                    street_name=decrypt(row[5]),
+                    house_number=decrypt(row[6]),
+                    zip_code=decrypt(row[7]),
+                    city=decrypt(row[8]),
+                    email=decrypt(row[9]),
+                    mobile_phone=decrypt(row[10]),
+                    driving_license_no=decrypt(row[11]),
+                    registration_date=row[12],   # remains plaintext
+                )
+            except Exception as exc:
+                # Skip rows that fail to decrypt or instantiate
+                print(f"Error processing traveller row {row[0]}: {exc}")
+                continue
 
-            # Combine all fields into one string and check substring
+            # Combine all fields into one string and check substring (if None, use empty string)
             searchable = (
-                str(traveller["traveller_id"])
-                + traveller["first_name"]
-                + traveller["last_name"]
-                + traveller["email"]
-                + traveller["mobile_phone"]
-                + traveller["driving_license_no"]
-                + traveller["city"]
-                + traveller["zip_code"]
+                str(traveller.traveller_id or "")
+                + (traveller.first_name or "")
+                + (traveller.last_name or "")
+                + (traveller.email or "")
+                + (traveller.mobile_phone or "")
+                + (traveller.driving_license_no or "")
+                + (traveller.city or "")
+                + (traveller.zip_code or "")
             ).lower()
 
             if key_lc in searchable:

@@ -1,6 +1,7 @@
 # models/traveller.py
 import re, random
 from datetime import datetime, date
+from typing import Optional
 from utils.crypto_utils import encrypt, decrypt
 
 CITY_CHOICES = {
@@ -11,6 +12,8 @@ CITY_CHOICES = {
 ZIP_RE      = re.compile(r"^\d{4}[A-Z]{2}$")
 PHONE_RE    = re.compile(r"^\+31-6-\d{8}$")
 LICENSE_RE  = re.compile(r"^(?:[A-Z]{2}\d{7}|[A-Z]\d{8})$")
+NAME_RE     = re.compile(r"^[A-Za-zÀ-ÿ]{2,30}$")  # letters only, 2-30 chars
+STREET_RE   = re.compile(r"^[A-Za-zÀ-ÿ\s]{2,50}$")  # letters and spaces, 2-50 chars
 BIRTH_RE    = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # yyyy-mm-dd
 EMAIL_RE    = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 HOUSE_RE    = re.compile(r"^\d+$") 
@@ -29,6 +32,7 @@ class Traveller:
         email: str,
         mobile_phone: str,
         driving_license_no: str,
+        traveller_id: Optional[int] = None,  # Optional, for existing travellers
     ):
         #basic non-empty checks
         for v in (first_name, last_name, birthday, gender, street_name,
@@ -37,9 +41,15 @@ class Traveller:
             if not v:
                 raise ValueError("all fields are mandatory")
 
-        # format checks 
+        # format checks
+        if not NAME_RE.match(first_name):
+            raise ValueError("first_name must be 2-30 chars, letters only")
+        if not NAME_RE.match(last_name):
+            raise ValueError("last_name must be 2-30 chars, letters only")
         if not BIRTH_RE.match(birthday):
             raise ValueError("birthday must be YYYY-MM-DD")
+        if not STREET_RE.match(street_name):
+            raise ValueError("street_name must be 2-50 chars, letters and spaces only")
         if not HOUSE_RE.match(house_number):
             raise ValueError("house_number may contain digits only")
         if not ZIP_RE.match(zip_code):
@@ -63,7 +73,7 @@ class Traveller:
             raise ValueError("gender must be male or female")
 
         # store(encrypted)
-        # self.customer_id        = random.randint(1_000_000, 9_999_999)       # properly unique ID
+        self.traveller_id       = traveller_id
         self.registration_date  = datetime.now()
         self.first_name         = encrypt(first_name)
         self.last_name          = encrypt(last_name)
