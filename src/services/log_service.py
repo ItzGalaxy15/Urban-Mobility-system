@@ -1,8 +1,9 @@
 # services/log_service.py
 import os
 from models.log_entry import LogEntry
-from utils.crypto_utils import encrypt
+from utils.crypto_utils import decrypt, encrypt
 from collections import defaultdict
+from models.log_entry import LogEntry
 
 LOG_FILE = "activity.log"
 _failed_counter = defaultdict(int)   # username -> consecutive fails
@@ -64,22 +65,61 @@ def log_login_attempt(username: str, success: bool):
     ))
 
 
-# def log_login_attempt(username: str, success: bool):
-#     """
-#     Track consecutive failures per username and log the attempt.
-#     After 3 fails in a row, mark it suspicious=True.
-#     """
-#     if success:
-#         _failed_counter[username] = 0          # reset on success
-#     else:
-#         _failed_counter[username] += 1
 
-#     suspicious = _failed_counter[username] >= 3
+def read_logs(limit: int | None = None) -> list[LogEntry]:
+    """
+    Decrypts log file and returns LogEntry objects (newest first).
+    limit – show only the latest N entries if provided.
+    """
+    if not os.path.exists(LOG_FILE):
+        return []
 
-#     write_log_entry(LogEntry(
-#         user_id="-",                      # unknown before auth
-#         username=username,
-#         description="Successful login" if success else "Unsuccessful login",
-#         additional=f"fail_count={_failed_counter[username]}",
-#         suspicious=suspicious
-#     ))
+    entries: list[LogEntry] = []
+    # this should activated before we deliver it
+    # with open(LOG_FILE, "rb") as f:
+    #     for token in f:
+    #         try:
+    #             line = decrypt(token.strip())          # "id|date|time|..."
+    #             parts = line.split("|")
+    #             entry = LogEntry(
+    #                 user_id=parts[1],                  # we ignore stored id order
+    #                 username=parts[3],
+    #                 description=parts[4],
+    #                 additional=parts[5],
+    #                 suspicious=(parts[6] == "Yes"),
+    #                 log_id=int(parts[0])
+    #             )
+    #             entries.append(entry)
+    #         except Exception:
+    #             # corrupted line? skip
+    #             continue
+
+    # entries.reverse()          # newest first
+    # if limit:
+    #     entries = entries[:limit]
+    # return entries
+
+    # Temporarily so I can see the log file with normal characters
+    with open(LOG_FILE, "r") as f:  # Open in text mode, not binary
+        for line in f:
+            try:
+                line = line.strip()  # Remove any surrounding whitespace or newline
+                parts = line.split("|")
+                entry = LogEntry(
+                    user_id=parts[1],                  # we ignore stored id order
+                    username=parts[3],
+                    description=parts[4],
+                    additional=parts[5],
+                    suspicious=(parts[6] == "Yes"),
+                    log_id=int(parts[0])
+                )
+                entries.append(entry)
+            except Exception:
+                # corrupted line? skip
+                continue
+
+    entries.reverse()          # newest first
+    if limit:
+        entries = entries[:limit]
+    return entries
+
