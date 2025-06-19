@@ -2,6 +2,7 @@ import datetime
 from typing import Optional, Dict, Any
 from models.scooter import Scooter
 from models.user import User
+from services.userservice import UserService, user_service
 from services.scooterservice import ScooterService
 from utils.role_utils import require_role
 from models.scooter import BATTERY_CAP_MAX, BRAND_RE, DATE_RE, MILEAGE_MAX, MODEL_RE, SERIAL_RE, TOP_SPEED_MAX, TOP_SPEED_MIN

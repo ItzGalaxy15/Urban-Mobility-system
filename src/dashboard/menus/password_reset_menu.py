@@ -56,7 +56,6 @@ def reset_password_flow(session):
         return
     
     print(f"\nReset code generated: {reset_code}")
-    print("This code will expire in 10 minutes")
     print("Please provide this code to the user")
     
     input("\nPress Enter to continue...")

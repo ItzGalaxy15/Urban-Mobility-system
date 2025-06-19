@@ -139,8 +139,6 @@ class UserService:
             validations.append(self.validate_username(updates["username"]))
         if "password" in updates:
             validations.append(self.validate_password(updates["password"]))
-        if "role" in updates:
-            validations.append(self.validate_role(updates["role"]))
             
         for ok, msg in validations:
             if not ok:
