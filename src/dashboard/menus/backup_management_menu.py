@@ -206,6 +206,8 @@ def restore_direct_flow(session):
     user_id = UserSession.get_current_user_id()
     user = UserSession.get_current_user()
     
+    # print(f"[DEBUG] restore_direct_flow: user_id={user_id}, user={user}")
+    
     if user.role_plain != 'super':
         print("Only super admins can restore backups directly.")
         input("\nPress Enter to continue...")
@@ -254,7 +256,8 @@ def restore_direct_flow(session):
         return
     
     # Perform restore
-    success, message = BackupController.restore_backup_direct(backup_id, user_id)
+    # print(f"[DEBUG] About to call BackupController.restore_backup_direct with user_id={user_id}, backup_id={backup_id}")
+    success, message = BackupController.restore_backup_direct(user_id, backup_id)
     print(f"\n{message}")
     
     input("\nPress Enter to continue...")

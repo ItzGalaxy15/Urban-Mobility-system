@@ -66,9 +66,12 @@ class BackupController:
     @staticmethod
     @log_action("Restore backup direct -> {msg}")
     @require_role("super")
-    def restore_backup_direct(backup_id: int, user_id: int) -> Tuple[bool, str]:
+    def restore_backup_direct(user_id: int, backup_id: int) -> Tuple[bool, str]:
         """Restore a backup directly (super admin only)."""
-        return backup_service.restore_backup_direct(backup_id, user_id)
+        # print(f"[DEBUG] BackupController.restore_backup_direct called with user_id={user_id}, backup_id={backup_id}")
+        result = backup_service.restore_backup_direct(backup_id, user_id)
+        # print(f"[DEBUG] BackupController.restore_backup_direct result: {result}")
+        return result
     
     @staticmethod
     @log_action("Get user pending requests -> {msg}")

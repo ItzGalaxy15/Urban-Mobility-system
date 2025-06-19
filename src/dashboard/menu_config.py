@@ -64,18 +64,8 @@ def get_menu(session):
          UserController.change_password, lambda: change_password_flow(session)),
 
         ("Edit profile/account", ("system_admin"), None, lambda: edit_account_flow(session)),
-
-        ("Create Database Backup", ("system_admin", "super"), None, lambda: backup_db_flow(session)),
-
-        ("Request Backup Restore", ("system_admin"), None, lambda: request_backup_restore_flow(session)),
-
-        ("Generate Restore Code", ("super"), None, lambda: generate_restore_code_flow(session)),
-
-        ("Restore Backup with Code", ("system_admin"), None, lambda: restore_with_code_flow(session)),
-
-        ("Direct Backup Restore", ("super"), None, lambda: restore_direct_flow(session)),
-
-        ("View My Restore Codes", ("system_admin"), None, lambda: view_my_codes_flow(session)),
+        
+        ("Manage backups", ("system_admin", "super"), None, lambda: backup_menu(session)),
 
         ("View system logs", ("system_admin", "super"), None, lambda: view_logs_flow(session)),
 
@@ -225,3 +215,36 @@ def scooter_menu(session):
 #--------------------------------------------------------------------------------------
 #                           The End of Scooter Management
 #--------------------------------------------------------------------------------------
+
+def get_menu_backup_management(session):
+    return [
+        ("Create Database Backup", ("system_admin", "super"), None, lambda: backup_db_flow(session)),
+
+        ("Request Backup Restore", ("system_admin"), None, lambda: request_backup_restore_flow(session)),
+
+        ("Generate Restore Code", ("super"), None, lambda: generate_restore_code_flow(session)),
+        
+        ("Restore Backup with Code", ("system_admin"), None, lambda: restore_with_code_flow(session)),
+        
+        ("Direct Backup Restore", ("super"), None, lambda: restore_direct_flow(session)),
+        
+        ("View My Restore Codes", ("system_admin"), None, lambda: view_my_codes_flow(session)),
+
+        ("Back", None, None, lambda: None)
+    ]
+
+def backup_menu(session):
+    while True:
+        os.system("cls")
+        print(f"\nWelcome, {UserSession.get_current_username()} ({UserSession.get_current_role()})")
+        menu_items = get_menu_backup_management(session)
+        visible_menu = build_menu_with_roles_and_permissions(menu_items, UserSession.get_current_role())
+        # print("Visible menu:", visible_menu)
+        choice = display_menu(visible_menu, title="Backup Management Menu")
+        if choice is None:
+            continue
+        label, action = visible_menu[choice]
+        
+        if label == "Back":
+            return
+        action()
