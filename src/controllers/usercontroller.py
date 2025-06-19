@@ -40,10 +40,10 @@ class UserController:
 
         return user_service.add_user(user=new_user)
 
-    @staticmethod
-    def add_user_controller(username, password, first_name, last_name, role):
-        """Direct wrapper for adding a user without role checks."""
-        return user_service.add_user(username, password, first_name, last_name, role)
+    # @staticmethod
+    # def add_user_controller(username, password, first_name, last_name, role):
+    #     """Direct wrapper for adding a user without role checks."""
+    #     return user_service.add_user(username, password, first_name, last_name, role)
     
     #--------------------------------------------------------------------------------------
     #                   Update User
