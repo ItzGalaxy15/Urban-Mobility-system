@@ -220,13 +220,16 @@ class UserService:
         users = []
         for row in rows:
             try:
+                # Handle NULL password_hash by providing a default empty string
+                password_hash = row[6] if row[6] is not None else b''
+                
                 user = User(
                     user_id=row[0],
                     username=decrypt(row[1]),
                     first_name=decrypt(row[2]),
                     last_name=decrypt(row[3]),
                     role=decrypt(row[4]),
-                    password_hash=row[6]  # Use the stored password hash
+                    password_hash=password_hash  # Use the stored password hash or empty bytes if NULL
                 )
                 # Set the registration_date from database if it exists
                 if row[5]:
@@ -273,13 +276,16 @@ class UserService:
         
         if row:
             try:
+                # Handle NULL password_hash by providing a default empty string
+                password_hash = row[6] if row[6] is not None else b''
+                
                 user = User(
                     user_id=row[0],
                     username=decrypt(row[1]),
                     first_name=decrypt(row[2]),
                     last_name=decrypt(row[3]),
                     role=decrypt(row[4]),
-                    password_hash=row[6]  # Use the stored password hash
+                    password_hash=password_hash  # Use the stored password hash or empty bytes if NULL
                 )
                 # Set the registration_date from database if it exists
                 if row[5]:

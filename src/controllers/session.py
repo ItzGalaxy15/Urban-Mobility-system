@@ -47,14 +47,6 @@ class UserSession:
             log_login_attempt(username, True)  # successful login
             return True
 
-        # Get password if not provided - only ask for password if no reset is needed
-        if password is None:
-            password = input("Password: ")
-            # Check for exit command in password field - do this immediately
-            if password.lower() == 'exit':
-                print("Exiting system...")
-                sys.exit(0)
-
         # Check if system is globally locked
         if UserSession._global_lockout_end and datetime.now() < UserSession._global_lockout_end:
             remaining_seconds = int((UserSession._global_lockout_end - datetime.now()).total_seconds())
@@ -80,7 +72,7 @@ class UserSession:
         c.execute('SELECT password_hash FROM User WHERE user_id = ?', (user_data.user_id,))
         row = c.fetchone()
         conn.close()
-        if row and row[0] is None:
+        if (row and row[0] is None) or user_service.has_pending_reset(user_data.user_id):
             # Password is missing, force reset code flow immediately
             from dashboard.menus.password_reset_menu import use_reset_code_flow
             print("\nA password reset has been requested for your account.")
@@ -91,16 +83,13 @@ class UserSession:
                 print("Password reset failed or cancelled.")
                 return False
 
-        # Check for pending password reset (legacy, in case password_hash is not NULL but reset is pending)
-        if user_service.has_pending_reset(user_data.user_id):
-            from dashboard.menus.password_reset_menu import use_reset_code_flow
-            print("\nA password reset has been requested for your account.")
-            if use_reset_code_flow(user_data.user_id):
-                print("Password reset successful. Please log in with your new password.")
-                return False  # Force user to log in again with new password
-            else:
-                print("Password reset failed or cancelled.")
-                return False
+        # Get password if not provided - only ask for password if no reset is needed
+        if password is None:
+            password = input("Password: ")
+            # Check for exit command in password field - do this immediately
+            if password.lower() == 'exit':
+                print("Exiting system...")
+                sys.exit(0)
 
         # If no reset is pending, proceed with normal password check
         if not user_service.verify_user_password(user_data.user_id, password):
