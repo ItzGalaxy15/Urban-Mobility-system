@@ -67,7 +67,7 @@ def add_user_flow(session):
                 print("Invalid role choice. Please try again.")
                 continue
         
-        success, message = UserController.add_user_controller(
+        success, message = UserController.add_user(
             current_user_id, 
             username, 
             password, 

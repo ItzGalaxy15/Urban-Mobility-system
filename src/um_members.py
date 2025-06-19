@@ -14,9 +14,9 @@ def main():
     
     # Only add user if username does not exist
     if not user_service.get_user_by_username("mike_admin"):
-        UserController.add_user("mike_admin", "StrongPass123!", "Mike", "Jansen", "system_admin")
+        UserController.add_user_controller("mike_admin", "StrongPass123!", "Mike", "Jansen", "system_admin")
     if not user_service.get_user_by_username("john_eng"):
-        UserController.add_user("john_eng", "Password123!", "John", "Doe", "service_engineer")
+        UserController.add_user_controller("john_eng", "Password123!", "John", "Doe", "service_engineer")
 
     while True:
         # Login loop
