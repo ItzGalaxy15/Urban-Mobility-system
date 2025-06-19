@@ -21,6 +21,7 @@ def main():
     while True:
         # Login loop
         while not UserSession.is_authenticated():
+            print("Type exit to exit the system")
             username = input("Username: ")
             if username == "super_admin":
                 password = input("Password: ")

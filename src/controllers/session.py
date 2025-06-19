@@ -20,7 +20,6 @@ class UserSession:
     @staticmethod
     def login(username, password=None):
         # Check for exit command
-        print("Type exit to exit the system")
         if username.lower() == 'exit':
             print("Exiting system...")
             sys.exit(0)
