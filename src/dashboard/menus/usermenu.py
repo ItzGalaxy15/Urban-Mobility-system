@@ -84,8 +84,7 @@ def update_user_flow(session):
     while True:
         print("\n--- Update User ---")
         print("Enter 'back' or 'exit' to go back to user management")
-        print("Enter the user id or username to update: ")
-        update_user = input("Enter the user id or username: ")
+        update_user = input("Enter the user id or username to update: ")
         if update_user == "":
             print("Invalid input")
             continue
@@ -148,8 +147,8 @@ def delete_user_flow(session):
     while True:
         print("\n--- Delete User ---")
         print("Enter 'back' or 'exit' to go back to user management")
-        print("Enter the user id or username to delete: ")
-        delete_user = input("Enter the user id or username: ")
+        # print("Enter the user id or username to delete: ")
+        delete_user = input("Enter the user id or username to delete: ")
         if delete_user == "":
             print("Invalid input")
             continue
@@ -168,6 +167,7 @@ def delete_user_flow(session):
             current_user_id, user_id, user.username
         )
         print(message)
+        input("Press Enter to continue...")
         if success:
             # If the deleted user is the currently logged-in user, log out immediately
             if user_id == UserSession.get_current_user_id():

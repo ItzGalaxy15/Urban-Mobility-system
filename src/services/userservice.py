@@ -49,6 +49,8 @@ class UserService:
             return False, f"{field_name} is required"
         if not name.strip():
             return False, f"{field_name} cannot be empty"
+        if len(name) < 2 or len(name) > 20:
+            return False, f"{field_name} must be between 2 and 20 characters"
         return True, ""
 
 

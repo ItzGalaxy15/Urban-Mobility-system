@@ -8,7 +8,7 @@ def reset_password_flow(session):
     
     # Get user identifier (ID or username)
     while True:
-        identifier = input("Enter user ID or username: ")
+        identifier = input("Enter user ID or username (leave blank to cancel): ")
         if not identifier:
             return
             
