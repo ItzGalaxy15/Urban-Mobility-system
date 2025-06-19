@@ -186,7 +186,7 @@ def list_users_flow(session):
         print("No users found.")
     else:
         for user in users:
-            print(f"{user.user_id} | {user.username_plain} | {user.first_name} | {user.last_name} | {user.role_plain}")
+            print(f"{user.user_id} | {user.username_plain} | {user.first_name_plain} | {user.last_name_plain} | {user.role_plain}")
     input("\nPress Enter to continue...")
 
 def change_password_flow(session):
@@ -219,14 +219,14 @@ def edit_account_flow(session):
         # Display profile based on role
         if role in ["service_engineer", "system_admin"]:
             print(f"\n--- Profile Information ---")
-            print(f"First Name: {user.first_name}")
-            print(f"Last Name: {user.last_name}")
+            print(f"First Name: {user.first_name_plain}")
+            print(f"Last Name: {user.last_name_plain}")
             print(f"Registration Date: {user.registration_date}")
             print("\n1. Change first name")
             print("2. Change last name")
             print("3. Back/Exit to main menu")
         else:
-            print(f"\n--- Edit Profile/Account: {user.user_id} | {user.username} ---")
+            print(f"\n--- Edit Profile/Account: {user.user_id} | {user.username_plain} ---")
             print("1. Change username")
             print("2. Change first name")
             print("3. Change last name")

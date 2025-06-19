@@ -89,6 +89,14 @@ class User:
         return decrypt(self.role)
 
     @property
+    def first_name_plain(self) -> str:
+        return decrypt(self.first_name) if self.first_name else ""
+
+    @property
+    def last_name_plain(self) -> str:
+        return decrypt(self.last_name) if self.last_name else ""
+
+    @property
     def full_name(self) -> str:
         first = decrypt(self.first_name) if self.first_name else ""
         last  = decrypt(self.last_name)  if self.last_name  else ""
