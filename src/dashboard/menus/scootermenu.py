@@ -30,12 +30,17 @@ def update_scooter_flow(session):
     print("\nUpdate Scooter")
     current_user_id = UserSession.get_current_user_id()
     scooter_id = input("Enter the ID of the scooter to update: ")
-    scooter = ScooterController.get_scooter(current_user_id, scooter_id)
+    
+    # Get the scooter - returns (scooter, message) tuple
+    scooter_result = ScooterController.get_scooter(current_user_id, scooter_id)
+    scooter, message = scooter_result
+    
     if not scooter:
-        print("Scooter not found.")
+        print("Scooter ID not found.")
+        input("Press Enter to continue...")
         return
 
-    new_scooter = ScooterController.create_scooter(scooter[0], session._current_role == "service_engineer")
+    new_scooter = ScooterController.create_scooter(scooter, session._current_role == "service_engineer")
 
     # Call the service method if the user is a service engineer otherwise call update method
     if UserSession.get_current_role() == "service_engineer":
@@ -57,18 +62,29 @@ def view_scooters_flow(session):
     choice = input("Do you want to view all scooters? (y/n): ")
     if choice.lower() == 'n':
         scooter_id = input("Enter the ID of the scooter to view: ")
-        scooters = ScooterController.get_scooter(current_user_id, scooter_id)
+        scooters_result = ScooterController.get_scooter(current_user_id, scooter_id)
+        scooters, message = scooters_result
     elif choice.lower() == 'y':
-        scooters = ScooterController.get_scooter(current_user_id)
+        scooters_result = ScooterController.get_scooter(current_user_id)
+        scooters, message = scooters_result
     else:
         print("Invalid choice.")
+        input("Press Enter to continue...")
         return
 
-    if scooters[0]:
+    if scooters:
         print("\nScooter(s):")
-        for scooter_id, scooter in enumerate(scooters[0]):
-            print(f"\nScooter #{scooter_id + 1}:")
-            for attr, value in vars(scooter).items():
+        # Handle both single scooter and list of scooters
+        if isinstance(scooters, list):
+            for scooter_id, scooter in enumerate(scooters, 1):
+                print(f"\nScooter #{scooter_id}:")
+                for attr, value in vars(scooter).items():
+                    print(f"  {attr}: {value}")
+                print("\n" + ("-" * 30))
+        else:
+            # Single scooter
+            print(f"\nScooter:")
+            for attr, value in vars(scooters).items():
                 print(f"  {attr}: {value}")
             print("\n" + ("-" * 30))
     else:
@@ -104,11 +120,13 @@ def search_scooters_flow(session):
     # Ask user for search term
     search_term = input("Enter search term: ")
 
-    # Call the search method
+    # Call the search method - returns (scooters, message) tuple
     results = ScooterController.search_for_scooters(current_user_id, search_term, field)
-    if results:
-        print(f"\nFound {len(results[0])} scooter(s):")
-        for idx, scooter in enumerate(results[0], 1):
+    scooters, message = results
+    
+    if scooters:
+        print(f"\nFound {len(scooters)} scooter(s):")
+        for idx, scooter in enumerate(scooters, 1):
             print(f"\nScooter #{idx} - ({scooter.scooter_id}):")
             for attr, value in vars(scooter).items():
                 print(f"  {attr}: {value}")

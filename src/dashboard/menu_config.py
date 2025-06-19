@@ -179,7 +179,7 @@ def get_menu_scooter_management(session):
         ("Add Scooter", ("system_admin", "super"),
          None, lambda: add_scooter_flow(session)),
 
-        ("Update Scooter", ("system_admin", "super"),
+        ("Update Scooter", ("system_admin", "super", "service_engineer"),
          None, lambda: update_scooter_flow(session)),
 
         ("View Scooters", ("service_engineer", "system_admin", "super"),

@@ -53,11 +53,7 @@ class UserSession:
             UserSession._global_failed_attempts = 0
             UserSession._global_lockout_end = None
 
-        # Get password if not provided
-        if password is None:
-            password = input("Password: ")
-
-        # Regular user login - check database only after both username and password are provided
+        # Regular user login - check database for user first
         user_data = user_service.get_user_by_username(username)
         if not user_data:
             UserSession._handle_failed_attempt()
@@ -65,16 +61,16 @@ class UserSession:
             log_login_attempt(username, False)         # failed login
             return False
 
-        # Check if password_hash is NULL (no password set)
+        # Check if password_hash is NULL (no password set) - do this BEFORE asking for password
         conn = user_service._get_connection()
         c = conn.cursor()
         c.execute('SELECT password_hash FROM User WHERE user_id = ?', (user_data.user_id,))
         row = c.fetchone()
         conn.close()
         if row and row[0] is None:
-            # Password is missing, force reset code flow
+            # Password is missing, force reset code flow immediately
             from dashboard.menus.password_reset_menu import use_reset_code_flow
-            # print("\nA password reset has been requested for your account.")
+            print("\nA password reset has been requested for your account.")
             if use_reset_code_flow(user_data.user_id):
                 print("Password reset successful. Please log in with your new password.")
                 return False  # Force user to log in again with new password
@@ -85,13 +81,17 @@ class UserSession:
         # Check for pending password reset (legacy, in case password_hash is not NULL but reset is pending)
         if user_service.has_pending_reset(user_data.user_id):
             from dashboard.menus.password_reset_menu import use_reset_code_flow
-            # print("\nA password reset has been requested for your account.")
+            print("\nA password reset has been requested for your account.")
             if use_reset_code_flow(user_data.user_id):
                 print("Password reset successful. Please log in with your new password.")
                 return False  # Force user to log in again with new password
             else:
                 print("Password reset failed or cancelled.")
                 return False
+
+        # Get password if not provided - only ask for password if no reset is needed
+        if password is None:
+            password = input("Password: ")
 
         # If no reset is pending, proceed with normal password check
         if not user_service.verify_user_password(user_data.user_id, password):

@@ -312,13 +312,16 @@ class UserService:
             try:
                 decrypted_username = decrypt(row[1])
                 if decrypted_username.lower() == username_lower:
+                    # Handle NULL password_hash by providing a default empty string
+                    password_hash = row[6] if row[6] is not None else b''
+                    
                     user = User(
                         user_id=row[0],
                         username=decrypt(row[1]),
                         first_name=decrypt(row[2]),
                         last_name=decrypt(row[3]),
                         role=decrypt(row[4]),
-                        password_hash=row[6]  # Use the stored password hash
+                        password_hash=password_hash  # Use the stored password hash or empty bytes if NULL
                     )
                     # Set the registration_date from database if it exists
                     if row[5]:
@@ -354,6 +357,34 @@ class UserService:
         c.execute('UPDATE User SET password_hash = ? WHERE user_id = ?', (hashed, user_id))
         conn.commit()
         conn.close()
+
+    def change_password(self, user_id: int, current_password: str, new_password: str) -> Tuple[bool, str]:
+        """
+        Change user's password by verifying current password first.
+        
+        Args:
+            user_id: ID of the user
+            current_password: Current password to verify
+            new_password: New password to set
+            
+        Returns:
+            Tuple of (success, message)
+        """
+        # Verify current password
+        if not self.verify_user_password(user_id, current_password):
+            return False, "Current password is incorrect"
+        
+        # Validate new password
+        valid, message = self.validate_password(new_password)
+        if not valid:
+            return False, message
+        
+        # Update password
+        try:
+            self.update_password(user_id, new_password)
+            return True, "Password changed successfully"
+        except Exception as e:
+            return False, f"Failed to update password: {str(e)}"
 
     def generate_temp_code(self, admin_id: int, target_user_id: int) -> Tuple[bool, str]:
         """
