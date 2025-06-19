@@ -115,23 +115,27 @@ def search_scooters_flow(session):
     scooter_fields = [
         "brand",
         "model",
-        "serial_number",
-        "top_speed",
-        "battery_capacity",
-        "state_of_charge",
-        "target_soc_min",
-        "target_soc_max",
-        "location_lat",
-        "location_lon",
-        "scooter_id",
-        "mileage",
-        "out_of_service",
-        "last_maint_date"
+        "serial_number"
     ]
-    print("\nAvailable fields to search by:\n" + " | ".join(scooter_fields))
+    print("\nAvailable fields to search by:")
+    for idx, field_name in enumerate(scooter_fields, 1):
+        print(f"{idx}. {field_name}")
+    print(f"{len(scooter_fields) + 1}. All fields")
 
-    # Ask user for the field to search by
-    field = input("Enter field to search by (leave blank to search all fields): ").strip() or None
+    # Ask user for the field to search by using a menu
+    while True:
+        try:
+            choice = int(input(f"Select field to search by (1-{len(scooter_fields) + 1}): "))
+            if 1 <= choice <= len(scooter_fields):
+                field = scooter_fields[choice - 1]
+                break
+            elif choice == len(scooter_fields) + 1:
+                field = None
+                break
+            else:
+                print("Invalid selection. Please try again.")
+        except ValueError:
+            print("Please enter a valid number.")
 
     # Ask user for search term
     search_term = input("Enter search term: ")
@@ -155,8 +159,4 @@ def delete_scooter_flow(session):
     scooter_id = input("Enter the ID of the scooter to delete: ")
     success, message = ScooterController.delete_scooter(current_user_id, scooter_id)
     print(message)
-    if success:
-        print("Scooter deleted successfully.")
-    else:
-        print("Failed to delete scooter.")
     input("Press Enter to continue...")

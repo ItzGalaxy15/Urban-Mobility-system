@@ -167,6 +167,7 @@ class ScooterController:
         while True:
             if is_service:
                 brand = old_scooter.brand_plain
+                print("Brand: " + old_scooter.brand_plain)
                 break
 
             print("")
@@ -184,6 +185,7 @@ class ScooterController:
         while True:
             if is_service:
                 model = old_scooter.model_plain
+                print("Model: " + old_scooter.model_plain)
                 break
             
             print("")
@@ -201,6 +203,7 @@ class ScooterController:
         while True:
             if is_service:
                 serial_number = old_scooter.serial_number_plain
+                print("Serial Number: " + old_scooter.serial_number_plain)
                 break
             
             print("")
@@ -218,6 +221,7 @@ class ScooterController:
         while True:
             if is_service:
                 top_speed = old_scooter.top_speed
+                print("Top Speed: " + str(old_scooter.top_speed) + " km/h")
                 break
             try:
                 print("")
@@ -238,6 +242,7 @@ class ScooterController:
         while True:
             if is_service:
                 battery_capacity = old_scooter.battery_capacity
+                print("Battery Capacity: " + str(old_scooter.battery_capacity) + " Wh")
                 break
             try:
                 print("")
@@ -378,8 +383,8 @@ class ScooterController:
         if old_scooter != None:
             print(f"Old scooter last maintenance date: {old_scooter.last_maint_date}")
 
-        print("")
         while True:
+            print("")
             last_maint_date = input("Enter last maintenance date (YYYY-MM-DD, default today): ")
             if last_maint_date == "":
                 last_maint_date = datetime.date.today().strftime('%Y-%m-%d')
