@@ -167,6 +167,7 @@ def delete_user_flow(session):
             current_user_id, user_id, user.username
         )
         print(message)
+        input("Press Enter to continue...")
         if success:
             # If the deleted user is the currently logged-in user, log out immediately
             if user_id == UserSession.get_current_user_id():
