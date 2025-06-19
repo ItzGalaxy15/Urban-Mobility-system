@@ -271,8 +271,8 @@ class TravellerService:
                     city=decrypt(row[8]),
                     email=decrypt(row[9]),
                     mobile_phone=decrypt(row[10]),
-                    driving_license_no=decrypt(row[11]),
-                    registration_date=row[12],   # remains plaintext
+                    driving_license_no=decrypt(row[11])
+                    # registration_date is set internally by the Traveller model
                 )
             except Exception as exc:
                 # Skip rows that fail to decrypt or instantiate
@@ -282,13 +282,13 @@ class TravellerService:
             # Combine all fields into one string and check substring (if None, use empty string)
             searchable = (
                 str(traveller.traveller_id or "")
-                + (traveller.first_name or "")
-                + (traveller.last_name or "")
-                + (traveller.email or "")
-                + (traveller.mobile_phone or "")
-                + (traveller.driving_license_no or "")
-                + (traveller.city or "")
-                + (traveller.zip_code or "")
+                + (traveller.first_name_plain or "")
+                + (traveller.last_name_plain or "")
+                + (traveller.email_plain or "")
+                + (traveller.mobile_phone_plain or "")
+                + (traveller.driving_license_no_plain or "")
+                + (traveller.city_plain or "")
+                + (traveller.zip_code_plain or "")
             ).lower()
 
             if key_lc in searchable:

@@ -224,4 +224,4 @@ def search_traveller_flow(session):
     else:
         for row in results:
             print(row)
-        input("Press Enter to continue...")
+    input("Press Enter to continue...")
