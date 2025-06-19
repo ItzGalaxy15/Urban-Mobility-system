@@ -134,7 +134,7 @@ class UserSession:
         failed_count = UserSession._global_failed_attempts
         
         # Only lock system after 5 failed attempts
-        if failed_count >= 5:
+        if failed_count >= 3:
             # Lock system for 15 minutes (900 seconds)
             timeout_seconds = 15
             UserSession._global_lockout_end = datetime.now().timestamp() + timeout_seconds
@@ -142,7 +142,7 @@ class UserSession:
             print(f"System locked for {timeout_seconds} seconds due to {failed_count} failed attempts.")
         else:
             # Show remaining attempts before lockout
-            remaining_attempts = 5 - failed_count
+            remaining_attempts = 3 - failed_count
             print(f"Login failed. {remaining_attempts} attempts remaining before system lockout.")
 
     @staticmethod
