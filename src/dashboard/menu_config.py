@@ -186,10 +186,10 @@ def user_menu(session):
 
 def get_menu_scooter_management(session):
     return [
-        ("Add Scooter", ("service_engineer", "system_admin", "super"),
+        ("Add Scooter", ("system_admin", "super"),
          None, lambda: add_scooter_flow(session)),
 
-        ("Update Scooter", ("service_engineer", "system_admin", "super"),
+        ("Update Scooter", ("system_admin", "super"),
          None, lambda: update_scooter_flow(session)),
 
         ("View Scooters", ("service_engineer", "system_admin", "super"),
@@ -198,7 +198,7 @@ def get_menu_scooter_management(session):
         ("Search Scooters", ("service_engineer", "system_admin", "super"),
          None, lambda: search_scooters_flow(session)),
 
-        ("Delete Scooter", ("service_engineer", "system_admin", "super"),
+        ("Delete Scooter", ("system_admin", "super"),
          None, lambda: delete_scooter_flow(session)),
 
         ("Back", None, None, lambda: None)
