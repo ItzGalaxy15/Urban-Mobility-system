@@ -136,7 +136,7 @@ class UserSession:
         # Only lock system after 5 failed attempts
         if failed_count >= 5:
             # Lock system for 15 minutes (900 seconds)
-            timeout_seconds = 900
+            timeout_seconds = 15
             UserSession._global_lockout_end = datetime.now().timestamp() + timeout_seconds
             UserSession._global_lockout_end = datetime.fromtimestamp(UserSession._global_lockout_end)
             print(f"System locked for {timeout_seconds} seconds due to {failed_count} failed attempts.")
