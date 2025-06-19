@@ -34,13 +34,13 @@ def write_log_entry(entry: LogEntry) -> None:
     """
     entry.log_id = get_next_log_id()
     line = entry.as_line()          # Plain text (pipe-separated) line
-    # token = encrypt(line)           # => bytes
-    # with open(LOG_FILE, "ab") as f:
-    #     f.write(token + b"\n")      # One encrypted line per entry
+    token = encrypt(line)           # => bytes
+    with open(LOG_FILE, "ab") as f:
+        f.write(token + b"\n")      # One encrypted line per entry
 
-    line = entry.as_line()
-    with open(LOG_FILE, "a") as f:
-        f.write(line + "\n")
+    # line = entry.as_line()
+    # with open(LOG_FILE, "a") as f:
+    #     f.write(line + "\n")
 
 def log_login_attempt(username: str, success: bool):
     if success:
@@ -78,34 +78,10 @@ def read_logs(limit: int | None = None) -> list[LogEntry]:
 
     entries: list[LogEntry] = []
     # this should activated before we deliver it
-    # with open(LOG_FILE, "rb") as f:
-    #     for token in f:
-    #         try:
-    #             line = decrypt(token.strip())          # "id|date|time|..."
-    #             parts = line.split("|")
-    #             entry = LogEntry(
-    #                 user_id=parts[1],                  # we ignore stored id order
-    #                 username=parts[3],
-    #                 description=parts[4],
-    #                 additional=parts[5],
-    #                 suspicious=(parts[6] == "Yes"),
-    #                 log_id=int(parts[0])
-    #             )
-    #             entries.append(entry)
-    #         except Exception:
-    #             # corrupted line? skip
-    #             continue
-
-    # entries.reverse()          # newest first
-    # if limit:
-    #     entries = entries[:limit]
-    # return entries
-
-    # Temporarily so I can see the log file with normal characters
-    with open(LOG_FILE, "r") as f:  # Open in text mode, not binary
-        for line in f:
+    with open(LOG_FILE, "rb") as f:
+        for token in f:
             try:
-                line = line.strip()  # Remove any surrounding whitespace or newline
+                line = decrypt(token.strip())          # "id|date|time|..."
                 parts = line.split("|")
                 entry = LogEntry(
                     user_id=parts[1],                  # we ignore stored id order
@@ -124,6 +100,30 @@ def read_logs(limit: int | None = None) -> list[LogEntry]:
     if limit:
         entries = entries[:limit]
     return entries
+
+    # # Temporarily so I can see the log file with normal characters
+    # with open(LOG_FILE, "r") as f:  # Open in text mode, not binary
+    #     for line in f:
+    #         try:
+    #             line = line.strip()  # Remove any surrounding whitespace or newline
+    #             parts = line.split("|")
+    #             entry = LogEntry(
+    #                 user_id=parts[1],                  # we ignore stored id order
+    #                 username=parts[3],
+    #                 description=parts[4],
+    #                 additional=parts[5],
+    #                 suspicious=(parts[6] == "Yes"),
+    #                 log_id=int(parts[0])
+    #             )
+    #             entries.append(entry)
+    #         except Exception:
+    #             # corrupted line? skip
+    #             continue
+
+    # entries.reverse()          # newest first
+    # if limit:
+    #     entries = entries[:limit]
+    # return entries
 
 
 def _conn():
