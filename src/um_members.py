@@ -7,6 +7,7 @@ from dashboard.dashboard import build_menu_with_roles_and_permissions, display_m
 from dashboard.menu_config import get_menu
 from dashboard.menus.password_reset_menu import use_reset_code_flow
 import os
+import sys
 
 def main():
     print("Urban Mobility System Starting...")
@@ -23,8 +24,14 @@ def main():
         while not UserSession.is_authenticated():
             print("Type exit to exit the system")
             username = input("Username: ")
+            if username.lower() == 'exit':
+                print("Exiting system...")
+                sys.exit(0)
             if username == "super_admin":
                 password = input("Password: ")
+                if password.lower() == 'exit':
+                    print("Exiting system...")
+                    sys.exit(0)
                 if UserSession.login(username, password):
                     break
             else:

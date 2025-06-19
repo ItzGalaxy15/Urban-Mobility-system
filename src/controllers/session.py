@@ -47,6 +47,14 @@ class UserSession:
             log_login_attempt(username, True)  # successful login
             return True
 
+        # Get password if not provided - only ask for password if no reset is needed
+        if password is None:
+            password = input("Password: ")
+            # Check for exit command in password field - do this immediately
+            if password.lower() == 'exit':
+                print("Exiting system...")
+                sys.exit(0)
+
         # Check if system is globally locked
         if UserSession._global_lockout_end and datetime.now() < UserSession._global_lockout_end:
             remaining_seconds = int((UserSession._global_lockout_end - datetime.now()).total_seconds())
@@ -93,10 +101,6 @@ class UserSession:
             else:
                 print("Password reset failed or cancelled.")
                 return False
-
-        # Get password if not provided - only ask for password if no reset is needed
-        if password is None:
-            password = input("Password: ")
 
         # If no reset is pending, proceed with normal password check
         if not user_service.verify_user_password(user_data.user_id, password):
