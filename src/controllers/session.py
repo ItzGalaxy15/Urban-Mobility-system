@@ -4,6 +4,8 @@ from services.userservice import user_service
 from models.user import User
 import sys
 import os
+import time
+from datetime import datetime
 
 from utils.crypto_utils import decrypt
 
@@ -12,6 +14,8 @@ class UserSession:
     _current_user_id = None
     _current_username = None
     _current_role = None
+    _failed_attempts = {}  # Dictionary to track failed attempts per username
+    _lockout_times = {}    # Dictionary to track lockout end times per username
 
     @staticmethod
     def login(username, password=None):
@@ -38,6 +42,19 @@ class UserSession:
             log_login_attempt(username, True)  # successful login
             return True
 
+        # Check if account is locked
+        if username in UserSession._lockout_times:
+            lockout_end = UserSession._lockout_times[username]
+            if datetime.now() < lockout_end:
+                remaining_seconds = int((lockout_end - datetime.now()).total_seconds())
+                print(f"Account temporarily locked due to multiple failed attempts.")
+                print(f"Please wait {remaining_seconds} seconds before trying again.")
+                return False
+            else:
+                # Lockout period has expired, reset failed attempts
+                UserSession._failed_attempts[username] = 0
+                del UserSession._lockout_times[username]
+
         # Get password if not provided
         if password is None:
             password = input("Password: ")
@@ -45,6 +62,7 @@ class UserSession:
         # Regular user login - check database only after both username and password are provided
         user_data = user_service.get_user_by_username(username)
         if not user_data:
+            UserSession._handle_failed_attempt(username)
             print("Username or password incorrect.")
             log_login_attempt(username, False)         # failed login
             return False
@@ -79,9 +97,14 @@ class UserSession:
 
         # If no reset is pending, proceed with normal password check
         if not user_service.verify_user_password(user_data.user_id, password):
+            UserSession._handle_failed_attempt(username)
             print("Username or password incorrect.")
             log_login_attempt(username, False)         # failed login
             return False
+        
+        # Successful login - reset failed attempts
+        if username in UserSession._failed_attempts:
+            UserSession._failed_attempts[username] = 0
         
         # Create User object for regular users
         UserSession._current_user = User(
@@ -105,6 +128,27 @@ class UserSession:
         # ------------------------------------------------------
         log_login_attempt(username, True)              # successful login
         return True
+
+    @staticmethod
+    def _handle_failed_attempt(username):
+        """Handle a failed login attempt with exponential backoff."""
+        if username not in UserSession._failed_attempts:
+            UserSession._failed_attempts[username] = 0
+        
+        UserSession._failed_attempts[username] += 1
+        failed_count = UserSession._failed_attempts[username]
+        
+        # Calculate timeout: 15s, 30s, 60s, 120s, 240s, 480s, 960s, 1800s, 3600s
+        base_timeout = 15
+        max_timeout = 3600
+        timeout_seconds = min(base_timeout * (2 ** (failed_count - 1)), max_timeout)
+        
+        # Set lockout end time
+        lockout_end = datetime.now().timestamp() + timeout_seconds
+        UserSession._lockout_times[username] = datetime.fromtimestamp(lockout_end)
+        
+        if failed_count >= 2:  # Only show timeout message after 2nd failed attempt
+            print(f"Account locked for {timeout_seconds} seconds due to {failed_count} failed attempts.")
 
     @staticmethod
     def logout():
