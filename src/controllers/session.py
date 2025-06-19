@@ -19,6 +19,11 @@ class UserSession:
 
     @staticmethod
     def login(username, password=None):
+        # Check for exit command
+        if username.lower() == 'exit':
+            print("Exiting system...")
+            sys.exit(0)
+            
         # Check for hardcoded super admin
         if username == "super_admin" and password == "Admin_123?":
             # Create a proper User object for super admin
