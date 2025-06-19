@@ -12,6 +12,24 @@ from models.scooter import (
     TOP_SPEED_MIN
 )
 
+def display_scooter_data(scooter):
+    """Display scooter data using decrypted properties"""
+    print(f"  scooter_id: {scooter.scooter_id}")
+    print(f"  brand: {scooter.brand_plain}")
+    print(f"  model: {scooter.model_plain}")
+    print(f"  serial_number: {scooter.serial_number_plain}")
+    print(f"  top_speed: {scooter.top_speed} km/h")
+    print(f"  battery_capacity: {scooter.battery_capacity} Wh")
+    print(f"  state_of_charge: {scooter.state_of_charge}%")
+    print(f"  target_soc_min: {scooter.target_soc_min}%")
+    print(f"  target_soc_max: {scooter.target_soc_max}%")
+    print(f"  location_lat: {scooter.location_lat}")
+    print(f"  location_lon: {scooter.location_lon}")
+    print(f"  mileage: {scooter.mileage} km")
+    print(f"  out_of_service: {'Yes' if scooter.is_out_of_service else 'No'}")
+    print(f"  last_maint_date: {scooter.last_maint_date}")
+    print(f"  in_service_date: {scooter.in_service_date}")
+
 def add_scooter_flow(session):
     print("\nAdd New Scooter")
     
@@ -78,14 +96,12 @@ def view_scooters_flow(session):
         if isinstance(scooters, list):
             for scooter_id, scooter in enumerate(scooters, 1):
                 print(f"\nScooter #{scooter_id}:")
-                for attr, value in vars(scooter).items():
-                    print(f"  {attr}: {value}")
+                display_scooter_data(scooter)
                 print("\n" + ("-" * 30))
         else:
             # Single scooter
             print(f"\nScooter:")
-            for attr, value in vars(scooters).items():
-                print(f"  {attr}: {value}")
+            display_scooter_data(scooters)
             print("\n" + ("-" * 30))
     else:
         print("No scooters found.")
@@ -128,8 +144,7 @@ def search_scooters_flow(session):
         print(f"\nFound {len(scooters)} scooter(s):")
         for idx, scooter in enumerate(scooters, 1):
             print(f"\nScooter #{idx} - ({scooter.scooter_id}):")
-            for attr, value in vars(scooter).items():
-                print(f"  {attr}: {value}")
+            display_scooter_data(scooter)
             print("\n" + ("-" * 30))
     else:
         print("No scooters found matching your search.")
