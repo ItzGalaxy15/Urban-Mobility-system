@@ -38,7 +38,11 @@ class UserSession:
             log_login_attempt(username, True)  # successful login
             return True
 
-        # Regular user login
+        # Get password if not provided
+        if password is None:
+            password = input("Password: ")
+
+        # Regular user login - check database only after both username and password are provided
         user_data = user_service.get_user_by_username(username)
         if not user_data:
             print("Username or password incorrect.")
@@ -74,10 +78,8 @@ class UserSession:
                 return False
 
         # If no reset is pending, proceed with normal password check
-        if password is None:
-            password = input("Password: ")
         if not user_service.verify_user_password(user_data.user_id, password):
-            print("Password incorrect.")
+            print("Username or password incorrect.")
             log_login_attempt(username, False)         # failed login
             return False
         
