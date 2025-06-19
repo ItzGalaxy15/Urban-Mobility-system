@@ -16,6 +16,9 @@ class UserController:
     @require_role("service_engineer", "system_admin")
     def change_password(user_id: int, current_password: str, new_password: str) -> Tuple[bool, str]:
         """Change user's own password."""
+        # Super admin doesn't need password change through this method
+        if user_id == 0:
+            return False, "Super admin password cannot be changed through this method."
         return user_service.change_password(user_id, current_password, new_password)
 
     #--------------------------------------------------------------------------------------
@@ -66,12 +69,17 @@ class UserController:
             except ValueError as e:
                 return False, str(e)
 
-        # Check permissions
-        current_user = user_service.get_user_by_id(current_user_id)
-        if not current_user:
-            return False, "Current user not found."
+        # Check permissions - handle super admin case
+        if current_user_id == 0:
+            # Super admin case - can update anyone
+            current_user_role = "super"
+        else:
+            current_user = user_service.get_user_by_id(current_user_id)
+            if not current_user:
+                return False, "Current user not found."
+            current_user_role = current_user.role_plain
 
-        if current_user.role_plain == "system_admin":
+        if current_user_role == "system_admin":
             target_user = user_service.get_user_by_id(user_id)
             if not target_user:
                 return False, "User not found."
@@ -91,12 +99,17 @@ class UserController:
     @require_role("system_admin", "super")
     def delete_user(current_user_id: int, user_id: int, username: str) -> Tuple[bool, str]:
         """Delete a user from the system."""
-        # Check permissions
-        current_user = user_service.get_user_by_id(current_user_id)
-        if not current_user:
-            return False, "Current user not found."
+        # Check permissions - handle super admin case
+        if current_user_id == 0:
+            # Super admin case - can delete anyone
+            current_user_role = "super"
+        else:
+            current_user = user_service.get_user_by_id(current_user_id)
+            if not current_user:
+                return False, "Current user not found."
+            current_user_role = current_user.role_plain
 
-        if current_user.role_plain == "system_admin":
+        if current_user_role == "system_admin":
             target_user = user_service.get_user_by_id(user_id)
             if not target_user:
                 return False, "User not found."
@@ -126,6 +139,9 @@ class UserController:
     @require_role("service_engineer", "system_admin")
     def change_own_password(user_id: int, current_password: str, new_password: str) -> Tuple[bool, str]:
         """Change user's own password."""
+        # Super admin doesn't need password change through this method
+        if user_id == 0:
+            return False, "Super admin password cannot be changed through this method."
         return user_service.change_password(user_id, current_password, new_password)
 
 
