@@ -2,7 +2,6 @@ import os
 from controllers.session import UserSession
 from controllers.usercontroller import UserController
 from controllers.backupcontroller import BackupController
-from dashboard.menus.backup_src_menu import backup_src_flow
 from dashboard.menus.backup_db_menu import backup_db_flow
 from dashboard.menus.backup_management_menu import (
     request_backup_restore_flow,
@@ -65,8 +64,6 @@ def get_menu(session):
          UserController.change_password, lambda: change_password_flow(session)),
 
         ("Edit profile/account", ("system_admin"), None, lambda: edit_account_flow(session)),
-
-        ("Create Full System (src) Backup", ("system_admin", "super"), None, lambda: backup_src_flow(session)),
 
         ("Create Database Backup", ("system_admin", "super"), None, lambda: backup_db_flow(session)),
 
@@ -201,7 +198,7 @@ def get_menu_scooter_management(session):
         ("Search Scooters", ("service_engineer", "system_admin", "super"),
          None, lambda: search_scooters_flow(session)),
 
-        ("Delete Scooter", ("super", "system_admin"),
+        ("Delete Scooter", ("service_engineer", "system_admin", "super"),
          None, lambda: delete_scooter_flow(session)),
 
         ("Back", None, None, lambda: None)

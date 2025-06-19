@@ -6,13 +6,21 @@ from typing import Tuple
 import random
 import string
 from datetime import datetime, timedelta
+import os
 
 class UserService:
     def __init__(self, db_path: str):
         self.db_path = db_path
 
     def _get_connection(self) -> sqlite3.Connection:
-        return sqlite3.connect(self.db_path)
+        # print(f"[DEBUG] _get_connection called, connecting to: {self.db_path}")
+        try:
+            conn = sqlite3.connect(self.db_path)
+            # print(f"[DEBUG] Database connection successful")
+            return conn
+        except Exception as e:
+            # print(f"[DEBUG] Database connection failed: {e}")
+            raise
 
     def validate_username(self, username: str) -> tuple[bool, str]:
         """Validate username format and requirements."""
@@ -252,11 +260,17 @@ class UserService:
 #-------------------------------------------------
     def get_user_by_id(self, user_id) -> User:
         """Get user details by user_id."""
+        # print(f"[DEBUG] get_user_by_id called with user_id: {user_id}")
+        # print(f"[DEBUG] Using database path: {self.db_path}")
+        
         conn = self._get_connection()
         c = conn.cursor()
         c.execute('SELECT user_id, username, first_name, last_name, role, registration_date, password_hash FROM User WHERE user_id=?', (user_id,))
         row = c.fetchone()
         conn.close()
+        
+        # print(f"[DEBUG] Database query returned row: {row}")
+        
         if row:
             try:
                 user = User(
@@ -270,12 +284,17 @@ class UserService:
                 # Set the registration_date from database if it exists
                 if row[5]:
                     user.registration_date = row[5]
+                # print(f"[DEBUG] Successfully created User object: {user}")
                 return user
             except Exception as e:
                 # Optionally log the error here
-                print(f"Invalid user data in DB: {e}")
+                # print(f"[DEBUG] Error creating User object: {e}")
+                # print(f"[DEBUG] Invalid user data in DB: {e}")
                 return None
-        return None
+        else:
+            # print(f"[DEBUG] No user found in database for user_id: {user_id}")
+            return None
+        # return None
     
 #-------------------------------------------------
 #                   Get User by Username
@@ -464,5 +483,7 @@ class UserService:
         conn.close()
         return has_reset
 
-# Create a single instance of UserService
-user_service = UserService("urban_mobility.db")
+# Create a singleton instance with absolute path
+SRC_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DB_FILE = os.path.join(SRC_FOLDER, 'urban_mobility.db')
+user_service = UserService(DB_FILE)

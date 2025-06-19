@@ -16,27 +16,26 @@ def request_backup_restore_flow(session):
         input("\nPress Enter to continue...")
         return
     
-    print("\n=== Available Backups ===")
+    print("\n=== Available Database Backups ===")
     backups = BackupController.get_backup_list(user_id)
     
     if not backups:
-        print("No backups found.")
+        print("No database backups found.")
         input("\nPress Enter to continue...")
         return
     
-    print(f"{'ID':<5} {'Date':<20} {'Type':<15} {'Creator':<30}")
-    print("-" * 70)
+    print(f"{'ID':<5} {'Date':<20} {'Creator':<30}")
+    print("-" * 55)
     
     for backup in backups:
-        backup_type = "Database" if "db_backup_" in backup['file_path'] else "System"
-        print(f"{backup['backup_id']:<5} {backup['backup_date']:<20} {backup_type:<15} {backup['creator']:<30}")
+        print(f"{backup['backup_id']:<5} {backup['backup_date']:<20} {backup['creator']:<30}")
     
     # If user is a system admin, allow them to request a restore code
     if user.role_plain == 'system_admin':
-        print("\n" + "="*70)
+        print("\n" + "="*55)
         print("REQUEST RESTORE CODE")
-        print("="*70)
-        print("As a system admin, you can request a restore code for any backup.")
+        print("="*55)
+        print("As a system admin, you can request a restore code for any database backup.")
         print("A super admin will need to generate the code for you.")
         
         try:
@@ -54,7 +53,7 @@ def request_backup_restore_flow(session):
                 return
             
             # Create the restore request
-            success, message = BackupController.create_restore_request(backup_id, user_id)
+            success, message = BackupController.create_restore_request(user_id, backup_id)
             print(f"\n{message}")
             if success:
                 print("Your request has been submitted to the super admin.")
@@ -69,21 +68,20 @@ def request_backup_restore_flow(session):
 
 def list_backups_flow(session):
     """Display list of all backups."""
-    print("\n=== Available Backups ===")
+    print("\n=== Available Database Backups ===")
     user_id = UserSession.get_current_user_id()
     backups = BackupController.get_backup_list(user_id)
     
     if not backups:
-        print("No backups found.")
+        print("No database backups found.")
         input("\nPress Enter to continue...")
         return
     
-    print(f"{'ID':<5} {'Date':<20} {'Type':<15} {'Creator':<30}")
-    print("-" * 70)
+    print(f"{'ID':<5} {'Date':<20} {'Creator':<30}")
+    print("-" * 55)
     
     for backup in backups:
-        backup_type = "Database" if "db_backup_" in backup['file_path'] else "System"
-        print(f"{backup['backup_id']:<5} {backup['backup_date']:<20} {backup_type:<15} {backup['creator']:<30}")
+        print(f"{backup['backup_id']:<5} {backup['backup_date']:<20} {backup['creator']:<30}")
     
     input("\nPress Enter to continue...")
 
@@ -109,11 +107,11 @@ def generate_restore_code_flow(session):
         return
     
     print("Pending restore code requests:")
-    print(f"{'Req ID':<8} {'Backup ID':<10} {'Backup Type':<12} {'Backup Date':<20} {'Requester':<25} {'Request Date':<20}")
-    print("-" * 95)
+    print(f"{'Req ID':<8} {'Backup ID':<10} {'Backup Date':<20} {'Requester':<25} {'Request Date':<20}")
+    print("-" * 85)
     
     for req in pending_requests:
-        print(f"{req['request_id']:<8} {req['backup_id']:<10} {req['backup_type']:<12} {req['backup_date']:<20} {req['requester_name']:<25} {req['request_date']:<20}")
+        print(f"{req['request_id']:<8} {req['backup_id']:<10} {req['backup_date']:<20} {req['requester_name']:<25} {req['request_date']:<20}")
     
     # Get request ID to process
     try:
@@ -137,8 +135,8 @@ def generate_restore_code_flow(session):
     
     # Generate code for the selected request
     success, result = BackupController.generate_restore_code(
+        user_id,
         selected_request['backup_id'], 
-        user_id, 
         selected_request['system_admin_user_id']
     )
     
@@ -146,7 +144,7 @@ def generate_restore_code_flow(session):
         print(f"\nRestore code generated successfully!")
         print(f"Code: {result}")
         print(f"Generated for: {selected_request['requester_name']}")
-        print(f"Backup ID: {selected_request['backup_id']} ({selected_request['backup_type']})")
+        print(f"Backup ID: {selected_request['backup_id']} (Database Backup)")
         print("This code can only be used once by that specific system admin.")
         
         # Mark request as completed
@@ -167,7 +165,7 @@ def restore_with_code_flow(session):
         input("\nPress Enter to continue...")
         return
     
-    print("\n=== Restore Backup with Code ===")
+    print("\n=== Restore Database Backup with Code ===")
     
     # Show user's available restore codes
     codes = BackupController.get_user_restore_codes(user_id)
@@ -188,8 +186,8 @@ def restore_with_code_flow(session):
         return
     
     # Confirm restore
-    print("\nWARNING: This will restore the system/database to the backup state.")
-    print("All current data may be lost!")
+    print("\nWARNING: This will restore the database to the backup state.")
+    print("All current database data may be lost!")
     confirm = input("Are you sure you want to proceed? (yes/no): ").lower()
     
     if confirm != 'yes':
@@ -198,7 +196,7 @@ def restore_with_code_flow(session):
         return
     
     # Perform restore
-    success, message = BackupController.restore_backup_with_code(code, user_id)
+    success, message = BackupController.restore_backup_with_code(user_id, code)
     print(f"\n{message}")
     
     input("\nPress Enter to continue...")
@@ -213,22 +211,21 @@ def restore_direct_flow(session):
         input("\nPress Enter to continue...")
         return
     
-    print("\n=== Direct Backup Restore (Super Admin) ===")
+    print("\n=== Direct Database Backup Restore (Super Admin) ===")
     
     # List available backups
     backups = BackupController.get_backup_list(user_id)
     if not backups:
-        print("No backups found.")
+        print("No database backups found.")
         input("\nPress Enter to continue...")
         return
     
-    print("Available backups:")
-    print(f"{'ID':<5} {'Date':<20} {'Type':<15}")
-    print("-" * 40)
+    print("Available database backups:")
+    print(f"{'ID':<5} {'Date':<20}")
+    print("-" * 25)
     
     for backup in backups:
-        backup_type = "Database" if "db_backup_" in backup['file_path'] else "System"
-        print(f"{backup['backup_id']:<5} {backup['backup_date']:<20} {backup_type:<15}")
+        print(f"{backup['backup_id']:<5} {backup['backup_date']:<20}")
     
     # Get backup ID
     try:
@@ -246,8 +243,8 @@ def restore_direct_flow(session):
         return
     
     # Confirm restore
-    print("\nWARNING: This will restore the system/database to the backup state.")
-    print("All current data may be lost!")
+    print("\nWARNING: This will restore the database to the backup state.")
+    print("All current database data may be lost!")
     print("All older backups will be wiped!")
     confirm = input("Are you sure you want to proceed? (yes/no): ").lower()
     

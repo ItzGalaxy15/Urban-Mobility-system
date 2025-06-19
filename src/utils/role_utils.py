@@ -1,6 +1,5 @@
 from functools import wraps
 from models.user import User
-from services.userservice import user_service
 
 # Role hierarchy defines the permission levels for different roles
 # Higher numbers indicate higher permission levels
@@ -34,6 +33,8 @@ def require_role(*required_roles):
             if user_id == 0:
                 return func(user_id, *args, **kwargs)
             
+            # Import user_service here to avoid circular imports
+            from services.userservice import user_service
             user = user_service.get_user_by_id(user_id)
             if not user:
                 return False, "User not found."
@@ -64,11 +65,17 @@ def has_permission(user_id, required_role):
             # Perform admin-only operation
             pass
     """
-    user = User(
-        username="super_admin",
-        password_plain="Admin_123?",
-        role="super"
-    ) if user_id == 0 else user_service.get_user_by_id(user_id)
+    if user_id == 0:
+        user = User(
+            username="super_admin",
+            password_plain="Admin_123?",
+            role="super"
+        )
+    else:
+        # Import user_service here to avoid circular imports
+        from services.userservice import user_service
+        user = user_service.get_user_by_id(user_id)
+    
     if not user:
         return False
     user_role = user.role_plain

@@ -10,66 +10,13 @@ from typing import Tuple
 # Get the absolute path to the project root (one level above src/)
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SRC_FOLDER = os.path.join(PROJECT_ROOT, 'src')
-BACKUP_DIR = os.path.join(PROJECT_ROOT, 'backups')
+BACKUP_DIR = os.path.join(SRC_FOLDER, 'backups')
 DB_FILE = os.path.join(SRC_FOLDER, 'urban_mobility.db')
 
 class BackupService:
     def __init__(self):
         if not os.path.exists(BACKUP_DIR):
             os.makedirs(BACKUP_DIR)
-
-    def create_backup(self, user_id):
-        # Check permissions
-        user = user_service.get_user_by_id(user_id) if user_id != 0 else {'role': 'super'}
-        if not user or user.role_plain not in ('system_admin', 'super'):
-            return False, 'Only system admin or super admin can create backups.'
-
-        # Create timestamped backup filename
-        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        backup_filename = f'src_backup_{timestamp}.zip'
-        backup_path = os.path.join(BACKUP_DIR, backup_filename)
-
-        # Zip the src folder, excluding src/backups/, __pycache__, .git
-        def exclude_filter(filepath):
-            rel = os.path.relpath(filepath, SRC_FOLDER)
-            parts = rel.split(os.sep)
-            if parts[0] == 'backups':
-                return True
-            if '__pycache__' in parts or '.git' in parts:
-                return True
-            return False
-
-        try:
-            with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for root, dirs, files in os.walk(SRC_FOLDER):
-                    # Exclude unwanted dirs
-                    dirs[:] = [d for d in dirs if not exclude_filter(os.path.join(root, d))]
-                    for file in files:
-                        filepath = os.path.join(root, file)
-                        if exclude_filter(filepath):
-                            continue
-                        arcname = os.path.relpath(filepath, SRC_FOLDER)
-                        zipf.write(filepath, arcname=arcname)
-        except Exception as e:
-            return False, f'Failed to create zip: {e}'
-
-        # Record in Backup table (in the src/urban_mobility.db database)
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        if user_id == 0:
-            c.execute('''
-                INSERT INTO Backup (backup_date, file_path, created_by_user_id)
-                VALUES (datetime('now'), ?, NULL)
-            ''', (backup_path,))
-        else:
-            c.execute('''
-                INSERT INTO Backup (backup_date, file_path, created_by_user_id)
-                VALUES (datetime('now'), ?, ?)
-            ''', (backup_path, user_id))
-        conn.commit()
-        conn.close()
-
-        return True, f'Backup created successfully'
 
     def create_db_backup(self, user_id):
         # Check permissions
@@ -110,20 +57,37 @@ class BackupService:
         Restore a backup using a restore code.
         Only the system admin who requested the code can use it.
         """
+        # print(f"[DEBUG] restore_backup_with_code called with code: {code}, user_id: {system_admin_user_id}")
+        
         # Check if user is a system admin
+        # print(f"[DEBUG] About to call user_service.get_user_by_id({system_admin_user_id})")
         user = user_service.get_user_by_id(system_admin_user_id)
-        if not user or user.role_plain != 'system_admin':
+        # print(f"[DEBUG] user_service.get_user_by_id returned: {user}")
+        
+        if not user:
+            # print(f"[DEBUG] User not found for ID: {system_admin_user_id}")
+            return False, "User not found."
+        
+        if user.role_plain != 'system_admin':
+            # print(f"[DEBUG] User role is {user.role_plain}, expected system_admin")
             return False, "Only system admins can restore backups with codes."
 
+        # print(f"[DEBUG] User validation passed. About to verify code...")
         # Verify the code and get backup_id
         success, message, backup_id = restore_code_service.verify_and_use_code(code, system_admin_user_id)
+        # print(f"[DEBUG] Code verification result: success={success}, message={message}, backup_id={backup_id}")
+        
         if not success:
             return False, message
 
+        # print(f"[DEBUG] Code verified successfully. About to perform restore...")
         # Perform the restore
         success, message = self._perform_restore(backup_id, system_admin_user_id)
+        # print(f"[DEBUG] Restore result: success={success}, message={message}")
+        
         if success:
             # For system admin restore, only delete the specific backup that was restored
+            # print(f"[DEBUG] Restore successful. About to delete specific backup...")
             self._delete_specific_backup(backup_id)
             return True, f"{message} The restored backup has been removed from the database."
         return success, message
@@ -163,11 +127,8 @@ class BackupService:
             return False, "Backup file not found on disk."
 
         try:
-            # Determine if this is a database backup or full system backup
-            if 'db_backup_' in backup_path:
-                return self._restore_database_backup(backup_path)
-            else:
-                return self._restore_system_backup(backup_path)
+            # All backups are now database backups
+            return self._restore_database_backup(backup_path)
         except Exception as e:
             return False, f"Restore failed: {str(e)}"
 
@@ -186,56 +147,6 @@ class BackupService:
             return True, "Database restored successfully"
         except Exception as e:
             return False, f"Database restore failed: {str(e)}"
-
-    def _restore_system_backup(self, backup_path: str) -> Tuple[bool, str]:
-        """Restore full system from backup."""
-        try:
-            # Create a backup of current system before restoring
-            timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            current_system_backup = os.path.join(BACKUP_DIR, f'pre_restore_system_{timestamp}.zip')
-            
-            with zipfile.ZipFile(current_system_backup, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for root, dirs, files in os.walk(SRC_FOLDER):
-                    # Exclude backups directory and current backup
-                    dirs[:] = [d for d in dirs if d != 'backups']
-                    for file in files:
-                        filepath = os.path.join(root, file)
-                        if 'backups' in filepath or filepath == backup_path:
-                            continue
-                        arcname = os.path.relpath(filepath, SRC_FOLDER)
-                        zipf.write(filepath, arcname=arcname)
-
-            # Extract backup to temporary location
-            temp_extract_dir = os.path.join(BACKUP_DIR, 'temp_restore')
-            if os.path.exists(temp_extract_dir):
-                shutil.rmtree(temp_extract_dir)
-            os.makedirs(temp_extract_dir)
-
-            with zipfile.ZipFile(backup_path, 'r') as zipf:
-                zipf.extractall(temp_extract_dir)
-
-            # Copy files from temp location to src folder, excluding the database
-            for item in os.listdir(temp_extract_dir):
-                src_item = os.path.join(temp_extract_dir, item)
-                dst_item = os.path.join(SRC_FOLDER, item)
-                
-                # Skip the database file to preserve backup records
-                if item == 'urban_mobility.db':
-                    continue
-                
-                if os.path.isdir(src_item):
-                    if os.path.exists(dst_item):
-                        shutil.rmtree(dst_item)
-                    shutil.copytree(src_item, dst_item)
-                else:
-                    shutil.copy2(src_item, dst_item)
-
-            # Clean up temp directory
-            shutil.rmtree(temp_extract_dir)
-
-            return True, "System restored successfully (database preserved)"
-        except Exception as e:
-            return False, f"System restore failed: {str(e)}"
 
     def _wipe_older_backups(self, current_backup_id: int):
         """Wipe all backups older than the current one."""

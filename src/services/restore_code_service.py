@@ -7,6 +7,7 @@ from models.restore_code import RestoreCode
 from services.userservice import user_service
 from utils.crypto_utils import check_password, decrypt, hash_password
 import uuid
+import os
 
 class RestoreCodeService:
     def __init__(self, db_path: str):
@@ -69,6 +70,9 @@ class RestoreCodeService:
         Verify a restore code and return the backup_id if valid.
         Only the system admin who requested the code can use it.
         """
+        # print(f"[DEBUG] verify_and_use_code called with code: {code}, user_id: {system_admin_user_id}")
+        # print(f"[DEBUG] Using database path: {self.db_path}")
+        
         conn = self._get_connection()
         c = conn.cursor()
         
@@ -80,16 +84,21 @@ class RestoreCodeService:
             ''', (system_admin_user_id,))
             
             rows = c.fetchall()
+            # print(f"[DEBUG] Found {len(rows)} restore codes for user {system_admin_user_id}")
+            
             for row in rows:
                 stored_code, backup_id, is_used = row
+                # print(f"[DEBUG] Checking code: stored_code={stored_code}, backup_id={backup_id}, is_used={is_used}")
                 
                 # Check if code is already used
                 if is_used:
+                    # print(f"[DEBUG] Code already used, skipping")
                     continue
                 
                 # Verify the code using bcrypt
                 try:
                     if check_password(code, stored_code):
+                        # print(f"[DEBUG] Code verified successfully!")
                         # Mark as used
                         c.execute('''
                             UPDATE RestoreCode SET is_used = 1 
@@ -98,14 +107,20 @@ class RestoreCodeService:
                         conn.commit()
                         conn.close()
                         return True, "Code verified successfully", backup_id
+                    else:
+                        # print(f"[DEBUG] Code verification failed for this code")
+                        continue
                 except Exception as e:
+                    # print(f"[DEBUG] bcrypt verification failed: {e}")
                     # If bcrypt verification fails, continue to next code
                     continue
             
             conn.close()
+            # print(f"[DEBUG] No valid codes found")
             return False, "Invalid or already used code", None
             
         except Exception as e:
+            # print(f"[DEBUG] Exception in verify_and_use_code: {e}")
             conn.rollback()
             conn.close()
             return False, f"Error verifying code: {str(e)}", None
@@ -259,15 +274,12 @@ class RestoreCodeService:
             except:
                 requester_name = f"User ID: {system_admin_user_id}"
             
-            backup_type = "Database" if "db_backup_" in file_path else "System"
-            
             requests.append({
                 'request_id': code_id,  # Use code_id as request_id
                 'backup_id': backup_id,
                 'system_admin_user_id': system_admin_user_id,
                 'request_date': generated_date,
                 'backup_date': backup_date,
-                'backup_type': backup_type,
                 'requester_name': requester_name
             })
         
@@ -294,14 +306,11 @@ class RestoreCodeService:
         for row in rows:
             code_id, backup_id, generated_date, backup_date, file_path = row
             
-            backup_type = "Database" if "db_backup_" in file_path else "System"
-            
             requests.append({
                 'request_id': code_id,
                 'backup_id': backup_id,
                 'request_date': generated_date,
-                'backup_date': backup_date,
-                'backup_type': backup_type
+                'backup_date': backup_date
             })
         
         return requests
@@ -324,5 +333,7 @@ class RestoreCodeService:
             conn.close()
             return False
 
-# Create a singleton instance
-restore_code_service = RestoreCodeService('urban_mobility.db') 
+# Create a singleton instance with absolute path
+SRC_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DB_FILE = os.path.join(SRC_FOLDER, 'urban_mobility.db')
+restore_code_service = RestoreCodeService(DB_FILE) 
