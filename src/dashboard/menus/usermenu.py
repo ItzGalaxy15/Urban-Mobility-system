@@ -76,6 +76,7 @@ def add_user_flow(session):
             role
         )
         print(message)
+        input("Press enter to continue...")
         if success:
             break
 
@@ -139,6 +140,7 @@ def update_user_flow(session):
                     **updates
                 )
                 print(message)
+                input("Press Enter to continue...")
                 if success:
                     break
 
@@ -170,6 +172,7 @@ def delete_user_flow(session):
             # If the deleted user is the currently logged-in user, log out immediately
             if user_id == UserSession.get_current_user_id():
                 print("You have deleted your own account. Logging out...")
+                input("\nPress Enter to continue...")
                 session.logout()
             break
 
@@ -206,7 +209,9 @@ def edit_account_flow(session):
         user = user_service.get_user_by_id(current_user_id)
         if not user:
             print("User not found.")
+            input("\nPress Enter to continue...")
             return
+        
         
         # Get user's role
         role = UserSession.get_current_role()
@@ -285,6 +290,7 @@ def edit_account_flow(session):
                 **updates
             )
             print(message)
+            input("\nPress Enter to continue...")
             if success:
                 # Optionally refresh session info if username was changed
                 if "username" in updates:
