@@ -35,7 +35,7 @@ def main():
         # Main menu loop
         try:
             while True:
-                # os.system("cls")
+                os.system("cls")
                 print(f"\nWelcome, {UserSession.get_current_username()} ({UserSession.get_current_role()})")
                 menu_items = get_menu(UserSession)
                 visible_menu = build_menu_with_roles_and_permissions(menu_items, UserSession.get_current_role())
