@@ -192,3 +192,16 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+urban_mobility.db
+
+
+# encription key handling
+generate_key.py
+secret.key
+
+# Database
+urban_mobility.db
+
+# Backup files
+backups/
+backups/*.zip
