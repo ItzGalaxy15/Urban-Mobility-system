@@ -1,84 +1,104 @@
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from services.userservice import user_service
+CANCEL_KEYWORDS = {"back", "exit"}
+
+def ask(label: str, validator) -> str | None:
+    """
+    Prompt until valid input or user cancels with a keyword.
+    """
+    while True:
+        value = input(f"{label}: ").strip()
+        if value.lower() in CANCEL_KEYWORDS:
+            return None
+        ok, msg = validator(value)
+        if ok:
+            return value
+        print(msg)
 
 def add_user_flow(session):
+    print("\n=== Add User ===")
+    print("Enter 'back' or 'exit' to go back to user management\n")
+
+    # Username
     while True:
-        # Username validation
-        while True:
-            username = input("Enter the username (8-10 chars, starts with letter/underscore): ")
-            # First validate format
-            valid, message = user_service.validate_username(username)
-            if not valid:
-                print(message)
-                continue
-            
-            # Then check if username exists
-            if user_service.get_user_by_username(username):
-                print("Username already exists. Please choose a different one.")
-                continue
-            break
+        username = input("Username (8-10 chars, starts with letter/underscore): ").strip()
+        if username.lower() in CANCEL_KEYWORDS:
+            print("Add cancelled.")
+            return
 
-        # Password validation
-        while True:
-            password = input("Enter the password (12-30 chars, must include lowercase, uppercase, digit, and special char): ")
-            valid, message = user_service.validate_password(password)
-            if not valid:
-                print(message)
-                continue
-            break
+        valid, msg = user_service.validate_username(username)
+        if not valid:
+            print(msg)
+            continue
 
-        # First name validation
-        while True:
-            first_name = input("Enter the first name: ")
-            valid, message = user_service.validate_name(first_name, "First name")
-            if not valid:
-                print(message)
-                continue
-            break
+        if user_service.get_user_by_username(username):
+            print("Username already exists. Please choose a different one.")
+            continue
 
-        # Last name validation
+        break
+
+    # Password
+    password = ask("Password (12-30 chars, incl. lowercase, uppercase, digit, special)", 
+                   user_service.validate_password)
+    if password is None:
+        print("Add cancelled.")
+        return
+
+    # First name
+    first_name = ask("First name", lambda v: user_service.validate_name(v, "First name"))
+    if first_name is None:
+        print("Add cancelled.")
+        return
+
+    # Last name
+    last_name = ask("Last name", lambda v: user_service.validate_name(v, "Last name"))
+    if last_name is None:
+        print("Add cancelled.")
+        return
+
+    # Role
+    current_role = UserSession.get_current_role()
+    current_user_id = UserSession.get_current_user_id()
+
+    if current_role == "system_admin":
+        role = "service_engineer"
+        print("Role: Service Engineer (auto-assigned)")
+    else:
+        print("Choose the role:")
+        print("1. Service Engineer")
+        print("2. System Admin")
         while True:
-            last_name = input("Enter the last name: ")
-            valid, message = user_service.validate_name(last_name, "Last name")
-            if not valid:
-                print(message)
-                continue
-            break
-        
-        # Get current user's role
-        current_role = UserSession.get_current_role()
-        current_user_id = UserSession.get_current_user_id()
-        
-        # Show appropriate role options based on current user's role
-        if current_role == "system_admin":
-            print("Role: Service Engineer")
-            role = "service_engineer"
-        else:  # super admin
-            print("Choose the role: ")
-            print("1. Service Engineer")
-            print("2. System Admin")
-            role_choice = input("Enter the role (1 or 2): ")
+            role_choice = input("Enter the role (1 or 2): ").strip()
+            if role_choice.lower() in CANCEL_KEYWORDS:
+                print("Add cancelled.")
+                return
             if role_choice == "1":
                 role = "service_engineer"
+                break
             elif role_choice == "2":
                 role = "system_admin"
+                break
             else:
-                print("Invalid role choice. Please try again.")
-                continue
-        
-        success, message = UserController.add_user(
-            current_user_id, 
-            username, 
-            password, 
-            first_name, 
-            last_name, 
-            role
-        )
-        print(message)
-        input("Press enter to continue...")
-        if success:
-            break
+                print("Invalid choice. Please enter 1 or 2.")
+
+    # Summary + confirmation
+    print("\nPlease review the entered data:")
+    print(f"  Username: {username}")
+    print(f"  First name: {first_name}")
+    print(f"  Last name: {last_name}")
+    print(f"  Role: {role}")
+    if input("\nSave this user? (y/n): ").strip().lower() != "y":
+        print("Add cancelled.")
+        input("Press Enter to continue...")
+        return
+
+    # Save
+    success, msg = UserController.add_user(
+        current_user_id, username, password, first_name, last_name, role
+    )
+    print(msg)
+    input("Press Enter to continue...")
 
 def update_user_flow(session):
     while True:
