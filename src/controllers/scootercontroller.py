@@ -178,7 +178,6 @@ class ScooterController:
             if BRAND_RE.match(brand):
                 break
             else:
-                #print("\033[3A", end="")
                 print("Invalid brand. 2-30 alphanumeric, space or dash.")
 
         # Model
@@ -196,7 +195,6 @@ class ScooterController:
             if MODEL_RE.match(model):
                 break
             else:
-                #print("\033[3A", end="")
                 print("Invalid model. 1-30 alphanumeric, space or dash.")
 
         # Serial Number
@@ -214,7 +212,6 @@ class ScooterController:
             if SERIAL_RE.match(serial_number):
                 break
             else:
-                #print("\033[3A", end="")
                 print("Invalid serial number. 10-17 alphanumeric.")
 
         # Top Speed
@@ -232,10 +229,8 @@ class ScooterController:
                 if TOP_SPEED_MIN <= top_speed <= TOP_SPEED_MAX:
                     break
                 else:
-                    #print("\033[3A", end="")
                     print(f"Top speed must be between {TOP_SPEED_MIN} and {TOP_SPEED_MAX} km/h.")
             except ValueError:
-                #print("\033[3A", end="")
                 print("Please enter a valid number for top speed.")
 
         # Battery Capacity
@@ -287,10 +282,8 @@ class ScooterController:
                 if 0 <= target_soc_min <= 100:
                     break
                 else:
-                    #print("\033[3A", end="")
                     print("Target SOC min must be between 0 and 100.")
             except ValueError:
-                #print("\033[3A", end="")
                 print("Please enter a valid number for target SOC min.")
 
         # Target SOC Max
@@ -304,10 +297,8 @@ class ScooterController:
                 if 0 <= target_soc_max <= 100 and target_soc_max > target_soc_min:
                     break
                 else:
-                    #print("\033[3A", end="")
                     print("Target SOC max must be between 0 and 100 and >= target SOC min.")
             except ValueError:
-                #print("\033[3A", end="")
                 print("Please enter a valid number for target SOC max.")
 
         # Location Latitude
@@ -321,10 +312,8 @@ class ScooterController:
                 if -90 <= location_lat <= 90:
                     break
                 else:
-                    #print("\033[3A", end="")
                     print("Latitude must be between -90 and 90.")
             except ValueError:
-                #print("\033[3A", end="")
                 print("Please enter a valid number for latitude.")
 
         # Location Longitude
@@ -338,10 +327,8 @@ class ScooterController:
                 if -180 <= location_lon <= 180:
                     break
                 else:
-                    #print("\033[3A", end="")
                     print("Longitude must be between -180 and 180.")
             except ValueError:
-                #print("\033[3A", end="")
                 print("Please enter a valid number for longitude.")
         
         # Optional: Mileage
@@ -359,10 +346,8 @@ class ScooterController:
                 if 0 <= mileage <= MILEAGE_MAX:
                     break
                 else:
-                    #print("\033[3A", end="")
                     print(f"Mileage must be between 0 and {MILEAGE_MAX}.")
             except ValueError:
-                #print("\033[3A", end="")
                 print("Please enter a valid number for mileage.")
 
         # Optional: Out of Service
@@ -375,7 +360,6 @@ class ScooterController:
             if out_of_service_input.lower() in ["y", "n"]:
                 out_of_service = out_of_service_input.lower() == "y"
                 break
-            #print("\033[3A", end="")
             print("Invalid format (y/n).")
 
         # Optional: Last Maintenance Date
@@ -392,7 +376,6 @@ class ScooterController:
             elif DATE_RE.match(last_maint_date):
                 break
             else:
-                #print("\033[3A", end="")
                 print("Invalid date format. Please use YYYY-MM-DD or leave blank for today.")
             
         

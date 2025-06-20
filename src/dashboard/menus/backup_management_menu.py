@@ -256,7 +256,6 @@ def restore_direct_flow(session):
         return
     
     # Perform restore
-    # print(f"[DEBUG] About to call BackupController.restore_backup_direct with user_id={user_id}, backup_id={backup_id}")
     success, message = BackupController.restore_backup_direct(user_id, backup_id)
     print(f"\n{message}")
     

@@ -6,7 +6,6 @@ def user_can_access(user_role, func):
     Checks if a user with the given role can access the function based on its required roles.
     """
     required_roles = getattr(func, '_required_roles', None)
-    # print(f"Checking access: user_role={user_role}, required_roles={required_roles}, func={func.__name__}")
     if not required_roles:
         return True  # No restriction
     user_level = ROLE_HIERARCHY.get(user_role, 0)

@@ -1,17 +1,7 @@
 from controllers.traveller_controller import TravellerController
 from controllers.session import UserSession
 from services.traveller_service import traveller_service
-from models.traveller import (
-    Traveller,
-    CITY_CHOICES,
-    ZIP_RE,
-    PHONE_RE,
-    LICENSE_RE,
-    BIRTH_RE,
-    EMAIL_RE,
-    HOUSE_RE,
-    STREET_RE
-)
+from models.traveller import CITY_CHOICES
 CANCEL_KEYWORDS = {"back", "exit"}
 
 def ask(label: str, validator) -> str | None:

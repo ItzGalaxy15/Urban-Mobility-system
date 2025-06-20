@@ -167,7 +167,6 @@ def delete_user_flow(session):
     while True:
         print("\n--- Delete User ---")
         print("Enter 'back' or 'exit' to go back to user management")
-        # print("Enter the user id or username to delete: ")
         delete_user = input("Enter the user id or username to delete: ")
         if delete_user == "":
             print("Invalid input")

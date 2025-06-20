@@ -1,16 +1,6 @@
 from controllers.scootercontroller import ScooterController
 from controllers.session import UserSession
-from models.scooter import (
-    Scooter,
-    BATTERY_CAP_MAX,
-    BRAND_RE,
-    DATE_RE,
-    MILEAGE_MAX,
-    MODEL_RE,
-    SERIAL_RE,
-    TOP_SPEED_MAX,
-    TOP_SPEED_MIN
-)
+from models.scooter import Scooter
 
 def display_scooter_data(scooter):
     """Display scooter data using decrypted properties"""

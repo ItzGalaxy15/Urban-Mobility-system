@@ -48,9 +48,6 @@ def reset_password_flow(session):
             return
         break
     
-    # Debug print
-    # print(f"[DEBUG] Generating reset code for user_id: {user.user_id}, username: {user.username_plain}")
-    # print(f"[DEBUG] Current admin user_id: {current_user_id}")
     success, reset_code = user_service.generate_temp_code(current_user_id, user.user_id)
     
     if not success:
@@ -67,8 +64,6 @@ def use_reset_code_flow(user_id):
     print("\n=== Password Reset Required ===")
     print("A password reset has been requested for your account.")
     
-    # Debug print
-    # print(f"[DEBUG] Attempting reset for user_id: {user_id}")
     
     # Get reset code
     reset_code = input("Enter the reset code provided by your administrator: ")
