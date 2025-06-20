@@ -1,6 +1,7 @@
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from services.userservice import user_service
+CANCEL_KEYWORDS = {"back", "exit"}
 
 def reset_password_flow(session):
     """Flow for system admin to reset a user's password"""
@@ -8,8 +9,9 @@ def reset_password_flow(session):
     
     # Get user identifier (ID or username)
     while True:
-        identifier = input("Enter user ID or username (leave blank to cancel): ")
-        if not identifier:
+        identifier = input("Enter user ID or username ('back' or 'exit' to cancel): ").strip()
+        if identifier.lower() in CANCEL_KEYWORDS:
+            print("Operation cancelled.")
             return
             
         # Try to find user by ID first
@@ -46,9 +48,6 @@ def reset_password_flow(session):
             return
         break
     
-    # Debug print
-    # print(f"[DEBUG] Generating reset code for user_id: {user.user_id}, username: {user.username_plain}")
-    # print(f"[DEBUG] Current admin user_id: {current_user_id}")
     success, reset_code = user_service.generate_temp_code(current_user_id, user.user_id)
     
     if not success:
@@ -65,8 +64,6 @@ def use_reset_code_flow(user_id):
     print("\n=== Password Reset Required ===")
     print("A password reset has been requested for your account.")
     
-    # Debug print
-    # print(f"[DEBUG] Attempting reset for user_id: {user_id}")
     
     # Get reset code
     reset_code = input("Enter the reset code provided by your administrator: ")

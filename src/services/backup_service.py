@@ -66,37 +66,27 @@ class BackupService:
         Restore a backup using a restore code.
         Only the system admin who requested the code can use it.
         """
-        # print(f"[DEBUG] restore_backup_with_code called with code: {code}, user_id: {system_admin_user_id}")
         
         # Check if user is a system admin
-        # print(f"[DEBUG] About to call user_service.get_user_by_id({system_admin_user_id})")
         user = user_service.get_user_by_id(system_admin_user_id)
-        # print(f"[DEBUG] user_service.get_user_by_id returned: {user}")
         
         if not user:
-            # print(f"[DEBUG] User not found for ID: {system_admin_user_id}")
             return False, "User not found."
         
         if user.role_plain != 'system_admin':
-            # print(f"[DEBUG] User role is {user.role_plain}, expected system_admin")
             return False, "Only system admins can restore backups with codes."
 
-        # print(f"[DEBUG] User validation passed. About to verify code...")
         # Verify the code and get backup_id
         success, message, backup_id = restore_code_service.verify_and_use_code(code, system_admin_user_id)
-        # print(f"[DEBUG] Code verification result: success={success}, message={message}, backup_id={backup_id}")
         
         if not success:
             return False, message
 
-        # print(f"[DEBUG] Code verified successfully. About to perform restore...")
         # Perform the restore
         success, message = self._perform_restore(backup_id, system_admin_user_id)
-        # print(f"[DEBUG] Restore result: success={success}, message={message}")
         
         if success:
             # For system admin restore, only delete the specific backup that was restored
-            # print(f"[DEBUG] Restore successful. About to delete specific backup...")
             self._delete_specific_backup(backup_id)
             return True, f"{message} The restored backup has been removed from the database."
         return success, message

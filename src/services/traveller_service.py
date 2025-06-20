@@ -9,6 +9,8 @@ from models.traveller import (
     ZIP_RE,
     PHONE_RE,
     LICENSE_RE,
+    NAME_RE,
+    STREET_RE,
     BIRTH_RE,
     EMAIL_RE,
     HOUSE_RE,
@@ -36,6 +38,8 @@ class TravellerService:
             return False, f"{field} is required"
         if not value.strip():
             return False, f"{field} cannot be empty"
+        if not NAME_RE.match(value):
+            return False, f"{field} must be 2-30 chars, letters only"
         return True, ""
 
     def _validate_birthday(self, birthday: str) -> Tuple[bool, str]:
@@ -74,7 +78,7 @@ class TravellerService:
         if not phone:
             return False, "Mobile phone is required"
         if not PHONE_RE.fullmatch(phone):
-            return False, "Phone must be +31-6-XXXXXXXX"
+            return False, "Phone must be +31-6-DDDDDDDD"
         return True, ""
 
     def _validate_house_number(self, house_number: str) -> Tuple[bool, str]:
@@ -104,6 +108,8 @@ class TravellerService:
             return False, "Street name is required"
         if not street.strip():
             return False, "Street name cannot be empty"
+        if not STREET_RE.match(street):
+            return False, "street_name must be 2-50 chars, letters and spaces only"
         return True, ""
 
     # CRUD Methods

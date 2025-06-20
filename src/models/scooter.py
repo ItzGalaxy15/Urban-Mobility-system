@@ -33,8 +33,6 @@ class Scooter:
         out_of_service: bool = False,
         last_maint_date: Optional[str] = None,  # YYYY-MM-DD
     ) -> None:
-        # Store ID if provided (for existing scooters)
-        # self.scooter_id = scooter_id if scooter_id is not None else random.randint(1_000_000, 9_999_999)
         
         # mandatory text checks
         if not all([brand, model, serial_number]):

@@ -13,13 +13,10 @@ class UserService:
         self.db_path = db_path
 
     def _get_connection(self) -> sqlite3.Connection:
-        # print(f"[DEBUG] _get_connection called, connecting to: {self.db_path}")
         try:
             conn = sqlite3.connect(self.db_path)
-            # print(f"[DEBUG] Database connection successful")
             return conn
         except Exception as e:
-            # print(f"[DEBUG] Database connection failed: {e}")
             raise
 
     def validate_username(self, username: str) -> tuple[bool, str]:
@@ -263,16 +260,12 @@ class UserService:
 #-------------------------------------------------
     def get_user_by_id(self, user_id) -> User:
         """Get user details by user_id."""
-        # print(f"[DEBUG] get_user_by_id called with user_id: {user_id}")
-        # print(f"[DEBUG] Using database path: {self.db_path}")
         
         conn = self._get_connection()
         c = conn.cursor()
         c.execute('SELECT user_id, username, first_name, last_name, role, registration_date, password_hash FROM User WHERE user_id=?', (user_id,))
         row = c.fetchone()
         conn.close()
-        
-        # print(f"[DEBUG] Database query returned row: {row}")
         
         if row:
             try:
@@ -290,15 +283,12 @@ class UserService:
                 # Set the registration_date from database if it exists
                 if row[5]:
                     user.registration_date = row[5]
-                # print(f"[DEBUG] Successfully created User object: {user}")
+
                 return user
             except Exception as e:
                 # Optionally log the error here
-                # print(f"[DEBUG] Error creating User object: {e}")
-                # print(f"[DEBUG] Invalid user data in DB: {e}")
                 return None
         else:
-            # print(f"[DEBUG] No user found in database for user_id: {user_id}")
             return None
         # return None
     
@@ -471,14 +461,8 @@ class UserService:
             stored_code, created_at = row
             created_at = datetime.strptime(created_at, '%Y-%m-%d %H:%M:%S')
             
-            # Check if code is expired (10 minutes)
-            # if datetime.now() - created_at > timedelta(minutes=10):
-            #     print("Reset code has expired")  # Debug
-            #     return False
-                
             # Compare codes - decrypt the stored code before comparing
             decrypted_code = decrypt(stored_code)
-            # print(f"Comparing codes - Input: {code}, Stored: {decrypted_code}")  # Debug
             return decrypted_code == code
         except Exception as e:
             print(f"Error verifying code: {str(e)}")  # Debug

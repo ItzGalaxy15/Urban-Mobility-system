@@ -156,7 +156,7 @@ def user_menu(session):
         menu_items = get_menu_user_management(session)
         visible_menu = build_menu_with_roles_and_permissions(menu_items, UserSession.get_current_role())
         # print("Visible menu:", visible_menu)
-        choice = display_menu(visible_menu, title="Scooter Management Menu")
+        choice = display_menu(visible_menu, title="User Management Menu")
         if choice is None:
             continue
         label, action = visible_menu[choice]
