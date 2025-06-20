@@ -1,0 +1,61 @@
+# Source-specific Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local development files
+*.log
+*.tmp
+*.temp
+
+# IDE/Editor specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database files (if any are created in src)
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+
+# Configuration files with sensitive data
+config.ini
+settings.local.py
+.env
+
+# Test coverage reports
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Documentation build artifacts
+docs/_build/
+site/
+
+# Temporary files created during development
+temp/
+tmp/
+cache/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Backup and restore files (if created in src)
+backup_*
+restore_*
+*.restore
+
+# Log files from the application
+logs/
+*.log
+
+# Any temporary files created by the application
+temp_*
+tmp_* 
