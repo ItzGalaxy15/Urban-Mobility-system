@@ -42,6 +42,7 @@ class UserSession:
             if cnt:
                 print(f"\n⚠  There are {cnt} unread suspicious activities in the log!"
                     "  Open 'View system logs' to review.\n")
+                input("Press Enter to continue...")
             # ---------------------------------
 
             log_login_attempt(username, True)  # successful login
@@ -121,6 +122,7 @@ class UserSession:
             if cnt:
                 print(f"\n⚠  There are {cnt} unread suspicious activities in the log!"
                     "  Open 'View system logs' to review.\n")
+                input("Press Enter to continue...")
         # ------------------------------------------------------
         log_login_attempt(username, True)              # successful login
         return True

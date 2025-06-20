@@ -38,7 +38,6 @@ def write_log_entry(entry: LogEntry) -> None:
     with open(LOG_FILE, "ab") as f:
         f.write(token + b"\n")      # One encrypted line per entry
 
-
 def log_login_attempt(username: str, success: bool):
     if success:
         _failed_counter.clear()          # reset ALL counters on first success
@@ -74,19 +73,20 @@ def read_logs(limit: int | None = None) -> list[LogEntry]:
         return []
 
     entries: list[LogEntry] = []
-    # this should activated before we deliver it
     with open(LOG_FILE, "rb") as f:
         for token in f:
             try:
-                line = decrypt(token.strip())          # "id|date|time|..."
+                line = decrypt(token.strip())  # "log_id|date|time|username|description|additional|flag|user_id"
                 parts = line.split("|")
                 entry = LogEntry(
-                    user_id=parts[1],                  # we ignore stored id order
+                    user_id=parts[7],
                     username=parts[3],
                     description=parts[4],
                     additional=parts[5],
                     suspicious=(parts[6] == "Yes"),
-                    log_id=int(parts[0])
+                    log_id=int(parts[0]),
+                    date=parts[1],
+                    time=parts[2]
                 )
                 entries.append(entry)
             except Exception:
