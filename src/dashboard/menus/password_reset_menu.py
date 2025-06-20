@@ -1,6 +1,7 @@
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
 from services.userservice import user_service
+CANCEL_KEYWORDS = {"back", "exit"}
 
 def reset_password_flow(session):
     """Flow for system admin to reset a user's password"""
@@ -8,8 +9,9 @@ def reset_password_flow(session):
     
     # Get user identifier (ID or username)
     while True:
-        identifier = input("Enter user ID or username (leave blank to cancel): ")
-        if not identifier:
+        identifier = input("Enter user ID or username ('back' or 'exit' to cancel): ").strip()
+        if identifier.lower() in CANCEL_KEYWORDS:
+            print("Operation cancelled.")
             return
             
         # Try to find user by ID first
