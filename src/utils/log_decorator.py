@@ -31,7 +31,7 @@ def log_action(description: str):
                 username=username,
                 description=description.format(msg=message),
                 additional="",
-                suspicious=not success
+                suspicious= False
             ))
             return result  # preserve original return value (tuple or other)
         return wrapper
