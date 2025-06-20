@@ -10,96 +10,85 @@ from models.traveller import (
     BIRTH_RE,
     EMAIL_RE,
     HOUSE_RE,
+    STREET_RE
 )
+CANCEL_KEYWORDS = {"back", "exit"}
+
+def ask(label: str, validator) -> str | None:
+    """
+    Prompt until the validator returns (True, _).
+    Return None if the user types a cancel keyword.
+    """
+    while True:
+        value = input(f"{label}: ").strip()
+        if value.lower() in CANCEL_KEYWORDS:
+            return None
+        ok, msg = validator(value)
+        if ok:
+            return value
+        print(msg)
 
 def add_traveller_flow(session):
-    """CLI wizard to add a traveller (same pattern as add_user_flow)."""
-    while True:
-        # ------- names -------
-        while True:
-            first_name = input("First name: ")
-            ok, msg = traveller_service._validate_name(first_name, "First name")
-            if ok: break
-            print(msg)
-        while True:
-            last_name = input("Last name: ")
-            ok, msg = traveller_service._validate_name(last_name, "Last name")
-            if ok: break
-            print(msg)
+    print("\n=== Add Traveller ===")
+    print("Type 'back' or 'exit' at any prompt to cancel.\n")
 
-        # ------- birthday & gender -------
-        while True:
-            birthday = input("Birthday (YYYY-MM-DD): ")
-            ok, msg = traveller_service._validate_birthday(birthday)
-            if ok: break
-            print(msg)
-        while True:
-            gender = input("Gender (male/female): ")
-            ok, msg = traveller_service._validate_gender(gender)
-            if ok: break
-            print(msg)
+    # ── Collect data ─────────────────────────────────────────────
+    data = {}
 
-        # ------- address -------
-        while True:
-            street_name = input("Street name: ")
-            ok, msg = traveller_service._validate_street_name(street_name)
-            if ok: break
-            print(msg)
-        while True:
-            house_number = input("House nº: ")
-            ok, msg = traveller_service._validate_house_number(house_number)
-            if ok: break
-            print(msg)
-        while True:
-            zip_code = input("ZIP (1234AB): ")
-            ok, msg = traveller_service._validate_zip(zip_code)
-            if ok: break
-            print(msg)
-        while True:
-            city = input(f"City {sorted(CITY_CHOICES)}: ")
-            ok, msg = traveller_service._validate_city(city)
-            if ok: break
-            print(msg)
+    data["first_name"] = ask("First name", 
+                             lambda v: traveller_service._validate_name(v, "First name"))
+    if data["first_name"] is None: return print("Add cancelled.")
 
-        # ------- contact -------
-        while True:
-            email = input("E-mail: ")
-            ok, msg = traveller_service._validate_email(email)
-            if ok: break
-            print(msg)
-        while True:
-            mobile_phone = input("Mobile phone (+31-6-XXXXXXXX): ")
-            ok, msg = traveller_service._validate_phone(mobile_phone)
-            if ok: break
-            print(msg)
+    data["last_name"] = ask("Last name",  
+                            lambda v: traveller_service._validate_name(v, "Last name"))
+    if data["last_name"] is None: return print("Add cancelled.")
 
-        # ------- licence -------
-        while True:
-            driving_license_no = input("Driving licence nº (XXDDDDDDD or XDDDDDDDD): ")
-            ok, msg = traveller_service._validate_license(driving_license_no)
-            if ok: break
-            print(msg)
+    data["birthday"] = ask("Birthday (YYYY-MM-DD)", traveller_service._validate_birthday)
+    if data["birthday"] is None: return print("Add cancelled.")
 
-        # ------- save -------
-        current_user_id = UserSession.get_current_user_id()
-        success, message = TravellerController.add_traveller_controller(
-            current_user_id,      # role-check needs this
-            first_name=first_name,
-            last_name=last_name,
-            birthday=birthday,
-            gender=gender,
-            street_name=street_name,
-            house_number=house_number,
-            zip_code=zip_code,
-            city=city,
-            email=email,
-            mobile_phone=mobile_phone,
-            driving_license_no=driving_license_no,
-        )
-        print(message)
-        if success:
-            input("Press Enter to continue...")
-            break
+    data["gender"] = ask("Gender (male/female)", traveller_service._validate_gender)
+    if data["gender"] is None: return print("Add cancelled.")
+
+    data["street_name"] = ask("Street name", traveller_service._validate_street_name)
+    if data["street_name"] is None: return print("Add cancelled.")
+
+    data["house_number"] = ask("House nº", traveller_service._validate_house_number)
+    if data["house_number"] is None: return print("Add cancelled.")
+
+    data["zip_code"] = ask("ZIP (1234AB)", traveller_service._validate_zip)
+    if data["zip_code"] is None: return print("Add cancelled.")
+
+    data["city"] = ask(f"City {sorted(CITY_CHOICES)}", traveller_service._validate_city)
+    if data["city"] is None: return print("Add cancelled.")
+
+    data["email"] = ask("E-mail", traveller_service._validate_email)
+    if data["email"] is None: return print("Add cancelled.")
+
+    data["mobile_phone"] = ask("Mobile phone (+31-6-DDDDDDDD)", 
+                               traveller_service._validate_phone)
+    if data["mobile_phone"] is None: return print("Add cancelled.")
+
+    data["driving_license_no"] = ask("Driving licence nº (XXDDDDDDD or XDDDDDDDD)",
+                                     traveller_service._validate_license)
+    if data["driving_license_no"] is None: return print("Add cancelled.")
+
+    # ── Final review ────────────────────────────────────────────
+    print("\nPlease review the entered data:")
+    for k, v in data.items():
+        print(f"  {k.replace('_',' ').title()}: {v}")
+
+    if input("\nSave this traveller? (y/n): ").strip().lower() != "y":
+        print("Add cancelled.")
+        input("Press Enter to continue...")
+        return
+
+    # ── Persist ─────────────────────────────────────────────────
+    current_user_id = UserSession.get_current_user_id()
+    success, message = TravellerController.add_traveller_controller(
+        current_user_id, **data
+    )
+    print(message)
+    input("Press Enter to continue..." if success else "\nPress Enter to return...")
 
 def _prompt_update(label: str, validator):
     """
@@ -116,13 +105,19 @@ def _prompt_update(label: str, validator):
         print(msg)                              # invalid → try again
 
 def update_traveller_flow(session):
-    print("\n=== Update traveller ===")
-    try:
-        traveller_id = int(input("Traveller ID to update: "))
-    except ValueError:
-        print("Not a number!")
+    user_input = input("Enter Traveller ID to update (leave blank to cancel): ").strip()
+
+    if user_input == "":
+        print("Update cancelled.")
         input("Press Enter to continue...")
         return
+
+    if not user_input.isdigit():
+        print("Invalid input. Please enter a number.")
+        input("Press Enter to continue...")
+        return
+
+    traveller_id = int(user_input)
 
     updates = {}
 
@@ -166,7 +161,7 @@ def update_traveller_flow(session):
             traveller_service._validate_email)
     if email is not None:  updates["email"] = email
 
-    phone  = _prompt_update("Mobile phone (+31-6-XXXXXXXX)",
+    phone  = _prompt_update("Mobile phone (+31-6-DDDDDDDD)",
             traveller_service._validate_phone)
     if phone is not None:  updates["mobile_phone"] = phone
 
@@ -189,13 +184,21 @@ def update_traveller_flow(session):
     input("Press Enter to continue...")
 
 def delete_traveller_flow(session):
-    print("\n=== Delete traveller ===")
-    try:
-        traveller_id = int(input("Traveller ID to delete: "))
-    except ValueError:
-        print("Not a number!")
+    print("\n=== Delete Traveller ===")
+
+    user_input = input("Enter Traveller ID to delete (leave blank to cancel): ").strip()
+
+    if user_input == "":
+        print("Deletion cancelled.")
         input("Press Enter to continue...")
         return
+
+    if not user_input.isdigit():
+        print("Invalid input. Please enter a number.")
+        input("Press Enter to continue...")
+        return
+
+    traveller_id = int(user_input)
     confirm = input("Type YES to confirm: ")
     if confirm.strip().lower() == "yes":
         current_user_id = UserSession.get_current_user_id()
@@ -214,14 +217,20 @@ def delete_traveller_flow(session):
         input("Deletion cancelled. Press Enter to continue...")
 
 def search_traveller_flow(session):
-    key = input("\nSearch key (name / e-mail / phone): ")
+    key = input("\nSearch key (name / e-mail / phone, leave blank to cancel): ").strip()
+
+    if key == "":
+        print("Search cancelled.")
+        input("Press Enter to continue...")
+        return
+
     current_user_id = UserSession.get_current_user_id()
-    results = TravellerController.search_travellers_controller(
-        current_user_id, key
-    )
+    results = TravellerController.search_travellers_controller(current_user_id, key)
+
     if not results:
-        print("No matches.")
+        print("No matches found.")
     else:
         for row in results:
             print(row)
+
     input("Press Enter to continue...")
