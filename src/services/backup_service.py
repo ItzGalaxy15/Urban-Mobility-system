@@ -159,20 +159,64 @@ class BackupService:
             return False, f"Restore failed: {str(e)}"
 
     def _restore_database_backup(self, backup_path: str) -> Tuple[bool, str]:
-        """Restore database from backup."""
+        """Restore database from backup while preserving current user passwords."""
         try:
             # Create a backup of current database before restoring
             timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             current_db_backup = os.path.join(BACKUP_DIR, f'pre_restore_db_{timestamp}.db')
             shutil.copy2(DB_FILE, current_db_backup)
 
+            # Backup current user passwords before restore
+            current_passwords = self._backup_current_passwords()
+            
             # Extract and restore database
             with zipfile.ZipFile(backup_path, 'r') as zipf:
                 zipf.extractall(SRC_FOLDER)
 
-            return True, "Database restored successfully"
+            # Restore current passwords to prevent security vulnerability
+            self._restore_current_passwords(current_passwords)
+
+            return True, "Database restored successfully (current passwords preserved)"
         except Exception as e:
             return False, f"Database restore failed: {str(e)}"
+
+    def _backup_current_passwords(self) -> dict:
+        """Backup current user passwords before database restore."""
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        
+        # Get all current user passwords
+        c.execute('SELECT user_id, password_hash FROM User WHERE password_hash IS NOT NULL')
+        rows = c.fetchall()
+        conn.close()
+        
+        # Store as {user_id: password_hash}
+        current_passwords = {row[0]: row[1] for row in rows}
+        return current_passwords
+
+    def _restore_current_passwords(self, current_passwords: dict):
+        """Restore current user passwords after database restore."""
+        if not current_passwords:
+            return
+            
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        
+        try:
+            # Update passwords for users that exist in the restored database
+            for user_id, password_hash in current_passwords.items():
+                c.execute('''
+                    UPDATE User 
+                    SET password_hash = ? 
+                    WHERE user_id = ? AND password_hash IS NOT NULL
+                ''', (password_hash, user_id))
+            
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(f"Error restoring passwords: {str(e)}")
+        finally:
+            conn.close()
 
     def _wipe_older_backups(self, current_backup_id: int):
         """Wipe all backups older than the current one."""

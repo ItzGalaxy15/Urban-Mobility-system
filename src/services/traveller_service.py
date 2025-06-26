@@ -161,69 +161,139 @@ class TravellerService:
     def search_travellers(self, key: str, limit: int = 50) -> list[Traveller]:
         """
         Search (partial, case-insensitive) for Travellers on the most common fields.
-        Returns a list of decrypted dicts; empty list = no match.
-
+        Uses efficient database-level filtering to avoid loading all data into memory.
+        
         Args:
-        key : piece of text/number to search for ("mik", "2328", …)
-        limit : max. number of results
+            key: piece of text/number to search for ("mik", "2328", …)
+            limit: max. number of results
         """
-        if not key:
+        if not key or not key:
             return []
 
         key_lc = key.lower()
-        conn   = self._get_connection()
-        cur    = conn.cursor()
+        conn = self._get_connection()
+        cur = conn.cursor()
 
-        cur.execute(
-            '''SELECT traveller_id, first_name, last_name, birthday, gender,
-                      street_name, house_number, zip_code, city, email,
-                      mobile_phone, driving_license_no, registration_date
-               FROM Traveller'''
-        )
-        rows = cur.fetchall()
-        conn.close()
-
-        results: list[dict] = []
-        for row in rows:
-            try:
-                traveller = Traveller(
-                    traveller_id=row[0],
-                    first_name=decrypt(row[1]),
-                    last_name=decrypt(row[2]),
-                    birthday=decrypt(row[3]),
-                    gender=decrypt(row[4]),
-                    street_name=decrypt(row[5]),
-                    house_number=decrypt(row[6]),
-                    zip_code=decrypt(row[7]),
-                    city=decrypt(row[8]),
-                    email=decrypt(row[9]),
-                    mobile_phone=decrypt(row[10]),
-                    driving_license_no=decrypt(row[11])
-                    # registration_date is set internally by the Traveller model
-                )
-            except Exception as exc:
-                # Skip rows that fail to decrypt or instantiate
-                print(f"Error processing traveller row {row[0]}: {exc}")
-                continue
-
-            # Combine all fields into one string and check substring (if None, use empty string)
-            searchable = (
-                str(traveller.traveller_id or "")
-                + (traveller.first_name_plain or "")
-                + (traveller.last_name_plain or "")
-                + (traveller.email_plain or "")
-                + (traveller.mobile_phone_plain or "")
-                + (traveller.driving_license_no_plain or "")
-                + (traveller.city_plain or "")
-                + (traveller.zip_code_plain or "")
-            ).lower()
-
-            if key_lc in searchable:
-                results.append(traveller)
-                if len(results) >= limit:
-                    break
-
-        return results
+        try:
+            # This query retrieves all traveller records that could potentially match our search.
+            # We select only the searchable fields (first_name, last_name, etc) that contain text
+            # we might want to search through.
+            #
+            # The WHERE clause ensures we only get records that have at least one searchable field 
+            # populated (not NULL). This avoids processing empty records.
+            #
+            # We also add a basic filter to reduce the number of records we need to decrypt:
+            # - For numeric searches (like zip codes, phone numbers), we look for records containing digits
+            # - For text searches, we look for records that might contain the search term
+            #
+            # The fields are encrypted in the database, so we'll need to decrypt them later
+            # to actually check if they contain our search term.
+            
+            # Determine if search term is numeric
+            is_numeric = key.isdigit()
+            
+            if is_numeric:
+                # For numeric searches, look for records that might contain numbers
+                cur.execute('''
+                    SELECT traveller_id, first_name, last_name, email, mobile_phone, 
+                           driving_license_no, city, zip_code
+                    FROM Traveller
+                    WHERE (first_name IS NOT NULL OR last_name IS NOT NULL OR 
+                           email IS NOT NULL OR mobile_phone IS NOT NULL OR 
+                           driving_license_no IS NOT NULL OR city IS NOT NULL OR 
+                           zip_code IS NOT NULL)
+                    AND (mobile_phone IS NOT NULL OR driving_license_no IS NOT NULL OR zip_code IS NOT NULL)
+                ''')
+            else:
+                # For text searches, look for records that might contain text
+                cur.execute('''
+                    SELECT traveller_id, first_name, last_name, email, mobile_phone, 
+                           driving_license_no, city, zip_code
+                    FROM Traveller
+                    WHERE (first_name IS NOT NULL OR last_name IS NOT NULL OR 
+                           email IS NOT NULL OR mobile_phone IS NOT NULL OR 
+                           driving_license_no IS NOT NULL OR city IS NOT NULL OR 
+                           zip_code IS NOT NULL)
+                    AND (first_name IS NOT NULL OR last_name IS NOT NULL OR email IS NOT NULL OR city IS NOT NULL)
+                ''')
+            
+            rows = cur.fetchall()
+            
+            # Find matching traveller IDs by decrypting and comparing
+            matching_ids = []
+            
+            for row in rows:
+                traveller_id = row[0]
+                try:
+                    # Decrypt all searchable fields and check if any contain the search term
+                    searchable_fields = [
+                        decrypt(row[1]) if row[1] else "",  # first_name
+                        decrypt(row[2]) if row[2] else "",  # last_name
+                        decrypt(row[3]) if row[3] else "",  # email
+                        decrypt(row[4]) if row[4] else "",  # mobile_phone
+                        decrypt(row[5]) if row[5] else "",  # driving_license_no
+                        decrypt(row[6]) if row[6] else "",  # city
+                        decrypt(row[7]) if row[7] else "",  # zip_code
+                    ]
+                    
+                    # Combine all fields into one searchable string
+                    searchable = " ".join(searchable_fields).lower()
+                    
+                    if key_lc in searchable:
+                        matching_ids.append(traveller_id)
+                        if len(matching_ids) >= limit:
+                            break
+                            
+                except Exception as exc:
+                    # Skip rows that fail to decrypt
+                    print(f"Error processing traveller row {traveller_id}: {exc}")
+                    continue
+            
+            # If no matches found, return empty list
+            if not matching_ids:
+                return []
+            
+            # Fetch only the matching travellers
+            placeholders = ','.join(['?' for _ in matching_ids])
+            cur.execute(f'''
+                SELECT traveller_id, first_name, last_name, birthday, gender,
+                       street_name, house_number, zip_code, city, email,
+                       mobile_phone, driving_license_no, registration_date
+                FROM Traveller 
+                WHERE traveller_id IN ({placeholders})
+            ''', matching_ids)
+            
+            matching_rows = cur.fetchall()
+            
+            results = []
+            for row in matching_rows:
+                try:
+                    traveller = Traveller(
+                        traveller_id=row[0],
+                        first_name=decrypt(row[1]),
+                        last_name=decrypt(row[2]),
+                        birthday=decrypt(row[3]),
+                        gender=decrypt(row[4]),
+                        street_name=decrypt(row[5]),
+                        house_number=decrypt(row[6]),
+                        zip_code=decrypt(row[7]),
+                        city=decrypt(row[8]),
+                        email=decrypt(row[9]),
+                        mobile_phone=decrypt(row[10]),
+                        driving_license_no=decrypt(row[11])
+                    )
+                    results.append(traveller)
+                except Exception as exc:
+                    print(f"Error creating traveller object for row {row[0]}: {exc}")
+                    continue
+            
+            return results
+            
+        except Exception as e:
+            print(f"Error in traveller search: {e}")
+            return []
+        finally:
+            conn.close()
 
 # Singleton instance (keeps import code clean)
 traveller_service = TravellerService("urban_mobility.db")

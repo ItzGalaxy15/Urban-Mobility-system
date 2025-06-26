@@ -1,6 +1,8 @@
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
+from services.userservice import user_service
 from utils.validation import validate_password
+import os
 CANCEL_KEYWORDS = {"back", "exit"}
 
 def reset_password_flow(session):
@@ -107,13 +109,11 @@ def use_reset_code_flow(user_id):
         # Try to reset password
         success, msg = user_service.reset_password_with_code(user_id, reset_code, new_password)
         if success:
-            print("Password reset successful. You are now logged in with your new password.")
-            # Set session for user
-            user_data = user_service.get_user_by_id(user_id)
-            UserSession._current_user = user_data  # This is now a User object
-            UserSession._current_user_id = user_data.user_id
-            UserSession._current_username = user_data.username_plain
-            UserSession._current_role = user_data.role_plain
+            print("Password reset successful. You will be logged out for security reasons.")
+            input("Press Enter to continue...")
+            os.system("cls")
+            # Logout the user immediately after password reset
+            UserSession.logout()
             return True
         else:
             print(msg)

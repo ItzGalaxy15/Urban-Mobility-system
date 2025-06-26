@@ -1,6 +1,8 @@
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
+from services.userservice import user_service
 from utils.validation import validate_username, validate_password, validate_first_name, validate_last_name
+import os
 CANCEL_KEYWORDS = {"back", "exit"}
 
 def ask(label: str, validator=None):
@@ -186,7 +188,7 @@ def delete_user_flow(session):
             # If the deleted user is the currently logged-in user, log out immediately
             if user_id == UserSession.get_current_user_id():
                 print("You have deleted your own account. Logging out...")
-                input("\nPress Enter to continue...")
+                os.system("cls")
                 session.logout()
             break
 
@@ -214,8 +216,11 @@ def change_password_flow(session):
         success, message = UserController.change_password(current_user_id, old_pw, new_pw)
         print(message)
         if success:
+            print("Password changed successfully. You will be logged out for security reasons.")
+            input("Press Enter to continue...")
+            os.system("cls")
+            session.logout()
             break
-    input("Press Enter to continue...")
 
 def edit_account_flow(session):
     while True:

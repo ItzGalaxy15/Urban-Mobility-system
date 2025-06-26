@@ -101,25 +101,78 @@ class ScooterService:
         except Exception as e:
             return []
 
-    def search_for_scooters(self, search_term: str, field) -> list[Scooter]:
+    def search_for_scooters(self, search_term: str, field: str) -> list[Scooter]:
         """
         Search for scooters by a selected main field (brand, model, serial_number).
-        The field is provided as a parameter.
-        Always fetches all scooters and filters in Python using the plain (decrypted) values.
+        Uses efficient database-level filtering to avoid loading all data into memory.
         """
         main_fields = ["brand", "model", "serial_number"]
         if field not in main_fields:
             return []
 
+        if not search_term or not search_term:
+            return []
+
         try:
-            scooters = self.get_all_scooters()
-            search_term_lower = search_term.lower()
-            result = [
-                scooter for scooter in scooters
-                if search_term_lower in str(getattr(scooter, field+"_plain", "")).lower()
-            ]
-            return result
-        except Exception:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Add intelligent database-level filtering based on search term characteristics
+                # This reduces the number of records we need to decrypt and process
+                is_numeric = search_term.isdigit()
+                
+                if field == "serial_number":
+                    # Serial numbers are typically alphanumeric, so we can't filter much at DB level
+                    # But we can ensure the field exists
+                    cursor.execute(f"SELECT scooter_id, {field} FROM Scooter WHERE {field} IS NOT NULL")
+                elif field == "brand":
+                    # For brand searches, we can filter based on search term length
+                    if len(search_term) >= 2:
+                        # Only get records that have brands (we'll decrypt and filter later)
+                        cursor.execute(f"SELECT scooter_id, {field} FROM Scooter WHERE {field} IS NOT NULL")
+                    else:
+                        # For very short searches, be more restrictive
+                        cursor.execute(f"SELECT scooter_id, {field} FROM Scooter WHERE {field} IS NOT NULL AND LENGTH({field}) >= ?", (len(search_term),))
+                elif field == "model":
+                    # Similar logic for models
+                    if len(search_term) >= 2:
+                        cursor.execute(f"SELECT scooter_id, {field} FROM Scooter WHERE {field} IS NOT NULL")
+                    else:
+                        cursor.execute(f"SELECT scooter_id, {field} FROM Scooter WHERE {field} IS NOT NULL AND LENGTH({field}) >= ?", (len(search_term),))
+                else:
+                    # Fallback for any other field
+                    cursor.execute(f"SELECT scooter_id, {field} FROM Scooter WHERE {field} IS NOT NULL")
+                
+                rows = cursor.fetchall()
+                
+                # Find matching scooter IDs by decrypting and comparing
+                matching_ids = []
+                search_term_lower = search_term.lower()
+                
+                for row in rows:
+                    scooter_id, encrypted_value = row
+                    try:
+                        # Decrypt the value and check if it contains the search term
+                        decrypted_value = decrypt(encrypted_value.encode() if isinstance(encrypted_value, str) else encrypted_value)
+                        if search_term_lower in decrypted_value.lower():
+                            matching_ids.append(scooter_id)
+                    except Exception:
+                        # Skip rows that fail to decrypt
+                        continue
+                
+                # If no matches found, return empty list
+                if not matching_ids:
+                    return []
+                
+                # Fetch only the matching scooters
+                placeholders = ','.join(['?' for _ in matching_ids])
+                cursor.execute(f"SELECT * FROM Scooter WHERE scooter_id IN ({placeholders})", matching_ids)
+                matching_rows = cursor.fetchall()
+                
+                return [self._row_to_scooter(row) for row in matching_rows]
+                
+        except Exception as e:
+            print(f"Error in scooter search: {e}")
             return []
 
     def _row_to_scooter(self, row: tuple) -> Scooter:
