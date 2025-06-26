@@ -1,20 +1,17 @@
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
-from services.userservice import user_service
+from utils.validation import validate_username, validate_password, validate_first_name, validate_last_name
 CANCEL_KEYWORDS = {"back", "exit"}
 
-def ask(label: str, validator) -> str | None:
-    """
-    Prompt until valid input or user cancels with a keyword.
-    """
+def ask(label: str, validator=None):
     while True:
-        value = input(f"{label}: ").strip()
-        if value.lower() in CANCEL_KEYWORDS:
-            return None
-        ok, msg = validator(value)
-        if ok:
-            return value
-        print(msg)
+        value = input(f"{label}: ")
+        if validator:
+            ok, msg = validator(value)
+            if not ok:
+                print(f"Error: {msg}")
+                continue
+        return value
 
 def add_user_flow(session):
     print("\n=== Add User ===")
@@ -22,12 +19,11 @@ def add_user_flow(session):
 
     # Username
     while True:
-        username = input("Username (8-10 chars, starts with letter/underscore): ").strip()
+        username = input("Username (8-10 chars, starts with letter/underscore): ")
         if username.lower() in CANCEL_KEYWORDS:
             print("Add cancelled.")
             return
-
-        valid, msg = user_service.validate_username(username)
+        valid, msg = validate_username(username)
         if not valid:
             print(msg)
             continue
@@ -39,20 +35,19 @@ def add_user_flow(session):
         break
 
     # Password
-    password = ask("Password (12-30 chars, incl. lowercase, uppercase, digit, special)", 
-                   user_service.validate_password)
+    password = ask("Password (12-30 chars, incl. lowercase, uppercase, digit, special)", validate_password)
     if password is None:
         print("Add cancelled.")
         return
 
     # First name
-    first_name = ask("First name", lambda v: user_service.validate_name(v, "First name"))
+    first_name = ask("First name", validate_first_name)
     if first_name is None:
         print("Add cancelled.")
         return
 
     # Last name
-    last_name = ask("Last name", lambda v: user_service.validate_name(v, "Last name"))
+    last_name = ask("Last name", validate_last_name)
     if last_name is None:
         print("Add cancelled.")
         return
@@ -69,7 +64,7 @@ def add_user_flow(session):
         print("1. Service Engineer")
         print("2. System Admin")
         while True:
-            role_choice = input("Enter the role (1 or 2): ").strip()
+            role_choice = input("Enter the role (1 or 2): ")
             if role_choice.lower() in CANCEL_KEYWORDS:
                 print("Add cancelled.")
                 return
@@ -88,7 +83,7 @@ def add_user_flow(session):
     print(f"  First name: {first_name}")
     print(f"  Last name: {last_name}")
     print(f"  Role: {role}")
-    if input("\nSave this user? (y/n): ").strip().lower() != "y":
+    if input("\nSave this user? (y/n): ").lower() != "y":
         print("Add cancelled.")
         input("Press Enter to continue...")
         return
@@ -123,7 +118,7 @@ def update_user_flow(session):
             print("2. Update first name (2-20 chars)")
             print("3. Update last name (2-20 chars)")
             print("4. Back")
-            choice = input("Choose an option: ").strip()
+            choice = input("Choose an option: ")
             updates = {}
             if choice == "1":
                 username = input("Enter the new username: ")
@@ -251,7 +246,7 @@ def edit_account_flow(session):
             print("3. Change last name")
             print("4. Back/Exit to main menu")
         
-        choice = input("Choose an option: ").strip()
+        choice = input("Choose an option: ")
         updates = {}
         
         if role in ["service_engineer", "system_admin"]:

@@ -5,7 +5,8 @@ from models.user import User
 from services.userservice import UserService, user_service
 from services.scooterservice import ScooterService
 from utils.role_utils import require_role
-from models.scooter import BATTERY_CAP_MAX, BRAND_RE, DATE_RE, MILEAGE_MAX, MODEL_RE, SERIAL_RE, TOP_SPEED_MAX, TOP_SPEED_MIN
+from models.scooter import BATTERY_CAP_MAX, MILEAGE_MAX, TOP_SPEED_MAX, TOP_SPEED_MIN
+from utils.validation import validate_brand, validate_model, validate_serial_number, validate_scooter_date
 from controllers.session import UserSession
 from utils.log_decorator import log_action 
 
@@ -175,10 +176,11 @@ class ScooterController:
                 print(f"Old scooter brand: {old_scooter.brand_plain}")
 
             brand = input("Enter scooter brand (2-30 chars): ")
-            if BRAND_RE.match(brand):
+            valid, msg = validate_brand(brand)
+            if valid:
                 break
             else:
-                print("Invalid brand. 2-30 alphanumeric, space or dash.")
+                print(f"Invalid brand: {msg}")
 
         # Model
         while True:
@@ -192,10 +194,11 @@ class ScooterController:
                 print(f"Old scooter model: {old_scooter.model_plain}")
 
             model = input("Enter scooter model (1-30 chars): ")
-            if MODEL_RE.match(model):
+            valid, msg = validate_model(model)
+            if valid:
                 break
             else:
-                print("Invalid model. 1-30 alphanumeric, space or dash.")
+                print(f"Invalid model: {msg}")
 
         # Serial Number
         while True:
@@ -209,10 +212,11 @@ class ScooterController:
                 print(f"Old scooter serial number: {old_scooter.serial_number_plain}")
 
             serial_number = input("Enter serial number (10-17 chars): ")
-            if SERIAL_RE.match(serial_number):
+            valid, msg = validate_serial_number(serial_number)
+            if valid:
                 break
             else:
-                print("Invalid serial number. 10-17 alphanumeric.")
+                print(f"Invalid serial number: {msg}")
 
         # Top Speed
         while True:
@@ -373,10 +377,12 @@ class ScooterController:
             if last_maint_date == "":
                 last_maint_date = datetime.date.today().strftime('%Y-%m-%d')
                 break
-            elif DATE_RE.match(last_maint_date):
-                break
             else:
-                print("Invalid date format. Please use YYYY-MM-DD or leave blank for today.")
+                valid, msg = validate_scooter_date(last_maint_date, "Last maintenance date")
+                if valid:
+                    break
+                else:
+                    print(f"Invalid date: {msg}")
             
         
         # Create new scooter instance

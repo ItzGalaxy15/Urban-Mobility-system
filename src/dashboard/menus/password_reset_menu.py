@@ -1,6 +1,6 @@
 from controllers.usercontroller import UserController
 from controllers.session import UserSession
-from services.userservice import user_service
+from utils.validation import validate_password
 CANCEL_KEYWORDS = {"back", "exit"}
 
 def reset_password_flow(session):
@@ -9,7 +9,7 @@ def reset_password_flow(session):
     
     # Get user identifier (ID or username)
     while True:
-        identifier = input("Enter user ID or username ('back' or 'exit' to cancel): ").strip()
+        identifier = input("Enter user ID or username ('back' or 'exit' to cancel): ")
         if identifier.lower() in CANCEL_KEYWORDS:
             print("Operation cancelled.")
             return
@@ -89,7 +89,7 @@ def use_reset_code_flow(user_id):
         if not new_password:
             print("Password reset cancelled.")
             return False
-        valid, message = user_service.validate_password(new_password)
+        valid, message = validate_password(new_password)
         if not valid:
             print(message)
             continue
@@ -117,7 +117,4 @@ def use_reset_code_flow(user_id):
             return True
         else:
             print(msg)
-            # If code is invalid/expired, break, else loop again
-            if "code" in msg.lower():
-                return False
-            # Otherwise, allow retry 
+            # If code is invalid/expired, break, else loop again 

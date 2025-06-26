@@ -30,12 +30,12 @@ class User:
         if password_plain is None and password_hash is None:
             raise ValueError("Either password_plain or password_hash must be provided")
 
-        role = role.lower()
-        if role not in {"super", "system_admin", "service_engineer"}:
+        # Validate role without modification
+        if role.lower() not in {"super", "system_admin", "service_engineer"}:
             raise ValueError(f"Unknown role: {role}")
 
         # Username & password rules (skip super admin hard‑coded user)
-        if role != "super":
+        if role.lower() != "super":
             # Username rules
             if not USERNAME_RE.fullmatch(username):
                 raise ValueError("username does not meet format/length rules")
@@ -51,7 +51,7 @@ class User:
                     raise ValueError("password must include lowercase, uppercase, digit and special char")
 
         # extra profile requirement
-        if role in {"system_admin", "service_engineer"}:
+        if role.lower() in {"system_admin", "service_engineer"}:
             if first_name is None or last_name is None:
                 raise ValueError("first_name and last_name are required for this role")
 
@@ -64,7 +64,7 @@ class User:
         else:
             self.password_hash: bytes = hash_password(password_plain)
             
-        self.role: str = encrypt(role)
+        self.role: str = encrypt(role.lower())  # Store in lowercase
 
         # Optional profile (encrypted)
         self.user_id = user_id
@@ -72,7 +72,7 @@ class User:
         self.last_name  = encrypt(last_name)  if last_name  else None
 
         # Registration date
-        if role == "super":
+        if role.lower() == "super":
             self.registration_date = None
         else:
             self.registration_date = datetime.now().isoformat()
@@ -100,7 +100,7 @@ class User:
     def full_name(self) -> str:
         first = decrypt(self.first_name) if self.first_name else ""
         last  = decrypt(self.last_name)  if self.last_name  else ""
-        return f"{first} {last}".strip()
+        return f"{first} {last}"
 
     def __repr__(self) -> str:
         uname = self.username_plain if self.username else "<unset>"
