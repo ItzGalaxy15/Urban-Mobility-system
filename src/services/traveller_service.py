@@ -36,10 +36,20 @@ class TravellerService:
     def _validate_name(self, value: str, field: str) -> Tuple[bool, str]:
         if not value:
             return False, f"{field} is required"
-        if not value.strip():
-            return False, f"{field} cannot be empty"
-        if not NAME_RE.match(value):
-            return False, f"{field} must be 2-30 chars, letters only"
+        
+        # Trim spaces and check if empty after trimming
+        trimmed_value = value.strip()
+        if not trimmed_value:
+            return False, f"{field} cannot be empty or contain only spaces"
+        
+        # Check if the trimmed value matches the name pattern (letters only)
+        if not NAME_RE.match(trimmed_value):
+            return False, f"{field} must be 2-30 chars, letters only (no spaces allowed)"
+        
+        # Check if original value had leading/trailing spaces (should be rejected)
+        if value != trimmed_value:
+            return False, f"{field} cannot have leading or trailing spaces"
+        
         return True, ""
 
     def _validate_birthday(self, birthday: str) -> Tuple[bool, str]:
@@ -47,11 +57,17 @@ class TravellerService:
             return False, "Birthday is required"
         if not BIRTH_RE.fullmatch(birthday):
             return False, "Birthday must be YYYY‑MM‑DD"
-        y, m, d = map(int, birthday.split("-"))
-        age = (date.today() - date(y, m, d)).days // 365
-        if age < 18:
-            return False, "Traveller must be at least 18 years old"
-        return True, ""
+        
+        try:
+            y, m, d = map(int, birthday.split("-"))
+            # Validate that the date actually exists
+            birth_date = date(y, m, d)
+            age = (date.today() - birth_date).days // 365
+            if age < 18:
+                return False, "Traveller must be at least 18 years old"
+            return True, ""
+        except ValueError:
+            return False, "Invalid date: Please enter a valid date (e.g., 1990-01-15)"
 
     def _validate_zip(self, zip_code: str) -> Tuple[bool, str]:
         if not zip_code:

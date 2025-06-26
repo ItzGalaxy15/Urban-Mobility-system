@@ -67,7 +67,10 @@ class Scooter:
         if last_maint_date is not None:
             if not DATE_RE.fullmatch(last_maint_date):
                 raise ValueError("last_maint_date must be YYYY‑MM‑DD")
-            last_maint_date_obj = datetime.strptime(last_maint_date, "%Y-%m-%d").date()
+            try:
+                last_maint_date_obj = datetime.strptime(last_maint_date, "%Y-%m-%d").date()
+            except ValueError:
+                raise ValueError("Invalid date: Please enter a valid date (e.g., 2023-01-15)")
         else:
             last_maint_date_obj = None
 

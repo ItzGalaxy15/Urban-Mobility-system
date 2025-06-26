@@ -44,10 +44,24 @@ class UserService:
         """Validate first/last name requirements."""
         if not name:
             return False, f"{field_name} is required"
-        if not name.strip():
-            return False, f"{field_name} cannot be empty"
-        if len(name) < 2 or len(name) > 20:
+        
+        # Trim spaces and check if empty after trimming
+        trimmed_name = name.strip()
+        if not trimmed_name:
+            return False, f"{field_name} cannot be empty or contain only spaces"
+        
+        # Check length after trimming
+        if len(trimmed_name) < 2 or len(trimmed_name) > 20:
             return False, f"{field_name} must be between 2 and 20 characters"
+        
+        # Check if original value had leading/trailing spaces (should be rejected)
+        if name != trimmed_name:
+            return False, f"{field_name} cannot have leading or trailing spaces"
+        
+        # Check if name contains only letters (no numbers or special characters)
+        if not trimmed_name.replace(" ", "").isalpha():
+            return False, f"{field_name} must contain only letters"
+        
         return True, ""
 
 

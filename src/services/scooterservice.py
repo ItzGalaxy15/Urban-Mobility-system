@@ -10,6 +10,66 @@ class ScooterService:
     def _get_connection(self) -> sqlite3.Connection:
         return sqlite3.connect(self.db_path)
     
+    def _validate_brand(self, brand: str) -> tuple[bool, str]:
+        """Validate brand name requirements."""
+        if not brand:
+            return False, "Brand is required"
+        
+        # Trim spaces and check if empty after trimming
+        trimmed_brand = brand.strip()
+        if not trimmed_brand:
+            return False, "Brand cannot be empty or contain only spaces"
+        
+        # Check if original value had leading/trailing spaces (should be rejected)
+        if brand != trimmed_brand:
+            return False, "Brand cannot have leading or trailing spaces"
+        
+        # Check if brand matches the pattern (2-30 alphanumeric, space or dash)
+        from models.scooter import BRAND_RE
+        if not BRAND_RE.fullmatch(trimmed_brand):
+            return False, "Brand must be 2-30 alphanumeric characters, spaces, or dashes"
+        
+        return True, ""
+    
+    def _validate_model(self, model: str) -> tuple[bool, str]:
+        """Validate model name requirements."""
+        if not model:
+            return False, "Model is required"
+        
+        # Trim spaces and check if empty after trimming
+        trimmed_model = model.strip()
+        if not trimmed_model:
+            return False, "Model cannot be empty or contain only spaces"
+        
+        # Check if original value had leading/trailing spaces (should be rejected)
+        if model != trimmed_model:
+            return False, "Model cannot have leading or trailing spaces"
+        
+        # Check if model matches the pattern (1-30 alphanumeric, space or dash)
+        from models.scooter import MODEL_RE
+        if not MODEL_RE.fullmatch(trimmed_model):
+            return False, "Model must be 1-30 alphanumeric characters, spaces, or dashes"
+        
+        return True, ""
+    
+    def _validate_date(self, date_str: str, field_name: str) -> tuple[bool, str]:
+        """Validate date format and existence."""
+        if not date_str:
+            return False, f"{field_name} is required"
+        
+        # Check format
+        from models.scooter import DATE_RE
+        if not DATE_RE.fullmatch(date_str):
+            return False, f"{field_name} must be YYYY-MM-DD"
+        
+        # Validate that the date actually exists
+        try:
+            from datetime import datetime
+            datetime.strptime(date_str, "%Y-%m-%d").date()
+            return True, ""
+        except ValueError:
+            return False, f"Invalid {field_name}: Please enter a valid date (e.g., 2023-01-15)"
+
     def add_scooter_from_params(self, scooter_id, brand, model, serial_number, top_speed, battery_capacity,
                                 state_of_charge, target_soc_min, target_soc_max, location_lat, location_lon,
                                 out_of_service, mileage, last_maint_date, in_service_date):

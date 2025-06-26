@@ -64,10 +64,14 @@ class Traveller:
             raise ValueError("driving_license format invalid")
 
         # 18+ control
-        y, m, d = map(int, birthday.split("-"))
-        age = (date.today() - date(y, m, d)).days // 365
-        if age < 18:
-            raise ValueError("traveller must be at least 18 years old")
+        try:
+            y, m, d = map(int, birthday.split("-"))
+            birth_date = date(y, m, d)
+            age = (date.today() - birth_date).days // 365
+            if age < 18:
+                raise ValueError("traveller must be at least 18 years old")
+        except ValueError:
+            raise ValueError("Invalid date: Please enter a valid date (e.g., 1990-01-15)")
 
         if gender.lower() not in {"male", "female"}:
             raise ValueError("gender must be male or female")

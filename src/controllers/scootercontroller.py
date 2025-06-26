@@ -175,10 +175,13 @@ class ScooterController:
                 print(f"Old scooter brand: {old_scooter.brand_plain}")
 
             brand = input("Enter scooter brand (2-30 chars): ")
-            if BRAND_RE.match(brand):
+            # Use service validation for better error handling
+            scooter_service = ScooterService("urban_mobility.db")
+            valid, msg = scooter_service._validate_brand(brand)
+            if valid:
                 break
             else:
-                print("Invalid brand. 2-30 alphanumeric, space or dash.")
+                print(f"Invalid brand: {msg}")
 
         # Model
         while True:
@@ -192,10 +195,12 @@ class ScooterController:
                 print(f"Old scooter model: {old_scooter.model_plain}")
 
             model = input("Enter scooter model (1-30 chars): ")
-            if MODEL_RE.match(model):
+            # Use service validation for better error handling
+            valid, msg = scooter_service._validate_model(model)
+            if valid:
                 break
             else:
-                print("Invalid model. 1-30 alphanumeric, space or dash.")
+                print(f"Invalid model: {msg}")
 
         # Serial Number
         while True:
@@ -373,10 +378,13 @@ class ScooterController:
             if last_maint_date == "":
                 last_maint_date = datetime.date.today().strftime('%Y-%m-%d')
                 break
-            elif DATE_RE.match(last_maint_date):
-                break
             else:
-                print("Invalid date format. Please use YYYY-MM-DD or leave blank for today.")
+                # Use service validation for better error handling
+                valid, msg = scooter_service._validate_date(last_maint_date, "Last maintenance date")
+                if valid:
+                    break
+                else:
+                    print(f"Invalid date: {msg}")
             
         
         # Create new scooter instance
