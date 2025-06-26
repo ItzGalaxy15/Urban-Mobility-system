@@ -32,7 +32,6 @@ class ScooterService:
                 out_of_service=out_of_service,
                 mileage=mileage,
                 last_maint_date=last_maint_date,
-                in_service_date=in_service_date
             )
             return self.add_scooter(scooter)
         except ValueError as e:
