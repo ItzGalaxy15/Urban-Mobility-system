@@ -1,6 +1,48 @@
 from controllers.scootercontroller import ScooterController
 from controllers.session import UserSession
 from models.scooter import Scooter
+from utils.validation import validate_brand, validate_model, validate_serial_number
+import re
+
+# Validation patterns for user input
+SCOOTER_ID_PATTERN = re.compile(r'^[0-9]+$')  # Only digits
+SEARCH_TERM_PATTERN = re.compile(r'^[A-Za-z0-9\s\-_]{1,50}$')  # Alphanumeric, spaces, dashes, underscores
+CHOICE_PATTERN = re.compile(r'^[ynYN]$')  # Only y/n
+
+def validate_scooter_id(scooter_id: str) -> tuple[bool, str]:
+    """Validate scooter ID input"""
+    if not scooter_id:
+        return False, "Scooter ID is required"
+    if SCOOTER_ID_PATTERN.fullmatch(scooter_id):
+        return True, ""
+    return False, "Scooter ID must contain only digits"
+
+def validate_search_term(search_term: str) -> tuple[bool, str]:
+    """Validate search term input"""
+    if not search_term:
+        return False, "Search term is required"
+    if SEARCH_TERM_PATTERN.fullmatch(search_term):
+        return True, ""
+    return False, "Search term must be 1-50 characters and contain only letters, numbers, spaces, dashes, and underscores"
+
+def validate_choice(choice: str) -> tuple[bool, str]:
+    """Validate y/n choice input"""
+    if not choice:
+        return False, "Choice is required"
+    if CHOICE_PATTERN.fullmatch(choice):
+        return True, ""
+    return False, "Choice must be 'y' or 'n'"
+
+def safe_input(prompt: str, validator=None) -> str:
+    """Get user input with validation"""
+    while True:
+        value = input(prompt)
+        if validator:
+            valid, message = validator(value)
+            if not valid:
+                print(f"Error: {message}")
+                continue
+        return value
 
 def display_scooter_data(scooter):
     """Display scooter data using decrypted properties"""
@@ -37,7 +79,9 @@ def add_scooter_flow(session):
 def update_scooter_flow(session):
     print("\nUpdate Scooter")
     current_user_id = UserSession.get_current_user_id()
-    scooter_id = input("Enter the ID of the scooter to update: ")
+    
+    # Validate scooter ID input
+    scooter_id = safe_input("Enter the ID of the scooter to update: ", validate_scooter_id)
     
     # Get the scooter - returns (scooter, message) tuple
     scooter_result = ScooterController.get_scooter(current_user_id, scooter_id)
@@ -67,9 +111,12 @@ def view_scooters_flow(session):
     print("\nView Scooters")
     current_user_id = UserSession.get_current_user_id()
 
-    choice = input("Do you want to view all scooters? (y/n): ")
+    # Validate choice input
+    choice = safe_input("Do you want to view all scooters? (y/n): ", validate_choice)
+    
     if choice.lower() == 'n':
-        scooter_id = input("Enter the ID of the scooter to view: ")
+        # Validate scooter ID input
+        scooter_id = safe_input("Enter the ID of the scooter to view: ", validate_scooter_id)
         scooters_result = ScooterController.get_scooter(current_user_id, scooter_id)
         scooters, message = scooters_result
     elif choice.lower() == 'y':
@@ -112,10 +159,14 @@ def search_scooters_flow(session):
         print(f"{idx}. {field_name}")
     print(f"{len(scooter_fields) + 1}. All fields")
 
-    # Ask user for the field to search by using a menu
+    # Ask user for the field to search by using a menu with validation
     while True:
         try:
-            choice = int(input(f"Select field to search by (1-{len(scooter_fields) + 1}): "))
+            choice_input = input(f"Select field to search by (1-{len(scooter_fields) + 1}): ")
+            if not choice_input.isdigit():
+                print("Please enter a valid number.")
+                continue
+            choice = int(choice_input)
             if 1 <= choice <= len(scooter_fields):
                 field = scooter_fields[choice - 1]
                 break
@@ -127,8 +178,8 @@ def search_scooters_flow(session):
         except ValueError:
             print("Please enter a valid number.")
 
-    # Ask user for search term
-    search_term = input("Enter search term: ")
+    # Validate search term input
+    search_term = safe_input("Enter search term: ", validate_search_term)
 
     # Call the search method - returns (scooters, message) tuple
     results = ScooterController.search_for_scooters(current_user_id, search_term, field)
@@ -146,7 +197,10 @@ def search_scooters_flow(session):
 
 def delete_scooter_flow(session):
     current_user_id = UserSession.get_current_user_id()
-    scooter_id = input("Enter the ID of the scooter to delete: ")
+    
+    # Validate scooter ID input
+    scooter_id = safe_input("Enter the ID of the scooter to delete: ", validate_scooter_id)
+    
     success, message = ScooterController.delete_scooter(current_user_id, scooter_id)
     print(message)
     input("Press Enter to continue...")
