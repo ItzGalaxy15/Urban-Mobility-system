@@ -16,6 +16,7 @@ class UserSession:
     _current_role = None
     _global_failed_attempts = 0  # Global counter for failed attempts
     _global_lockout_end = None   # Global lockout end time
+    _user_service = None  # Allow injection for testing
 
     @staticmethod
     def login(username, password=None):
@@ -42,9 +43,11 @@ class UserSession:
             if cnt:
                 print(f"\n⚠  There are {cnt} unread suspicious activities in the log!"
                     "  Open 'View system logs' to review.\n")
-                input("Press Enter to continue...")
+                # Only prompt for input if not in test mode
+                if not os.environ.get('PYTEST_CURRENT_TEST'):
+                    input("Press Enter to continue...")
             # ---------------------------------
-
+            
             log_login_attempt(username, True)  # successful login
             return True
 
@@ -60,7 +63,9 @@ class UserSession:
             UserSession._global_lockout_end = None
 
         # Regular user login - check database for user first
-        user_data = user_service.get_user_by_username(username)
+        # Use injected service for testing, or default singleton
+        svc = UserSession._user_service if UserSession._user_service else user_service
+        user_data = svc.get_user_by_username(username)
         if not user_data:
             UserSession._handle_failed_attempt()
             print("Username or password incorrect.")
@@ -68,12 +73,12 @@ class UserSession:
             return False
 
         # Check if password_hash is NULL (no password set) - do this BEFORE asking for password
-        conn = user_service._get_connection()
+        conn = svc._get_connection()
         c = conn.cursor()
         c.execute('SELECT password_hash FROM User WHERE user_id = ?', (user_data.user_id,))
         row = c.fetchone()
         conn.close()
-        if (row and row[0] is None) or user_service.has_pending_reset(user_data.user_id):
+        if (row and row[0] is None) or svc.has_pending_reset(user_data.user_id):
             # Password is missing, force reset code flow immediately
             from dashboard.menus.password_reset_menu import use_reset_code_flow
             print("\nA password reset has been requested for your account.")
@@ -93,7 +98,7 @@ class UserSession:
                 sys.exit(0)
 
         # If no reset is pending, proceed with normal password check
-        if not user_service.verify_user_password(user_data.user_id, password):
+        if not svc.verify_user_password(user_data.user_id, password):
             UserSession._handle_failed_attempt()
             print("Username or password incorrect.")
             log_login_attempt(username, False)         # failed login
@@ -122,7 +127,9 @@ class UserSession:
             if cnt:
                 print(f"\n⚠  There are {cnt} unread suspicious activities in the log!"
                     "  Open 'View system logs' to review.\n")
-                input("Press Enter to continue...")
+                # Only prompt for input if not in test mode
+                if not os.environ.get('PYTEST_CURRENT_TEST'):
+                    input("Press Enter to continue...")
         # ------------------------------------------------------
         log_login_attempt(username, True)              # successful login
         return True
@@ -174,3 +181,19 @@ class UserSession:
     @staticmethod
     def get_current_role():
         return UserSession._current_role
+
+    @staticmethod
+    def reset_session():
+        """Reset all session state - useful for testing."""
+        UserSession._current_user = None
+        UserSession._current_user_id = None
+        UserSession._current_username = None
+        UserSession._current_role = None
+        UserSession._global_failed_attempts = 0
+        UserSession._global_lockout_end = None
+        UserSession._user_service = None
+    
+    @staticmethod
+    def set_user_service(service):
+        """Set user service for testing purposes."""
+        UserSession._user_service = service
