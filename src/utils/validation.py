@@ -24,6 +24,9 @@ DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
 def validate_first_name(value: str) -> tuple[bool, str]:
     if not value:
         return False, "First name is required"
+    # Check for leading/trailing spaces
+    if value != value.strip():
+        return False, "First name cannot have leading or trailing spaces"
     if NAME_PATTERN.fullmatch(value):
         return True, ""
     return False, "First name must be 2-30 characters and contain only letters and spaces"
@@ -31,6 +34,9 @@ def validate_first_name(value: str) -> tuple[bool, str]:
 def validate_last_name(value: str) -> tuple[bool, str]:
     if not value:
         return False, "Last name is required"
+    # Check for leading/trailing spaces
+    if value != value.strip():
+        return False, "Last name cannot have leading or trailing spaces"
     if NAME_PATTERN.fullmatch(value):
         return True, ""
     return False, "Last name must be 2-30 characters and contain only letters and spaces"
@@ -82,6 +88,9 @@ def validate_gender(gender: str) -> tuple[bool, str]:
 def validate_street_name(street: str) -> tuple[bool, str]:
     if not street:
         return False, "Street name is required"
+    # Check for leading/trailing spaces
+    if street != street.strip():
+        return False, "Street name cannot have leading or trailing spaces"
     if STREET_PATTERN.fullmatch(street):
         return True, ""
     return False, "Street name must be 2-50 characters and contain only letters and spaces"
@@ -138,6 +147,9 @@ def validate_license(license_no: str) -> tuple[bool, str]:
 def validate_brand(brand: str) -> tuple[bool, str]:
     if not brand:
         return False, "Brand is required"
+    # Check for leading/trailing spaces
+    if brand != brand.strip():
+        return False, "Brand cannot have leading or trailing spaces"
     if BRAND_PATTERN.fullmatch(brand):
         return True, ""
     return False, "Brand must be 2-30 alphanumeric characters, spaces, or dashes"
@@ -145,6 +157,9 @@ def validate_brand(brand: str) -> tuple[bool, str]:
 def validate_model(model: str) -> tuple[bool, str]:
     if not model:
         return False, "Model is required"
+    # Check for leading/trailing spaces
+    if model != model.strip():
+        return False, "Model cannot have leading or trailing spaces"
     if MODEL_PATTERN.fullmatch(model):
         return True, ""
     return False, "Model must be 1-30 alphanumeric characters, spaces, or dashes"
