@@ -67,11 +67,13 @@ class Scooter:
         if last_maint_date is not None:
             if not DATE_RE.fullmatch(last_maint_date):
                 raise ValueError("last_maint_date must be YYYY‑MM‑DD")
-            last_maint_date_obj = datetime.strptime(last_maint_date, "%Y-%m-%d").date()
-        else:
-            last_maint_date_obj = None
+            try:
+                datetime.strptime(last_maint_date, "%Y-%m-%d").date()
+            except ValueError:
+                raise ValueError("Invalid date: Please enter a valid date (e.g., 2023-01-15)")
 
-        in_service_dt = datetime.now()
+        # Store date as string for SQLite compatibility (Python 3.12+ deprecates datetime adapters)
+        in_service_date_str = datetime.now().strftime("%Y-%m-%d")
 
         # store(encrypted) -------------------------------------------
         try:
@@ -92,8 +94,8 @@ class Scooter:
         self.mileage = float(mileage)
 
         self.scooter_id = scooter_id
-        self.last_maint_date = last_maint_date_obj  # date or None
-        self.in_service_date = in_service_dt        # datetime
+        self.last_maint_date = last_maint_date  # string YYYY-MM-DD or None
+        self.in_service_date = in_service_date_str  # string YYYY-MM-DD
 
 
     # Getters (plain text)
