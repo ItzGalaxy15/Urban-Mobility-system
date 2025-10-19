@@ -33,11 +33,11 @@ class User:
             raise ValueError("Either password_plain or password_hash must be provided")
 
         # Validate role without modification
-        if role.lower() not in {"super", "system_admin", "service_engineer"}:
+        if role not in {"super", "system_admin", "service_engineer"}:
             raise ValueError(f"Unknown role: {role}")
 
         # Username & password rules (skip super admin hard‑coded user)
-        if role.lower() != "super":
+        if role != "super":
             # Username rules
             if not USERNAME_PATTERN.fullmatch(username):
                 raise ValueError("username does not meet format/length rules")
@@ -53,12 +53,12 @@ class User:
                     raise ValueError("password must include lowercase, uppercase, digit and special char")
 
         # extra profile requirement
-        if role.lower() in {"system_admin", "service_engineer"}:
+        if role in {"system_admin", "service_engineer"}:
             if first_name is None or last_name is None:
                 raise ValueError("first_name and last_name are required for this role")
 
         # Core fields
-        self.username: bytes = encrypt(username.lower())  # case‑insensitive store
+        self.username: bytes = encrypt(username)  # case‑insensitive store
         
         # Handle password - either use provided hash or create hash from plain text
         if password_hash is not None:
@@ -66,7 +66,7 @@ class User:
         else:
             self.password_hash: bytes = hash_password(password_plain)
             
-        self.role: str = encrypt(role.lower())  # Store in lowercase
+        self.role: str = encrypt(role)  # Store role encrypted
 
         # Optional profile (encrypted)
         self.user_id = user_id
@@ -74,7 +74,7 @@ class User:
         self.last_name  = encrypt(last_name)  if last_name  else None
 
         # Registration date
-        if role.lower() == "super":
+        if role == "super":
             self.registration_date = None
         else:
             self.registration_date = datetime.now().isoformat()
