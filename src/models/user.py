@@ -3,11 +3,13 @@ import re, random
 from datetime import datetime
 from typing import Optional
 from utils.crypto_utils import encrypt, decrypt, hash_password, check_password
+from utils.validation import USERNAME_PATTERN, PASSWORD_PATTERN
 
-# Username & password validation patterns
-USERNAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)
-# Allowed special chars for password as per spec
-PWD_ALLOWED_RE = re.compile(r"^[A-Za-z0-9~!@#$%&_\-+=`|\\(){}\[\]:;'<>,.?/]{12,30}$")
+# These are now imported from utils/validation.py
+# # Username & password validation patterns
+# USERNAME_RE    | USERNAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)
+# # Allowed special chars for password as per spec
+# PWD_ALLOWED_RE | PASSWORD_PATTERN = re.compile(r"^[A-Za-z0-9~!@#$%&_\-+=`|\\(){}\[\]:;'<>,.?/]{12,30}$")
 
 class User:
     def __init__(
@@ -37,11 +39,11 @@ class User:
         # Username & password rules (skip super admin hard‑coded user)
         if role.lower() != "super":
             # Username rules
-            if not USERNAME_RE.fullmatch(username):
+            if not USERNAME_PATTERN.fullmatch(username):
                 raise ValueError("username does not meet format/length rules")
             # Password rules (only validate if password_plain is provided)
             if password_plain is not None:
-                if not PWD_ALLOWED_RE.fullmatch(password_plain):
+                if not PWD_ALLOWED_PATTERN.fullmatch(password_plain):
                     raise ValueError("password contains invalid characters or length")
                 # complexity check
                 if not (re.search(r"[a-z]", password_plain)

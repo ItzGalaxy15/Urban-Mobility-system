@@ -1,10 +1,14 @@
 import re
 from datetime import date, datetime
-from models.traveller import CITY_CHOICES, ZIP_RE, PHONE_RE, LICENSE_RE, NAME_RE, STREET_RE, BIRTH_RE, EMAIL_RE, HOUSE_RE
-from models.user import USERNAME_RE, PWD_ALLOWED_RE
-from models.scooter import BRAND_RE, MODEL_RE, SERIAL_RE, DATE_RE, TOP_SPEED_MIN, TOP_SPEED_MAX, BATTERY_CAP_MAX, MILEAGE_MAX
+# from models.traveller import CITY_CHOICES, ZIP_RE, PHONE_RE, LICENSE_RE, NAME_RE, STREET_RE, BIRTH_RE, EMAIL_RE, HOUSE_RE
+# from models.user import USERNAME_RE, PWD_ALLOWED_RE
+# from models.scooter import BRAND_RE, MODEL_RE, SERIAL_RE, DATE_RE, TOP_SPEED_MIN, TOP_SPEED_MAX, BATTERY_CAP_MAX, MILEAGE_MAX
 
 # Define whitelist patterns for consistent validation
+CITY_CHOICES = {
+    "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
+    "Groningen", "Maastricht", "Arnhem", "Leiden", "Zwolle",
+}
 NAME_PATTERN = re.compile(r'^[A-Za-zÀ-ÿ\s]{2,30}$')  # Letters, spaces, accented characters
 USERNAME_PATTERN = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{7,9}$')  # 8-10 chars, starts with letter/underscore
 PASSWORD_PATTERN = re.compile(r'^[A-Za-z0-9~!@#$%&\-_+=`|\\(){}\[\]:;\'<>,.?/]{12,30}$')  # Allowed chars only
@@ -18,7 +22,14 @@ BIRTH_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
 BRAND_PATTERN = re.compile(r'^[A-Za-z0-9\s\-]{2,30}$')  # Alphanumeric, spaces, dashes
 MODEL_PATTERN = re.compile(r'^[A-Za-z0-9\s\-]{1,30}$')  # Alphanumeric, spaces, dashes
 SERIAL_PATTERN = re.compile(r'^[A-Za-z0-9]{10,17}$')  # Alphanumeric only
-DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
+# DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
+DATE_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")  # YYYY-MM-DD format
+TIME_PATTERN = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$") # HH:MM:SS format
+
+# Scooter specifications
+TOP_SPEED_MIN, TOP_SPEED_MAX = 5, 50     # km/h
+BATTERY_CAP_MAX = 5_000                  # Wh
+MILEAGE_MAX     = 1_000_000              # km
 
 # --- User/Traveller Name Validation ---
 def validate_first_name(value: str) -> tuple[bool, str]:
