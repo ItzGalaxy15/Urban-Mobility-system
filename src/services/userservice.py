@@ -8,7 +8,7 @@ from typing import Tuple
 import random
 import string
 from datetime import datetime, timedelta
-import os
+from config import DB_FILE
 
 class UserService:
     def __init__(self, db_path: str):
@@ -464,7 +464,5 @@ class UserService:
         conn.close()
         return has_reset
 
-# Create a singleton instance with absolute path
-SRC_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-DB_FILE = os.path.join(SRC_FOLDER, 'urban_mobility.db')
+# Create a singleton instance
 user_service = UserService(DB_FILE) 

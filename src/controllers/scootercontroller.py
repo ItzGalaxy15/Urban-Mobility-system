@@ -8,15 +8,17 @@ from utils.role_utils import require_role
 from models.scooter import BATTERY_CAP_MAX, MILEAGE_MAX, TOP_SPEED_MAX, TOP_SPEED_MIN
 from utils.validation import validate_brand, validate_model, validate_serial_number, validate_scooter_date
 from controllers.session import UserSession
-from utils.log_decorator import log_action 
+from utils.log_decorator import log_action
+from config import DB_FILE
+
+# Create singleton service instance
+_scooterservice = ScooterService(DB_FILE) 
 
 class ScooterController:
     @staticmethod
     @require_role("super", "system_admin")
     @log_action("Add scooter -> {msg}")
     def add_scooter(current_user_id: int, new_scooter: Scooter) -> tuple[bool, str]:
-        _scooterservice = ScooterService("urban_mobility.db")
-
         try:
             if _scooterservice.add_scooter(scooter=new_scooter):
                 return True, f"Scooter {new_scooter.serial_number_plain} added successfully"
@@ -33,7 +35,6 @@ class ScooterController:
     @log_action("Get scooter(s) -> {msg}")
     @require_role("super", "system_admin", "service_engineer")
     def get_scooter(user_id: int, scooter_id: int | None = None) -> tuple[Optional[Scooter], str]:
-        _scooterservice = ScooterService("urban_mobility.db")
         try:
             if scooter_id is None:
                 scooters = _scooterservice.get_all_scooters()
@@ -52,7 +53,6 @@ class ScooterController:
     @log_action("Service scooter -> {msg}") 
     @require_role("service_engineer")
     def service_scooter(user_id: int, scooter_id: int, update_data: Scooter) -> tuple[bool, str]:
-        _scooterservice = ScooterService("urban_mobility.db")
         user = user_service.get_user_by_id(user_id)
         if user.role_plain != "service_engineer":
             return False, "Unauthorized: Only service engineer can use this function"
@@ -94,7 +94,6 @@ class ScooterController:
     @log_action("Update scooter -> {msg}")
     @require_role("super", "system_admin")
     def update_scooter(user_id: int, scooter_id: int, update_data: Scooter) -> tuple[bool, str]:
-        _scooterservice = ScooterService("urban_mobility.db")
         try:
             scooter = _scooterservice.get_scooter_by_id(scooter_id)
             if not scooter:
@@ -130,7 +129,6 @@ class ScooterController:
     @log_action("Search scooters -> {msg}")
     @require_role("super", "system_admin", "service_engineer")
     def search_for_scooters(user_id: int, search_term: str, field: str) -> tuple[Optional[Scooter], str]:
-        _scooterservice = ScooterService("urban_mobility.db")
 
         scooters = _scooterservice.search_for_scooters(search_term, field)
         if scooters:
@@ -141,7 +139,6 @@ class ScooterController:
     @log_action("Delete scooter -> {msg}")
     @require_role("super", "system_admin")
     def delete_scooter(user_id: int, scooter_id: int) -> tuple[bool, str]:
-        _scooterservice = ScooterService("urban_mobility.db")
 
         if _scooterservice.delete_scooter(scooter_id):
             return True, f"Scooter {scooter_id} deleted successfully"

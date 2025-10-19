@@ -6,9 +6,8 @@ from collections import defaultdict
 from models.log_entry import LogEntry
 import sqlite3
 from pathlib import Path
+from config import DB_FILE, LOG_FILE
 
-LOG_FILE = "activity.log"
-DB_PATH = "urban_mobility.db" 
 _failed_counter = defaultdict(int)   # username -> consecutive fails
 
 def get_next_log_id() -> int:
@@ -100,7 +99,7 @@ def read_logs(limit: int | None = None) -> list[LogEntry]:
 
 
 def _conn():
-    return sqlite3.connect(DB_PATH)
+    return sqlite3.connect(DB_FILE)
 
 def unread_suspicious_count(user_id: int) -> int:
     """
