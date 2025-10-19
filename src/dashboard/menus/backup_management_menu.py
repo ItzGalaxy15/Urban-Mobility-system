@@ -5,6 +5,7 @@ from services.restore_code_service import restore_code_service
 from services.userservice import user_service
 from controllers.session import UserSession
 from controllers.backupcontroller import BackupController
+from utils.validation import validate_restore_code
 
 def request_backup_restore_flow(session):
     """Display list of all backups and allow system admins to request restore codes."""
@@ -179,9 +180,16 @@ def restore_with_code_flow(session):
             print(f"{code['code_id']:<8} {code['backup_id']:<10} {code['backup_date']:<20} {used_status:<5}")
     
     # Get restore code
-    code = input("\nEnter your restore code: ").strip()
+    code = input("\nEnter your restore code: ")
     if not code:
         print("No code entered.")
+        input("\nPress Enter to continue...")
+        return
+
+    # Validate restore code format
+    valid, message = validate_restore_code(code)
+    if not valid:
+        print(f"Invalid code format: {message}")
         input("\nPress Enter to continue...")
         return
     

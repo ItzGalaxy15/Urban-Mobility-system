@@ -131,14 +131,14 @@ def update_user_flow(session):
                 updates["username"] = username
             elif choice == "2":
                 first_name = input("Enter the new first name: ")
-                valid, message = user_service.validate_name(first_name, "First name")
+                valid, message = user_service.validate_first_name(first_name)
                 if not valid:
                     print(message)
                     break
                 updates["first_name"] = first_name
             elif choice == "3":
                 last_name = input("Enter the new last name: ")
-                valid, message = user_service.validate_name(last_name, "Last name")
+                valid, message = user_service.validate_last_name(last_name)
                 if not valid:
                     print(message)
                     break
@@ -257,14 +257,14 @@ def edit_account_flow(session):
         if role in ["service_engineer", "system_admin"]:
             if choice == "1":
                 first_name = input("Enter the new first name: ")
-                valid, message = user_service.validate_name(first_name, "First name")
+                valid, message = user_service.validate_first_name(first_name)
                 if not valid:
                     print(message)
                     continue
                 updates["first_name"] = first_name
             elif choice == "2":
                 last_name = input("Enter the new last name: ")
-                valid, message = user_service.validate_name(last_name, "Last name")
+                valid, message = user_service.validate_last_name(last_name)
                 if not valid:
                     print(message)
                     continue
@@ -284,14 +284,14 @@ def edit_account_flow(session):
                 updates["username"] = username
             elif choice == "2":
                 first_name = input("Enter the new first name: ")
-                valid, message = user_service.validate_name(first_name, "First name")
+                valid, message = user_service.validate_first_name(first_name)
                 if not valid:
                     print(message)
                     continue
                 updates["first_name"] = first_name
             elif choice == "3":
                 last_name = input("Enter the new last name: ")
-                valid, message = user_service.validate_name(last_name, "Last name")
+                valid, message = user_service.validate_last_name(last_name)
                 if not valid:
                     print(message)
                     continue

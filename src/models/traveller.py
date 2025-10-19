@@ -67,7 +67,7 @@ class Traveller:
         if age < 18:
             raise ValueError("traveller must be at least 18 years old")
 
-        if gender.lower() not in {"male", "female"}:
+        if gender not in {"male", "female"}:
             raise ValueError("gender must be male or female")
 
         # store(encrypted)
@@ -76,7 +76,7 @@ class Traveller:
         self.first_name         = encrypt(first_name)
         self.last_name          = encrypt(last_name)
         self.birthday           = encrypt(birthday)
-        self.gender             = encrypt(gender.lower())
+        self.gender             = encrypt(gender)
         self.street_name        = encrypt(street_name)
         self.house_number       = encrypt(house_number)
         self.zip_code           = encrypt(zip_code)

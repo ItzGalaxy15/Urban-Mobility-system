@@ -43,7 +43,7 @@ class User:
                 raise ValueError("username does not meet format/length rules")
             # Password rules (only validate if password_plain is provided)
             if password_plain is not None:
-                if not PWD_ALLOWED_PATTERN.fullmatch(password_plain):
+                if not PASSWORD_PATTERN.fullmatch(password_plain):
                     raise ValueError("password contains invalid characters or length")
                 # complexity check
                 if not (re.search(r"[a-z]", password_plain)

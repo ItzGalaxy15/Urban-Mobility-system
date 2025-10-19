@@ -1,7 +1,8 @@
 import sqlite3
 from utils.crypto_utils import hash_password, decrypt, check_password, encrypt
-from models.user import User, USERNAME_RE, PWD_ALLOWED_RE
+from models.user import User
 from utils.validation import validate_username, validate_password, validate_first_name, validate_last_name
+from utils.validation import USERNAME_PATTERN, PASSWORD_PATTERN
 import re
 from typing import Tuple
 import random
@@ -24,7 +25,7 @@ class UserService:
         """Validate username format and requirements."""
         if not username:
             return False, "Username is required"
-        if not USERNAME_RE.fullmatch(username):
+        if not USERNAME_PATTERN.fullmatch(username):
             return False, "Username must be 8-10 characters and start with a letter or underscore"
         return True, ""
 
@@ -32,36 +33,13 @@ class UserService:
         """Validate password requirements."""
         if not password:
             return False, "Password is required"
-        if not PWD_ALLOWED_RE.fullmatch(password):
+        if not PASSWORD_PATTERN.fullmatch(password):
             return False, "Password must be 12-30 characters and contain only allowed special characters"
         if not (re.search(r"[a-z]", password)
                 and re.search(r"[A-Z]", password)
                 and re.search(r"\d", password)
                 and re.search(r"[~!@#$%&\-_+=`|\\(){}\[\]:;'<>,.?/]", password)):
             return False, "Password must include lowercase, uppercase, digit and special character"
-        return True, ""
-
-    def validate_name(self, name: str, field_name: str) -> tuple[bool, str]:
-        """Validate first/last name requirements."""
-        if not name:
-            return False, f"{field_name} is required"
-        
-        # Check if name is empty or contains only spaces
-        if not name or name.isspace():
-            return False, f"{field_name} cannot be empty or contain only spaces"
-        
-        # Check length of the raw input
-        if len(name) < 2 or len(name) > 20:
-            return False, f"{field_name} must be between 2 and 20 characters"
-        
-        # Check if name contains only letters and spaces (no numbers or special characters)
-        if not name.replace(" ", "").isalpha():
-            return False, f"{field_name} must contain only letters"
-        
-        # Check for leading/trailing spaces
-        if name.startswith(" ") or name.endswith(" "):
-            return False, f"{field_name} cannot have leading or trailing spaces"
-        
         return True, ""
 
 #-------------------------------------------------
