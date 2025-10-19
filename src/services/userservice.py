@@ -21,27 +21,6 @@ class UserService:
         except Exception as e:
             raise
 
-    def validate_username(self, username: str) -> tuple[bool, str]:
-        """Validate username format and requirements."""
-        if not username:
-            return False, "Username is required"
-        if not USERNAME_PATTERN.fullmatch(username):
-            return False, "Username must be 8-10 characters and start with a letter or underscore"
-        return True, ""
-
-    def validate_password(self, password: str) -> tuple[bool, str]:
-        """Validate password requirements."""
-        if not password:
-            return False, "Password is required"
-        if not PASSWORD_PATTERN.fullmatch(password):
-            return False, "Password must be 12-30 characters and contain only allowed special characters"
-        if not (re.search(r"[a-z]", password)
-                and re.search(r"[A-Z]", password)
-                and re.search(r"\d", password)
-                and re.search(r"[~!@#$%&\-_+=`|\\(){}\[\]:;'<>,.?/]", password)):
-            return False, "Password must include lowercase, uppercase, digit and special character"
-        return True, ""
-
 #-------------------------------------------------
 #                   Add User
 #-------------------------------------------------
