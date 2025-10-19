@@ -129,13 +129,13 @@ class UserSession:
 
     @staticmethod
     def _handle_failed_attempt():
-        """Handle a failed login attempt with lockout after 5 failed attempts."""
+        """Handle a failed login attempt with lockout after 3 failed attempts."""
         UserSession._global_failed_attempts += 1
         failed_count = UserSession._global_failed_attempts
         
-        # Only lock system after 5 failed attempts
+        # Only lock system after 3 failed attempts
         if failed_count >= 3:
-            # Lock system for 15 minutes (900 seconds)
+            # Lock system for 15 seconds
             timeout_seconds = 15
             UserSession._global_lockout_end = datetime.now().timestamp() + timeout_seconds
             UserSession._global_lockout_end = datetime.fromtimestamp(UserSession._global_lockout_end)
