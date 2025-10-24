@@ -229,22 +229,25 @@ class TravellerService:
                     # Decrypt ONLY the fields needed for this search type
                     if is_numeric:
                         # Only decrypt numeric fields (4 fields instead of 12!)
+                        # row[0]=traveller_id, row[1]=mobile_phone, row[2]=house_number, row[3]=zip_code, row[4]=driving_license_no
                         searchable = " ".join([
-                            decrypt(row[10]) if row[10] else "",  # mobile_phone
-                            decrypt(row[7]) if row[7] else "",    # zip_code
-                            decrypt(row[6]) if row[6] else "",    # house_number
-                            decrypt(row[11]) if row[11] else "",  # driving_license_no
+                            decrypt(row[1]) if row[1] else "",  # mobile_phone
+                            decrypt(row[2]) if row[2] else "",  # house_number
+                            decrypt(row[3]) if row[3] else "",  # zip_code
+                            decrypt(row[4]) if row[4] else "",  # driving_license_no
                         ]).lower()
                     elif has_email_chars:
                         # Only decrypt email field (1 field instead of 12!)
-                        searchable = decrypt(row[9]).lower() if row[9] else ""  # email
+                        # row[0]=traveller_id, row[1]=email
+                        searchable = decrypt(row[1]).lower() if row[1] else ""  # email
                     else:
                         # Only decrypt text fields (4 fields instead of 12!)
+                        # row[0]=traveller_id, row[1]=first_name, row[2]=last_name, row[3]=street_name, row[4]=city
                         searchable = " ".join([
                             decrypt(row[1]) if row[1] else "",  # first_name
                             decrypt(row[2]) if row[2] else "",  # last_name
-                            decrypt(row[8]) if row[8] else "",  # city
-                            decrypt(row[5]) if row[5] else "",  # street_name
+                            decrypt(row[3]) if row[3] else "",  # street_name
+                            decrypt(row[4]) if row[4] else "",  # city
                         ]).lower()
                     
                     # Check if this row matches the search
