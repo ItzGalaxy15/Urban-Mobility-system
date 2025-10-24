@@ -128,12 +128,15 @@ class ScooterController:
     @staticmethod
     @log_action("Search scooters -> {msg}")
     @require_role("super", "system_admin", "service_engineer")
-    def search_for_scooters(user_id: int, search_term: str, field: str) -> tuple[Optional[Scooter], str]:
-
-        scooters = _scooterservice.search_for_scooters(search_term, field)
+    def search_for_scooters(user_id: int, search_term: str, limit: int = 50) -> tuple[Optional[list[Scooter]], str]:
+        """
+        Search for scooters by partial text match across brand, model, and serial_number.
+        Uses intelligent field detection and minimal decryption strategy.
+        """
+        scooters = _scooterservice.search_for_scooters(search_term, limit)
         if scooters:
-            return scooters, f"Scooter(s) found for {field}='{search_term}'"
-        return None, f"No scooters found for {field}='{search_term}'"
+            return scooters, f"Found {len(scooters)} scooter(s) matching '{search_term}'"
+        return None, f"No scooters found matching '{search_term}'"
 
     @staticmethod
     @log_action("Delete scooter -> {msg}")
