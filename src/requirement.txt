@@ -1,4 +1,1 @@
-bcrypt
-cryptography
-pytest
-pytest-cov
+pip install bcrypt cryptography

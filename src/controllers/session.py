@@ -16,7 +16,6 @@ class UserSession:
     _current_role = None
     _global_failed_attempts = 0  # Global counter for failed attempts
     _global_lockout_end = None   # Global lockout end time
-    _user_service = None  # Allow injection for testing
 
     @staticmethod
     def login(username, password=None):
@@ -175,4 +174,3 @@ class UserSession:
     @staticmethod
     def get_current_role():
         return UserSession._current_role
-
