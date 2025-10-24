@@ -3,11 +3,13 @@ import re, random
 from datetime import datetime
 from typing import Optional
 from utils.crypto_utils import encrypt, decrypt, hash_password, check_password
+from utils.validation import USERNAME_PATTERN, PASSWORD_PATTERN
 
-# Username & password validation patterns
-USERNAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)
-# Allowed special chars for password as per spec
-PWD_ALLOWED_RE = re.compile(r"^[A-Za-z0-9~!@#$%&_\-+=`|\\(){}\[\]:;'<>,.?/]{12,30}$")
+# These are now imported from utils/validation.py
+# # Username & password validation patterns
+# USERNAME_RE    | USERNAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)
+# # Allowed special chars for password as per spec
+# PWD_ALLOWED_RE | PASSWORD_PATTERN = re.compile(r"^[A-Za-z0-9~!@#$%&_\-+=`|\\(){}\[\]:;'<>,.?/]{12,30}$")
 
 class User:
     def __init__(
@@ -31,17 +33,17 @@ class User:
             raise ValueError("Either password_plain or password_hash must be provided")
 
         # Validate role without modification
-        if role.lower() not in {"super", "system_admin", "service_engineer"}:
+        if role not in {"super", "system_admin", "service_engineer"}:
             raise ValueError(f"Unknown role: {role}")
 
         # Username & password rules (skip super admin hard‑coded user)
-        if role.lower() != "super":
+        if role != "super":
             # Username rules
-            if not USERNAME_RE.fullmatch(username):
+            if not USERNAME_PATTERN.fullmatch(username):
                 raise ValueError("username does not meet format/length rules")
             # Password rules (only validate if password_plain is provided)
             if password_plain is not None:
-                if not PWD_ALLOWED_RE.fullmatch(password_plain):
+                if not PASSWORD_PATTERN.fullmatch(password_plain):
                     raise ValueError("password contains invalid characters or length")
                 # complexity check
                 if not (re.search(r"[a-z]", password_plain)
@@ -51,12 +53,12 @@ class User:
                     raise ValueError("password must include lowercase, uppercase, digit and special char")
 
         # extra profile requirement
-        if role.lower() in {"system_admin", "service_engineer"}:
+        if role in {"system_admin", "service_engineer"}:
             if first_name is None or last_name is None:
                 raise ValueError("first_name and last_name are required for this role")
 
         # Core fields
-        self.username: bytes = encrypt(username.lower())  # case‑insensitive store
+        self.username: bytes = encrypt(username)  # case‑insensitive store
         
         # Handle password - either use provided hash or create hash from plain text
         if password_hash is not None:
@@ -64,7 +66,7 @@ class User:
         else:
             self.password_hash: bytes = hash_password(password_plain)
             
-        self.role: str = encrypt(role.lower())  # Store in lowercase
+        self.role: str = encrypt(role)  # Store role encrypted
 
         # Optional profile (encrypted)
         self.user_id = user_id
@@ -72,7 +74,7 @@ class User:
         self.last_name  = encrypt(last_name)  if last_name  else None
 
         # Registration date
-        if role.lower() == "super":
+        if role == "super":
             self.registration_date = None
         else:
             self.registration_date = datetime.now().isoformat()

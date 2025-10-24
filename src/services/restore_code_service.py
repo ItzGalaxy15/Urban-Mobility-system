@@ -7,7 +7,7 @@ from models.restore_code import RestoreCode
 from services.userservice import user_service
 from utils.crypto_utils import check_password, decrypt, hash_password
 import uuid
-import os
+from config import DB_FILE
 
 class RestoreCodeService:
     def __init__(self, db_path: str):
@@ -323,7 +323,5 @@ class RestoreCodeService:
             conn.close()
             return False
 
-# Create a singleton instance with absolute path
-SRC_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-DB_FILE = os.path.join(SRC_FOLDER, 'urban_mobility.db')
+# Create a singleton instance
 restore_code_service = RestoreCodeService(DB_FILE) 

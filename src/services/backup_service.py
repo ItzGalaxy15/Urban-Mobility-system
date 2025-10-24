@@ -7,12 +7,7 @@ from services.userservice import user_service
 from services.restore_code_service import restore_code_service
 from typing import Tuple
 from models.user import User
-
-# Get the absolute path to the project root (one level above src/)
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-SRC_FOLDER = os.path.join(PROJECT_ROOT, 'src')
-BACKUP_DIR = os.path.join(SRC_FOLDER, 'backups')
-DB_FILE = os.path.join(SRC_FOLDER, 'urban_mobility.db')
+from config import DB_FILE, BACKUP_DIR, SRC_FOLDER
 
 class BackupService:
     def __init__(self):

@@ -3,22 +3,21 @@ from datetime import date
 from typing import Tuple, Optional
 
 from utils.crypto_utils import encrypt, decrypt
-from models.traveller import (
-    Traveller,
-    CITY_CHOICES,
-    ZIP_RE,
-    PHONE_RE,
-    LICENSE_RE,
-    NAME_RE,
-    STREET_RE,
-    BIRTH_RE,
-    EMAIL_RE,
-    HOUSE_RE,
-)
+from models.traveller import Traveller
+from config import DB_FILE
 from utils.validation import (
     validate_first_name, validate_last_name, validate_birthday, validate_gender,
     validate_street_name, validate_house_number, validate_zip, validate_city,
-    validate_email, validate_phone, validate_license
+    validate_email, validate_phone, validate_license,
+    CITY_CHOICES,
+    ZIP_PATTERN,
+    PHONE_PATTERN,
+    LICENSE_PATTERN,
+    NAME_PATTERN,
+    STREET_PATTERN,
+    BIRTH_PATTERN,
+    EMAIL_PATTERN,
+    HOUSE_PATTERN,
 )
 
 
@@ -295,5 +294,5 @@ class TravellerService:
         finally:
             conn.close()
 
-# Singleton instance (keeps import code clean)
-traveller_service = TravellerService("urban_mobility.db")
+# Singleton instance
+traveller_service = TravellerService(DB_FILE)

@@ -1,12 +1,16 @@
 import re
 from datetime import date, datetime
-from models.traveller import CITY_CHOICES, ZIP_RE, PHONE_RE, LICENSE_RE, NAME_RE, STREET_RE, BIRTH_RE, EMAIL_RE, HOUSE_RE
-from models.user import USERNAME_RE, PWD_ALLOWED_RE
-from models.scooter import BRAND_RE, MODEL_RE, SERIAL_RE, DATE_RE, TOP_SPEED_MIN, TOP_SPEED_MAX, BATTERY_CAP_MAX, MILEAGE_MAX
+# from models.traveller import CITY_CHOICES, ZIP_RE, PHONE_RE, LICENSE_RE, NAME_RE, STREET_RE, BIRTH_RE, EMAIL_RE, HOUSE_RE
+# from models.user import USERNAME_RE, PWD_ALLOWED_RE
+# from models.scooter import BRAND_RE, MODEL_RE, SERIAL_RE, DATE_RE, TOP_SPEED_MIN, TOP_SPEED_MAX, BATTERY_CAP_MAX, MILEAGE_MAX
 
 # Define whitelist patterns for consistent validation
+CITY_CHOICES = {
+    "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
+    "Groningen", "Maastricht", "Arnhem", "Leiden", "Zwolle",
+}
 NAME_PATTERN = re.compile(r'^[A-Za-zÀ-ÿ\s]{2,30}$')  # Letters, spaces, accented characters
-USERNAME_PATTERN = re.compile(r'^[A-Za-z_][A-Za-z0-9_]{7,9}$')  # 8-10 chars, starts with letter/underscore
+USERNAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)  # 8-10 chars, starts with letter/underscore
 PASSWORD_PATTERN = re.compile(r'^[A-Za-z0-9~!@#$%&\-_+=`|\\(){}\[\]:;\'<>,.?/]{12,30}$')  # Allowed chars only
 EMAIL_PATTERN = re.compile(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')  # Standard email format
 PHONE_PATTERN = re.compile(r'^\+31-6-[0-9]{8}$')  # Dutch mobile format
@@ -18,7 +22,17 @@ BIRTH_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
 BRAND_PATTERN = re.compile(r'^[A-Za-z0-9\s\-]{2,30}$')  # Alphanumeric, spaces, dashes
 MODEL_PATTERN = re.compile(r'^[A-Za-z0-9\s\-]{1,30}$')  # Alphanumeric, spaces, dashes
 SERIAL_PATTERN = re.compile(r'^[A-Za-z0-9]{10,17}$')  # Alphanumeric only
-DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
+# DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
+DATE_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")  # YYYY-MM-DD format
+TIME_PATTERN = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$") # HH:MM:SS format
+
+# Scooter specifications
+TOP_SPEED_MIN, TOP_SPEED_MAX = 5, 50     # km/h
+BATTERY_CAP_MAX = 5_000                  # Wh
+MILEAGE_MAX     = 1_000_000              # km
+
+# Restore Code Validation
+RESTORE_CODE_PATTERN = re.compile(r'^[A-Z0-9]{8}$')  # 8 chars, uppercase + digits
 
 # --- User/Traveller Name Validation ---
 def validate_first_name(value: str) -> tuple[bool, str]:
@@ -74,7 +88,7 @@ def validate_birthday(birthday: str) -> tuple[bool, str]:
 def validate_gender(gender: str) -> tuple[bool, str]:
     if not gender:
         return False, "Gender is required"
-    if gender.lower() in {"male", "female"}:
+    if gender in {"male", "female"}:
         return True, ""
     return False, "Gender must be 'male' or 'female'"
 
@@ -168,3 +182,12 @@ def validate_scooter_date(date_str: str, field_name: str = "Date") -> tuple[bool
         except ValueError:
             return False, f"Invalid {field_name}: Please enter a valid date (e.g., 2023-01-15)"
     return False, f"{field_name} must be YYYY-MM-DD" 
+
+# --- Restore Code Validation ---
+def validate_restore_code(code: str) -> tuple[bool, str]:
+    """Validate restore code format."""
+    if not code:
+        return False, "Restore code is required"
+    if RESTORE_CODE_PATTERN.fullmatch(code):
+        return True, ""
+    return False, "Restore code must be 8 uppercase letters and digits (e.g., A3F7K2M9)"

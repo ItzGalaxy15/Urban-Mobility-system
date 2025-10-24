@@ -2,16 +2,18 @@ import re, random
 from datetime import datetime
 from typing import Optional
 from utils.crypto_utils import encrypt, decrypt
+from utils.validation import BRAND_PATTERN, MODEL_PATTERN, SERIAL_PATTERN, DATE_PATTERN, TOP_SPEED_MIN, TOP_SPEED_MAX, BATTERY_CAP_MAX, MILEAGE_MAX
 
+# These are now imported from utils/validation.py
 # Regex & ranges
-BRAND_RE   = re.compile(r"^[A-Za-z0-9\- ]{2,30}$")
-MODEL_RE   = re.compile(r"^[A-Za-z0-9\- ]{1,30}$")
-SERIAL_RE  = re.compile(r"^[A-Za-z0-9]{10,17}$")
-DATE_RE    = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# BRAND_RE  |BRAND_PATTERN = re.compile(r"^[A-Za-z0-9\- ]{2,30}$")
+# MODEL_RE  |MODEL_PATTERN = re.compile(r"^[A-Za-z0-9\- ]{1,30}$")
+# SERIAL_RE |SERIAL_PATTERN = re.compile(r"^[A-Za-z0-9]{10,17}$")
+# DATE_RE   |DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-TOP_SPEED_MIN, TOP_SPEED_MAX = 5, 50     # km/h
-BATTERY_CAP_MAX = 5_000                  # Wh
-MILEAGE_MAX     = 1_000_000              # km
+# TOP_SPEED_MIN, TOP_SPEED_MAX = 5, 50     # km/h
+# BATTERY_CAP_MAX = 5_000                  # Wh
+# MILEAGE_MAX     = 1_000_000              # km
 
 
 class Scooter:
@@ -38,11 +40,11 @@ class Scooter:
         if not all([brand, model, serial_number]):
             raise ValueError("brand, model and serial_number are mandatory")
 
-        if not BRAND_RE.fullmatch(brand):
+        if not BRAND_PATTERN.fullmatch(brand):
             raise ValueError("brand format invalid (2‑30 alphanum/- chars)")
-        if not MODEL_RE.fullmatch(model):
+        if not MODEL_PATTERN.fullmatch(model):
             raise ValueError("model format invalid (1‑30 alphanum/‑ chars)")
-        if not SERIAL_RE.fullmatch(serial_number):
+        if not SERIAL_PATTERN.fullmatch(serial_number):
             raise ValueError("serial_number must be 10‑17 alphanum chars")
 
         # numeric range checks
@@ -65,7 +67,7 @@ class Scooter:
 
         # date handling
         if last_maint_date is not None:
-            if not DATE_RE.fullmatch(last_maint_date):
+            if not DATE_PATTERN.fullmatch(last_maint_date):
                 raise ValueError("last_maint_date must be YYYY‑MM‑DD")
             try:
                 datetime.strptime(last_maint_date, "%Y-%m-%d").date()
