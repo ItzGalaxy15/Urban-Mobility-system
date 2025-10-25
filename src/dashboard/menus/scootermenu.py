@@ -1,5 +1,5 @@
 from controllers.scootercontroller import ScooterController
-from controllers.session import UserSession
+from services.session_service import session_service
 from models.scooter import Scooter
 from utils.validation import validate_brand, validate_model, validate_serial_number
 import re
@@ -66,7 +66,7 @@ def add_scooter_flow(session):
     print("\nAdd New Scooter")
     
     new_scooter = ScooterController.create_scooter()
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_service.get_current_user_id()
 
     success, message = ScooterController.add_scooter(current_user_id, new_scooter)
     print(message)
@@ -78,7 +78,7 @@ def add_scooter_flow(session):
 
 def update_scooter_flow(session):
     print("\nUpdate Scooter")
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_service.get_current_user_id()
     
     # Validate scooter ID input
     scooter_id = safe_input("Enter the ID of the scooter to update: ", validate_scooter_id)
@@ -95,7 +95,7 @@ def update_scooter_flow(session):
     new_scooter = ScooterController.create_scooter(scooter, session._current_role == "service_engineer")
 
     # Call the service method if the user is a service engineer otherwise call update method
-    if UserSession.get_current_role() == "service_engineer":
+    if session_service.get_current_role() == "service_engineer":
         success, message = ScooterController.service_scooter(current_user_id, scooter_id=scooter_id, update_data=new_scooter)
     else:
         success, message = ScooterController.update_scooter(current_user_id, scooter_id, new_scooter)
@@ -109,7 +109,7 @@ def update_scooter_flow(session):
 
 def view_scooters_flow(session):
     print("\nView Scooters")
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_service.get_current_user_id()
 
     # Validate choice input
     choice = safe_input("Do you want to view all scooters? (y/n): ", validate_choice)
@@ -147,7 +147,7 @@ def view_scooters_flow(session):
 def search_scooters_flow(session):
     print("\n=== Scooter Search ===")
     
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_service.get_current_user_id()
 
     # Advanced Search - field-specific
     print("\n--- Advanced Search ---")
@@ -199,7 +199,7 @@ def search_scooters_flow(session):
     input("Press Enter to continue...")
 
 def delete_scooter_flow(session):
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_service.get_current_user_id()
     
     # Validate scooter ID input
     scooter_id = safe_input("Enter the ID of the scooter to delete: ", validate_scooter_id)
