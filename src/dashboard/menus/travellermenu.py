@@ -252,7 +252,7 @@ def search_traveller_flow(session: UserSession) -> None:
     Returns:
         None. Prints the search results.
     """
-    key = input("\nSearch key (name / e-mail / phone, leave blank to cancel): ")
+    key = input("\nSearch key (id / first name / last name / e-mail / phone / birthday / gender / street name / house number / ZIP / city / driving licence, leave blank to cancel): ")
 
     if key == "":
         print("Search cancelled.")
