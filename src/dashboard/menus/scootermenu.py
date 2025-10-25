@@ -114,12 +114,12 @@ def view_scooters_flow(session):
     # Validate choice input
     choice = safe_input("Do you want to view all scooters? (y/n): ", validate_choice)
     
-    if choice.lower() == 'n':
+    if choice == 'n':
         # Validate scooter ID input
         scooter_id = safe_input("Enter the ID of the scooter to view: ", validate_scooter_id)
         scooters_result = ScooterController.get_scooter(current_user_id, scooter_id)
         scooters, message = scooters_result
-    elif choice.lower() == 'y':
+    elif choice == 'y':
         scooters_result = ScooterController.get_scooter(current_user_id)
         scooters, message = scooters_result
     else:

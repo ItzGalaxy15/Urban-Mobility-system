@@ -12,7 +12,7 @@ def reset_password_flow(session):
     # Get user identifier (ID or username)
     while True:
         identifier = input("Enter user ID or username ('back' or 'exit' to cancel): ")
-        if identifier.lower() in CANCEL_KEYWORDS:
+        if identifier in CANCEL_KEYWORDS:
             print("Operation cancelled.")
             return
             

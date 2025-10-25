@@ -87,7 +87,7 @@ class SessionService:
     def login(self, username: str, password: Optional[str] = None) -> bool:
         """Authenticate user login with whitelist approach."""
         # Check for exit command
-        if username.lower() == 'exit':
+        if username == 'exit':
             print("Exiting system...")
             sys.exit(0)
         
@@ -133,7 +133,7 @@ class SessionService:
         # Get password if not provided
         if password is None:
             password = input("Password: ")
-            if password.lower() == 'exit':
+            if password == 'exit':
                 print("Exiting system...")
                 sys.exit(0)
         

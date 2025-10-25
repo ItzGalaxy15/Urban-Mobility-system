@@ -18,12 +18,12 @@ def main():
         while not session_service.is_authenticated():
             print("Type exit to exit the system")
             username = input("Username: ")
-            if username.lower() == 'exit':
+            if username == 'exit':
                 print("Exiting system...")
                 sys.exit(0)
             if username == "super_admin":
                 password = input("Password: ")
-                if password.lower() == 'exit':
+                if password == 'exit':
                     print("Exiting system...")
                     sys.exit(0)
                 if session_service.login(username, password):

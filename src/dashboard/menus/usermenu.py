@@ -22,10 +22,10 @@ def add_user_flow(session):
     # Username
     while True:
         username = input("Username (8-10 chars, starts with letter/underscore): ")
+        valid, msg = validate_username(username)
         if username.lower() in CANCEL_KEYWORDS:
             print("Add cancelled.")
             return
-        valid, msg = validate_username(username)
         if not valid:
             print(msg)
             continue
@@ -67,9 +67,6 @@ def add_user_flow(session):
         print("2. System Admin")
         while True:
             role_choice = input("Enter the role (1 or 2): ")
-            if role_choice.lower() in CANCEL_KEYWORDS:
-                print("Add cancelled.")
-                return
             if role_choice == "1":
                 role = "service_engineer"
                 break
@@ -85,7 +82,9 @@ def add_user_flow(session):
     print(f"  First name: {first_name}")
     print(f"  Last name: {last_name}")
     print(f"  Role: {role}")
-    if input("\nSave this user? (y/n): ").lower() != "y":
+
+    answer = input("\nSave this user? (y/n): ")
+    if answer != "y":
         print("Add cancelled.")
         input("Press Enter to continue...")
         return

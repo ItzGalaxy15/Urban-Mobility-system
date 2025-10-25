@@ -361,8 +361,8 @@ class ScooterController:
                 print(f"Old scooter out of service: {'Yes' if old_scooter.out_of_service else 'No'}")
 
             out_of_service_input = input("Is the scooter out of service? (y/n): ")
-            if out_of_service_input.lower() in ["y", "n"]:
-                out_of_service = out_of_service_input.lower() == "y"
+            if out_of_service_input in ["y", "n"]:
+                out_of_service = out_of_service_input == "y"
                 break
             print("Invalid format (y/n).")
 
