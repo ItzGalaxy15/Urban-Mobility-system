@@ -146,53 +146,30 @@ def view_scooters_flow(session):
 
 def search_scooters_flow(session):
     print("\nSearch Scooters")
+    print("Search across brand, model, and serial number")
+    
     current_user_id = UserSession.get_current_user_id()
 
-    # Print out all fields from the scooter object as a reference for the user
-    scooter_fields = [
-        "brand",
-        "model",
-        "serial_number"
-    ]
-    print("\nAvailable fields to search by:")
-    for idx, field_name in enumerate(scooter_fields, 1):
-        print(f"{idx}. {field_name}")
-    print(f"{len(scooter_fields) + 1}. All fields")
-
-    # Ask user for the field to search by using a menu with validation
-    while True:
-        try:
-            choice_input = input(f"Select field to search by (1-{len(scooter_fields) + 1}): ")
-            if not choice_input.isdigit():
-                print("Please enter a valid number.")
-                continue
-            choice = int(choice_input)
-            if 1 <= choice <= len(scooter_fields):
-                field = scooter_fields[choice - 1]
-                break
-            elif choice == len(scooter_fields) + 1:
-                field = None
-                break
-            else:
-                print("Invalid selection. Please try again.")
-        except ValueError:
-            print("Please enter a valid number.")
-
     # Validate search term input
-    search_term = safe_input("Enter search term: ", validate_search_term)
+    search_term = safe_input("\nEnter search term (leave blank to cancel): ", validate_search_term)
+    
+    if not search_term or search_term.strip() == "":
+        print("Search cancelled.")
+        input("Press Enter to continue...")
+        return
 
     # Call the search method - returns (scooters, message) tuple
-    results = ScooterController.search_for_scooters(current_user_id, search_term, field)
+    results = ScooterController.search_for_scooters(current_user_id, search_term)
     scooters, message = results
     
     if scooters:
-        print(f"\nFound {len(scooters)} scooter(s):")
+        print(f"\n{message}")
         for idx, scooter in enumerate(scooters, 1):
-            print(f"\nScooter #{idx} - ({scooter.scooter_id}):")
+            print(f"\nScooter #{idx} - (ID: {scooter.scooter_id}):")
             display_scooter_data(scooter)
             print("\n" + ("-" * 30))
     else:
-        print("No scooters found matching your search.")
+        print(f"\n{message}")
     input("Press Enter to continue...")
 
 def delete_scooter_flow(session):
