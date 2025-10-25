@@ -19,7 +19,7 @@ def log_action(description: str):
             # Normalise return value
             if not (isinstance(result, tuple) and len(result) == 2
                     and isinstance(result[0], bool)):
-                success, message = True, "OK"
+                success, message = True, ""
             else:
                 success, message = result
 
