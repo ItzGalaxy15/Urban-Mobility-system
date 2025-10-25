@@ -265,7 +265,7 @@ class UserService:
         conn.close()
 
         # Normalize input username to lowercase for comparison
-        username_lower = username.lower()
+        username_lower = username
 
         for row in users:
             try:

@@ -30,7 +30,7 @@ def add_user_flow(session):
             print(msg)
             continue
 
-        if user_service.get_user_by_username(username):
+        if user_service.get_user_by_username(username.lower()):
             print("Username already exists. Please choose a different one.")
             continue
 
