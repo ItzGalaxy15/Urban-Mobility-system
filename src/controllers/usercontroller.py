@@ -27,8 +27,23 @@ class UserController:
     @staticmethod
     @log_action("Add user -> {msg}")
     @require_role("system_admin", "super")
-    def add_user(current_user_id: int, username: str, password: str, first_name: str, last_name: str, role: str) -> Tuple[bool, str]:
+    def add_user(user_id: int, username: str, password: str, first_name: str, last_name: str, role: str) -> Tuple[bool, str]:
         """Add a new user to the system."""
+        # Check permissions - handle super admin case
+        if user_id == 0:
+            # Super admin case - can add any role
+            current_user_role = "super"
+        else:
+            current_user = user_service.get_user_by_id(user_id)
+            if not current_user:
+                return False, "Current user not found."
+            current_user_role = current_user.role_plain
+
+        # System admin can only add service_engineer roles
+        if current_user_role == "system_admin":
+            if role != "service_engineer":
+                return False, "System admins can only add service engineers."
+        
         # Validate new user data using User model
         try:
             new_user = User(
@@ -49,12 +64,12 @@ class UserController:
     @staticmethod
     @log_action("Update user -> {msg}")
     @require_role("system_admin", "super")
-    def update_user(current_user_id: int, user_id: int, **updates) -> Tuple[bool, str]:
+    def update_user(user_id: int, target_user_id: int, **updates) -> Tuple[bool, str]:
         """Update user information."""
         # Validate updates using User model
         if "password" in updates:
             new_password = updates["password"]
-            user = user_service.get_user_by_id(user_id)
+            user = user_service.get_user_by_id(target_user_id)
             if not user:
                 return False, "User not found."
 
@@ -65,26 +80,38 @@ class UserController:
                 return False, str(e)
 
         # Check permissions - handle super admin case
-        if current_user_id == 0:
+        if user_id == 0:
             # Super admin case - can update anyone
             current_user_role = "super"
         else:
-            current_user = user_service.get_user_by_id(current_user_id)
+            current_user = user_service.get_user_by_id(user_id)
             if not current_user:
                 return False, "Current user not found."
             current_user_role = current_user.role_plain
 
         if current_user_role == "system_admin":
-            target_user = user_service.get_user_by_id(user_id)
+            target_user = user_service.get_user_by_id(target_user_id)
             if not target_user:
                 return False, "User not found."
-            if target_user.role_plain == "service_engineer" or user_id == current_user_id:
-                return user_service.update_user(user_id, **updates)
-            else:
-                return False, "System admins can only update service engineers or themselves."
+            
+            # System admin can only update service_engineer, NOT other system_admins or super admins
+            if target_user.role_plain != "service_engineer":
+                return False, "System admins can only update service engineers."
+            
+            # Check if trying to escalate the target user's role
+            if "role" in updates:
+                if updates["role"] != "service_engineer":
+                    return False, "System admins cannot escalate roles."
+            
+            return user_service.update_user(target_user_id, **updates)
         else:
-            # Super admin can update anyone
-            return user_service.update_user(user_id, **updates)
+            # Super admin can update anyone, but check for self privilege escalation
+            if user_id != 0 and target_user_id == user_id and "role" in updates:
+                current_user = user_service.get_user_by_id(user_id)
+                if current_user and updates["role"] != current_user.role_plain:
+                    return False, "Users cannot change their own role."
+            
+            return user_service.update_user(target_user_id, **updates)
 
     #--------------------------------------------------------------------------------------
     #                   Delete User
@@ -92,29 +119,30 @@ class UserController:
     @staticmethod
     @log_action("Delete user -> {msg}")
     @require_role("system_admin", "super")
-    def delete_user(current_user_id: int, user_id: int, username: str) -> Tuple[bool, str]:
+    def delete_user(user_id: int, target_user_id: int, username: str) -> Tuple[bool, str]:
         """Delete a user from the system."""
         # Check permissions - handle super admin case
-        if current_user_id == 0:
+        if user_id == 0:
             # Super admin case - can delete anyone
             current_user_role = "super"
         else:
-            current_user = user_service.get_user_by_id(current_user_id)
+            current_user = user_service.get_user_by_id(user_id)
             if not current_user:
                 return False, "Current user not found."
             current_user_role = current_user.role_plain
 
-        if current_user_role == "system_admin":
-            target_user = user_service.get_user_by_id(user_id)
+        if current_user_role == "system_admin" or user_id == target_user_id:
+            target_user = user_service.get_user_by_id(target_user_id)
             if not target_user:
                 return False, "User not found."
-            if target_user.role_plain == "service_engineer" or user_id == current_user_id:
-                return user_service.delete_user(user_id, username)
+            # System admin can only delete service_engineer, NOT other system_admins or themselves
+            if target_user.role_plain == "service_engineer":
+                return user_service.delete_user(target_user_id, username)
             else:
-                return False, "System admins can only delete service engineers or themselves."
+                return False, "System admins can only delete service engineers."
         else:
             # Super admin can delete anyone
-            return user_service.delete_user(user_id, username)
+            return user_service.delete_user(target_user_id, username)
     
     #--------------------------------------------------------------------------------------
     #                   List Users
@@ -122,7 +150,7 @@ class UserController:
     @staticmethod
     @log_action("List users -> {msg}")
     @require_role("system_admin", "super")
-    def list_users(current_user_id: int) -> List[User]:
+    def list_users(user_id: int) -> List[User]:
         """List all users in the system."""
         return user_service.list_users()
     
