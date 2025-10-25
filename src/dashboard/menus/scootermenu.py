@@ -155,9 +155,13 @@ def search_scooters_flow(session):
     print("1. Brand")
     print("2. Model")
     print("3. Serial Number")
-    
-    field_choice = safe_input("\nSelect field (1-3): ", lambda x: (x in ["1", "2", "3"], "Choice must be 1, 2, or 3"))
-    
+
+    field_choice = input("\nSelect field (1-3): ")
+    if field_choice not in ["1", "2", "3"]:
+        print("Invalid choice. Search cancelled.")
+        input("Press Enter to continue...")
+        return
+
     # Map to actual field names
     field_map = {
         "1": "brand",
