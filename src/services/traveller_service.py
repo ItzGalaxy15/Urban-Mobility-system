@@ -18,8 +18,14 @@ from utils.validation import (
     BIRTH_PATTERN,
     EMAIL_PATTERN,
     HOUSE_PATTERN,
-)
+    )
 
+# Allowed fields for search_travellers (must match column names in the Traveller table)
+ALLOWED_FIELDS = {
+    "first_name", "last_name", "birthday", "gender", "street_name",
+    "house_number", "zip_code", "city", "email", "mobile_phone",
+    "driving_license_no"
+}
 
 class TravellerService:
     """Service layer responsible for CRUD operations on *Traveller* records.
@@ -157,126 +163,59 @@ class TravellerService:
         return False, "Traveller not found"
 
 
-    def search_travellers(self, key: str, limit: int = 50) -> list[Traveller]:
+    def search_travellers(self, key: str, field_name: str, limit: int = 50) -> list[Traveller]:
         """
-        Search (partial, case-insensitive) for Travellers on the most common fields.
-        Uses efficient database-level filtering to avoid loading all data into memory.
+        Search for travellers in a SPECIFIC field only.
+        More accurate for edge cases like "45DE" in ZIP or "john.smith" in email.
         
-        Two-phase approach:
-        PHASE 1 - Lightweight Search (minimal decryption):
-          1. Detect search type (numeric/email/text) → intelligent SQL filtering
-          2. Decrypt ONLY search-relevant fields (1-4 fields, not all 12!)
-          3. Find matching IDs with early exit
-        
-        PHASE 2 - Full Decryption (only for matches):
-          4. Second query to fetch ONLY matching records
-          5. Decrypt all 12 fields ONLY for actual matches
-
         Args:
-            key: piece of text/number to search for ("mik", "2328", …)
-            limit: Maximum results to return
+            key: search term
+            field_name: exact field to search ("first_name", "email", "zip_code", etc.)
+            limit: max results
         """
-        if not key:
+        if not key or field_name not in ALLOWED_FIELDS:
             return []
-
-        key_lc = key.lower()
+        
         conn = self._get_connection()
         cur = conn.cursor()
-
+        
         try:
-            # Analyze search term to optimize SQL query
-            is_numeric = key.isdigit()
-            has_email_chars = '@' in key and '.' in key
-            
-            # Build intelligent SQL query based on search pattern
-            if is_numeric:
-                # Numeric search: Only fetch records with numeric fields populated
-                # Target fields: phone, zip_code, house_number, driving_license_no
-                cur.execute('''
-                    SELECT traveller_id, mobile_phone, house_number, zip_code, driving_license_no
-                    FROM Traveller
-                    WHERE mobile_phone IS NOT NULL 
-                       OR zip_code IS NOT NULL 
-                       OR driving_license_no IS NOT NULL
-                       OR house_number IS NOT NULL
-                ''')
-            elif has_email_chars:
-                # Email search: Only fetch records with email populated
-                cur.execute('''
-                    SELECT traveller_id, email
-                    FROM Traveller
-                    WHERE email IS NOT NULL
-                ''')
-            else:
-                # Text search: Fetch records with name/address fields populated
-                # Target fields: first_name, last_name, city, street_name
-                cur.execute('''
-                    SELECT traveller_id, first_name, last_name, street_name, city
-                    FROM Traveller
-                    WHERE first_name IS NOT NULL 
-                       OR last_name IS NOT NULL 
-                       OR city IS NOT NULL
-                       OR street_name IS NOT NULL
-                ''')
+            # PHASE 1: Fetch only specified field
+            cur.execute(f'''
+                SELECT traveller_id, {field_name}
+                FROM Traveller
+                WHERE {field_name} IS NOT NULL
+            ''')
             
             rows = cur.fetchall()
             matching_ids = []
+            key_lc = key
             
-            # PHASE 1: LIGHTWEIGHT SEARCH - Only decrypt search-relevant fields
+            # Decrypt and search ONLY the specified field
             for row in rows:
-                traveller_id = row[0]
+                traveller_id, encrypted_value = row
                 try:
-                    # Decrypt ONLY the fields needed for this search type
-                    if is_numeric:
-                        # Only decrypt numeric fields (4 fields instead of 12!)
-                        # row[0]=traveller_id, row[1]=mobile_phone, row[2]=house_number, row[3]=zip_code, row[4]=driving_license_no
-                        searchable = " ".join([
-                            decrypt(row[1]) if row[1] else "",  # mobile_phone
-                            decrypt(row[2]) if row[2] else "",  # house_number
-                            decrypt(row[3]) if row[3] else "",  # zip_code
-                            decrypt(row[4]) if row[4] else "",  # driving_license_no
-                        ]).lower()
-                    elif has_email_chars:
-                        # Only decrypt email field (1 field instead of 12!)
-                        # row[0]=traveller_id, row[1]=email
-                        searchable = decrypt(row[1]).lower() if row[1] else ""  # email
-                    else:
-                        # Only decrypt text fields (4 fields instead of 12!)
-                        # row[0]=traveller_id, row[1]=first_name, row[2]=last_name, row[3]=street_name, row[4]=city
-                        searchable = " ".join([
-                            decrypt(row[1]) if row[1] else "",  # first_name
-                            decrypt(row[2]) if row[2] else "",  # last_name
-                            decrypt(row[3]) if row[3] else "",  # street_name
-                            decrypt(row[4]) if row[4] else "",  # city
-                        ]).lower()
-                    
-                    # Check if this row matches the search
-                    if key_lc in searchable:
+                    decrypted = decrypt(encrypted_value) if encrypted_value else ""
+                    if key_lc in decrypted:
                         matching_ids.append(traveller_id)
-                        
-                        # Early exit when limit reached
                         if len(matching_ids) >= limit:
                             break
-                            
-                except Exception as exc:
-                    # Skip rows that fail to decrypt
-                    print(f"Error processing traveller {traveller_id}: {exc}")
+                except Exception:
                     continue
             
-            # If no matches, return empty list
             if not matching_ids:
                 return []
             
-            # PHASE 2: FULL DECRYPTION - Only for matching records
-            # Fetch complete records for matches only
+            # PHASE 2: Fetch full records for matches
             placeholders = ','.join(['?'] * len(matching_ids))
             cur.execute(f'''
                 SELECT traveller_id, first_name, last_name, birthday, gender,
-                       street_name, house_number, zip_code, city, email,
-                       mobile_phone, driving_license_no, registration_date
+                    street_name, house_number, zip_code, city, email,
+                    mobile_phone, driving_license_no, registration_date
                 FROM Traveller 
                 WHERE traveller_id IN ({placeholders})
             ''', matching_ids)
+            
             
             matching_rows = cur.fetchall()
             results = []
