@@ -267,6 +267,10 @@ def search_traveller_flow(session) -> None:
     print("8. Driving License")
     
     field_choice = input("Select field (1-8): ")
+    if field_choice not in [str(i) for i in range(1, 9)]:
+        print("Invalid choice. Search cancelled.")
+        input("Press Enter to continue...")
+        return
     search_term = input("Enter search term: ")
     
     # Map to actual field name
