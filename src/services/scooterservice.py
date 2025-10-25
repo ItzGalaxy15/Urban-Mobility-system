@@ -64,8 +64,8 @@ class ScooterService:
                     scooter.location_lon,
                     scooter.out_of_service,
                     scooter.mileage,
-                    scooter.last_maint_date,
-                    scooter.in_service_date
+                    scooter.last_maint_date.isoformat() if scooter.last_maint_date else None,  # Convert datetime to ISO string
+                    scooter.in_service_date.isoformat() if scooter.in_service_date else None   # Convert datetime to ISO string
                 ))
                 conn.commit()
                 return True
@@ -222,6 +222,9 @@ class ScooterService:
             serial_number = decrypt(row[3].encode() if isinstance(row[3], str) else row[3])
 
             # Create a new Scooter object with the decrypted data
+            # Convert ISO string back to datetime object (if not None)
+            last_maint_date = datetime.fromisoformat(row[13]) if row[13] else None
+            
             return Scooter(
                 scooter_id=row[0],
                 brand=brand,
@@ -236,7 +239,7 @@ class ScooterService:
                 location_lon=row[10],
                 out_of_service=bool(row[11]),
                 mileage=row[12],
-                last_maint_date=row[13]
+                last_maint_date=last_maint_date
             )
         except Exception as e:
             raise
