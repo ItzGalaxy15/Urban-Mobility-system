@@ -34,9 +34,8 @@ class TravellerController:
     @staticmethod
     @log_action("Search travellers -> {msg}") 
     @require_role("system_admin", "super")
-    def search_travellers_controller(current_user_id: int, key: str, limit: int = 50):
+    def search_travellers_controller(current_user_id: int, key: str, field_name: str, limit: int = 50):
         """Find travellers via partial-text search."""
-        return traveller_service.search_travellers(key, limit)
-
+        return traveller_service.search_travellers(key, field_name, limit)
 
 traveller_controller = TravellerController()

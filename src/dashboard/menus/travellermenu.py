@@ -37,7 +37,7 @@ def add_traveller_flow(session) -> None:
     Collect traveller details from the user and save them.
 
     Args:
-        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        session: The current user session
 
     Returns:
         None. Prints feedback to the console.
@@ -128,7 +128,7 @@ def update_traveller_flow(session) -> None:
     Update selected traveller fields.
 
     Args:
-        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        session: The current user session
 
     Returns:
         None. Prints feedback to the console.
@@ -205,7 +205,7 @@ def delete_traveller_flow(session) -> None:
     Delete a traveller by id after confirmation.
 
     Args:
-        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        session: The current user session (not used directly here)
 
     Returns:
         None. Prints feedback to the console.
@@ -247,24 +247,48 @@ def search_traveller_flow(session) -> None:
     Search travellers by a free text key.
 
     Args:
-        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        session: The current user session
 
     Returns:
         None. Prints the search results.
     """
-    key = input("\nSearch key (id / first name / last name / e-mail / phone / birthday / gender / street name / house number / ZIP / city / driving licence, leave blank to cancel): ")
+    # Traveller Search Menu
+    print("\n=== Traveller Search ===")
 
-    if key == "":
-        print("Search cancelled.")
-        input("Press Enter to continue...")
-        return
+    # Field-specific search
+    print("\nSelect field to search:")
+    print("1. First Name")
+    print("2. Last Name") 
+    print("3. Email")
+    print("4. Mobile Phone")
+    print("5. ZIP Code")
+    print("6. City")
+    print("7. Street Name")
+    print("8. Driving License")
+    
+    field_choice = input("Select field (1-8): ")
+    search_term = input("Enter search term: ")
+    
+    # Map to actual field name
+    field_map = {
+        "1": "first_name",
+        "2": "last_name",
+        "3": "email",
+        "4": "mobile_phone",
+        "5": "zip_code",
+        "6": "city",
+        "7": "street_name",
+        "8": "driving_license",
+    }
 
+    search_field = field_map[field_choice]
     current_user_id = session_service.get_current_user_id()
-    results = TravellerController.search_travellers_controller(current_user_id, key)
+    results = TravellerController.search_travellers_controller(current_user_id, search_term, search_field)
 
-    if not results:
+    if not results or not results[0]:
         print("No matches found.")
     else:
+        print(f"\nFound {len(results)} traveller(s):\n")
         for row in results:
             print(row)
 

@@ -145,23 +145,45 @@ def view_scooters_flow(session):
     input("Press Enter to continue...")
 
 def search_scooters_flow(session):
-    print("\nSearch Scooters")
-    print("Search across brand, model, and serial number")
+    print("\n=== Scooter Search ===")
     
     current_user_id = session_service.get_current_user_id()
 
-    # Validate search term input
-    search_term = safe_input("\nEnter search term (leave blank to cancel): ", validate_search_term)
+    # Advanced Search - field-specific
+    print("\n--- Advanced Search ---")
+    print("Select field to search:")
+    print("1. Brand")
+    print("2. Model")
+    print("3. Serial Number")
     
-    if not search_term or search_term.strip() == "":
+    field_choice = safe_input("\nSelect field (1-3): ", lambda x: (x in ["1", "2", "3"], "Choice must be 1, 2, or 3"))
+    
+    # Map to actual field names
+    field_map = {
+        "1": "brand",
+        "2": "model",
+        "3": "serial_number"
+    }
+    
+    field_name = field_map[field_choice]
+    field_display = {
+        "brand": "Brand",
+        "model": "Model", 
+        "serial_number": "Serial Number"
+    }[field_name]
+
+    search_term = input(f"Enter {field_display} to search: ")
+
+    if not search_term:
         print("Search cancelled.")
         input("Press Enter to continue...")
         return
-
-    # Call the search method - returns (scooters, message) tuple
-    results = ScooterController.search_for_scooters(current_user_id, search_term)
+    
+    # Call field-specific search method
+    results = ScooterController.search_for_scooters(current_user_id, search_term, field_name)
     scooters, message = results
     
+    # Display results
     if scooters:
         print(f"\n{message}")
         for idx, scooter in enumerate(scooters, 1):
