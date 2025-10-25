@@ -37,7 +37,7 @@ def add_traveller_flow(session: UserSession) -> None:
     Collect traveller details from the user and save them.
 
     Args:
-        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        session: The current user session
 
     Returns:
         None. Prints feedback to the console.
@@ -128,7 +128,7 @@ def update_traveller_flow(session: UserSession) -> None:
     Update selected traveller fields.
 
     Args:
-        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        session: The current user session
 
     Returns:
         None. Prints feedback to the console.
@@ -205,7 +205,7 @@ def delete_traveller_flow(session: UserSession) -> None:
     Delete a traveller by id after confirmation.
 
     Args:
-        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        session: The current user session (not used directly here)
 
     Returns:
         None. Prints feedback to the console.
@@ -242,7 +242,16 @@ def delete_traveller_flow(session: UserSession) -> None:
     else:
         input("Deletion cancelled. Press Enter to continue...")
 
-def search_traveller_flow(session):
+def search_traveller_flow(session) -> None:
+    """
+    Search travellers by a free text key.
+
+    Args:
+        session: The current user session
+
+    Returns:
+        None. Prints the search results.
+    """
     # Traveller Search Menu
     print("\n=== Traveller Search ===")
 
