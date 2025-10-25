@@ -1,5 +1,5 @@
 from controllers.usercontroller import UserController
-from controllers.session import UserSession
+from services.session_service import session_service
 from services.userservice import user_service
 from utils.validation import validate_password
 import os
@@ -28,7 +28,7 @@ def reset_password_flow(session):
             print("User not found")
             continue
         
-        current_user_id = UserSession.get_current_user_id()
+        current_user_id = session_service.get_current_user_id()
         # Special-case for hardcoded super admin
         if current_user_id == 0:
             current_role = 'super'
@@ -113,7 +113,7 @@ def use_reset_code_flow(user_id):
             input("Press Enter to continue...")
             os.system("cls")
             # Logout the user immediately after password reset
-            UserSession.logout()
+            session_service.logout()
             return True
         else:
             print(msg)

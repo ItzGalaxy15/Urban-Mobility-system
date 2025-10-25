@@ -2,7 +2,7 @@
 from dbcontext.dbcontext import create_db
 from services.userservice import user_service
 from controllers.usercontroller import UserController
-from controllers.session import UserSession
+from services.session_service import session_service
 from dashboard.dashboard import build_menu_with_roles_and_permissions, display_menu
 from dashboard.menu_config import get_menu
 from dashboard.menus.password_reset_menu import use_reset_code_flow
@@ -15,7 +15,7 @@ def main():
     
     while True:
         # Login loop
-        while not UserSession.is_authenticated():
+        while not session_service.is_authenticated():
             print("Type exit to exit the system")
             username = input("Username: ")
             if username.lower() == 'exit':
@@ -26,10 +26,10 @@ def main():
                 if password.lower() == 'exit':
                     print("Exiting system...")
                     sys.exit(0)
-                if UserSession.login(username, password):
+                if session_service.login(username, password):
                     break
             else:
-                if UserSession.login(username):
+                if session_service.login(username):
                     break
             # If login fails, loop again
             continue
@@ -38,9 +38,9 @@ def main():
         try:
             while True:
                 os.system("cls")
-                print(f"\nWelcome, {UserSession.get_current_username()} ({UserSession.get_current_role()})")
-                menu_items = get_menu(UserSession)
-                visible_menu = build_menu_with_roles_and_permissions(menu_items, UserSession.get_current_role())
+                print(f"\nWelcome, {session_service.get_current_username()} ({session_service.get_current_role()})")
+                menu_items = get_menu(session_service)
+                visible_menu = build_menu_with_roles_and_permissions(menu_items, session_service.get_current_role())
                 choice = display_menu(visible_menu)
                 if choice is None:
                     continue

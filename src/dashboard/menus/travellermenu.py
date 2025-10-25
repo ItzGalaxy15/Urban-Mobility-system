@@ -1,5 +1,5 @@
 from controllers.traveller_controller import TravellerController
-from controllers.session import UserSession
+from services.session_service import session_service
 from models.traveller import CITY_CHOICES
 from utils.validation import (
     validate_first_name, validate_last_name, validate_birthday, validate_gender,
@@ -32,7 +32,7 @@ def ask(label: str, validator: Optional[Callable[[str], Tuple[bool, str]]] = Non
                 continue
         return value
 
-def add_traveller_flow(session: UserSession) -> None:
+def add_traveller_flow(session) -> None:
     """
     Collect traveller details from the user and save them.
 
@@ -96,7 +96,7 @@ def add_traveller_flow(session: UserSession) -> None:
     
 
     # ── Persist ─────────────────────────────────────────────────
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_service.get_current_user_id()
     success, message = TravellerController.add_traveller_controller(
         current_user_id, **data
     )
@@ -123,7 +123,7 @@ def _prompt_update(label: str, validator: Callable[[str], Tuple[bool, str]]) -> 
             return val                          # valid → use it
         print(msg)                              # invalid → try again
 
-def update_traveller_flow(session: UserSession) -> None:
+def update_traveller_flow(session) -> None:
     """
     Update selected traveller fields.
 
@@ -193,14 +193,14 @@ def update_traveller_flow(session: UserSession) -> None:
         input("Press Enter to continue...")
         return
 
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_service.get_current_user_id()
     ok, msg = TravellerController.update_traveller_controller(
         current_user_id, traveller_id, **updates
     )
     print(msg)
     input("Press Enter to continue...")
 
-def delete_traveller_flow(session: UserSession) -> None:
+def delete_traveller_flow(session) -> None:
     """
     Delete a traveller by id after confirmation.
 
@@ -227,7 +227,7 @@ def delete_traveller_flow(session: UserSession) -> None:
     traveller_id = int(user_input)
     confirm = input("Type 'yes' to confirm: ")
     if confirm == "yes":
-        current_user_id = UserSession.get_current_user_id()
+        current_user_id = session_service.get_current_user_id()
         ok, msg = TravellerController.delete_traveller_controller(
             current_user_id, traveller_id
         )
@@ -242,7 +242,7 @@ def delete_traveller_flow(session: UserSession) -> None:
     else:
         input("Deletion cancelled. Press Enter to continue...")
 
-def search_traveller_flow(session: UserSession) -> None:
+def search_traveller_flow(session) -> None:
     """
     Search travellers by a free text key.
 
@@ -259,7 +259,7 @@ def search_traveller_flow(session: UserSession) -> None:
         input("Press Enter to continue...")
         return
 
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_service.get_current_user_id()
     results = TravellerController.search_travellers_controller(current_user_id, key)
 
     if not results:

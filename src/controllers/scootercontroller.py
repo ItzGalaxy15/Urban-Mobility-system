@@ -7,7 +7,7 @@ from services.scooterservice import ScooterService
 from utils.role_utils import require_role
 from models.scooter import BATTERY_CAP_MAX, MILEAGE_MAX, TOP_SPEED_MAX, TOP_SPEED_MIN
 from utils.validation import validate_brand, validate_model, validate_serial_number, validate_scooter_date
-from controllers.session import UserSession
+from services.session_service import session_service
 from utils.log_decorator import log_action
 from config import DB_FILE
 
