@@ -21,7 +21,7 @@ class LogEntry:
         now = datetime.now()
         self.date = date if is_valid_date(date) else now.strftime("%Y-%m-%d")
         self.time = time if is_valid_time(time) else now.strftime("%H:%M:%S")
-        self.username = username.lower()
+        self.username = username
         self.description = description
         self.additional = additional
         self.suspicious = suspicious

@@ -270,7 +270,7 @@ class UserService:
         for row in users:
             try:
                 decrypted_username = decrypt(row[1])
-                if decrypted_username.lower() == username_lower:
+                if decrypted_username== username_lower:
                     # Handle NULL password_hash by providing a default empty string
                     password_hash = row[6] if row[6] is not None else b''
 

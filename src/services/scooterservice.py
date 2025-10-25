@@ -129,8 +129,6 @@ class ScooterService:
             print(f"Invalid field name: {field_name}. Must be one of {valid_fields}")
             return []
 
-        search_term_lower = search_term.lower()
-        
         # Map field names to column indices
         field_map = {
             'brand': 1,
@@ -159,10 +157,10 @@ class ScooterService:
                     scooter_id = row[0]
                     try:
                         # Decrypt the single target field
-                        field_value = decrypt(row[1].encode() if isinstance(row[1], str) else row[1]).lower() if row[1] else ""
+                        field_value = decrypt(row[1].encode() if isinstance(row[1], str) else row[1]) if row[1] else ""
                         
                         # Check if this row matches
-                        if search_term_lower in field_value:
+                        if search_term in field_value:
                             matching_ids.append(scooter_id)
                             
                             # Early exit when limit reached
