@@ -34,20 +34,23 @@ class UserService:
             Or:
             - user: User object with encrypted data
         """
+        success = False  # Whitelist: default to False
+        message = "Failed to add user"
+        
         try:
             if user is None:
-                valid, message = validate_username(username)
+                valid, msg = validate_username(username)
                 if not valid:
-                    return False, message
-                valid, message = validate_password(password)
+                    return False, msg
+                valid, msg = validate_password(password)
                 if not valid:
-                    return False, message
-                valid, message = validate_first_name(first_name)
+                    return False, msg
+                valid, msg = validate_first_name(first_name)
                 if not valid:
-                    return False, message
-                valid, message = validate_last_name(last_name)
+                    return False, msg
+                valid, msg = validate_last_name(last_name)
                 if not valid:
-                    return False, message
+                    return False, msg
 
                 # Check if username already exists by comparing decrypted usernames
                 conn = self._get_connection()
@@ -83,12 +86,17 @@ class UserService:
             ))
             conn.commit()
             conn.close()
-            return True, "User added successfully"
+            success = True
+            message = "User added successfully"
         except ValueError as e:
-            return False, str(e)
+            message = str(e)
+        
+        return success, message
 
     def update_user(self, user_id: int, **updates) -> Tuple[bool, str]:
         """Update *one or more* fields of a user."""
+        success = False  # Whitelist: default to False
+        message = "Failed to update user"
 
         if not updates:
             return False, "No updates provided"
@@ -166,7 +174,9 @@ class UserService:
         conn.commit()
         conn.close()
 
-        return True, "User updated successfully"
+        success = True
+        message = "User updated successfully"
+        return success, message
 
 #-------------------------------------------------
 #                   List Users
@@ -207,6 +217,9 @@ class UserService:
 #-------------------------------------------------
     def delete_user(self, user_id: int, username: str) -> Tuple[bool, str]:
         """Delete a user from the database."""
+        success = False  # Whitelist: default to False
+        message = "Failed to delete user"
+
         try:
             conn = self._get_connection()
             c = conn.cursor()
@@ -214,9 +227,13 @@ class UserService:
             c.execute('DELETE FROM User WHERE username=?', (username,))
             conn.commit()
             conn.close()
-            return True, "User deleted successfully"
+
+            success = True
+            message = "User deleted successfully"
         except ValueError as e:
-            return False, str(e)
+            message = str(e)
+
+        return success, message
 
 #-------------------------------------------------
 #                   Get User
@@ -296,14 +313,16 @@ class UserService:
 #                   Verify User Password
 #-------------------------------------------------
     def verify_user_password(self, user_id, password) -> bool:
+        success = False  # Whitelist: default to False
+
         conn = self._get_connection()
         c = conn.cursor()
         c.execute('SELECT password_hash FROM User WHERE user_id=?', (user_id,))
         row = c.fetchone()
         conn.close()
         if row:
-            return check_password(password, row[0])
-        return False
+            success = check_password(password, row[0])
+        return success
 
 #-------------------------------------------------
 #                   Update Password
@@ -328,21 +347,27 @@ class UserService:
         Returns:
             Tuple of (success, message)
         """
+        success = False  # Whitelist: default to False
+        message = "Failed to change password"
+
         # Verify current password
         if not self.verify_user_password(user_id, current_password):
             return False, "Current password is incorrect"
 
         # Validate new password
-        valid, message = validate_password(new_password)
+        valid, msg = validate_password(new_password)
         if not valid:
-            return False, message
+            return False, msg
 
         # Update password
         try:
             self.update_password(user_id, new_password)
-            return True, "Password changed successfully"
+            success = True
+            message = "Password changed successfully"
         except Exception as e:
-            return False, f"Failed to update password: {str(e)}"
+            message = f"Failed to update password: {str(e)}"
+
+        return success, message
 
     def generate_temp_code(self, admin_id: int, target_user_id: int) -> Tuple[bool, str]:
         """
@@ -350,6 +375,9 @@ class UserService:
         Only system admin can reset service engineer passwords.
         Super admin can reset both system admin and service engineer passwords.
         """
+        success = False  # Whitelist: default to False
+        message = "Failed to generate temporary code"
+
         # Special-case for hardcoded super admin
         if admin_id == 0:
             admin_role = 'super'
@@ -397,15 +425,20 @@ class UserService:
             if not stored or decrypt(stored[0]) != code:
                 return False, "Failed to store reset code properly"
 
-            return True, code
+            success = True
+            message = code
         except Exception as e:
             conn.rollback()
-            return False, f"Error storing reset code: {str(e)}"
+            message = f"Error storing reset code: {str(e)}"
         finally:
             conn.close()
 
+        return success, message
+
     def verify_temp_code(self, user_id: int, code: str) -> bool:
         """Verify if the temporary code is valid for the user."""
+        success = False  # Whitelist: default to False
+
         conn = self._get_connection()
         c = conn.cursor()
 
@@ -423,23 +456,27 @@ class UserService:
 
             # Compare codes - decrypt the stored code before comparing
             decrypted_code = decrypt(stored_code)
-            return decrypted_code == code
+            success = (decrypted_code == code)
         except Exception as e:
             print(f"Error verifying code: {str(e)}")  # Debug
-            return False
         finally:
             conn.close()
 
+        return success
+
     def reset_password_with_code(self, user_id: int, code: str, new_password: str) -> Tuple[bool, str]:
         """Reset password using temporary code."""
+        success = False  # Whitelist: default to False
+        message = "Failed to reset password"
+
         # Verify code
         if not self.verify_temp_code(user_id, code):
             return False, "Invalid or expired code"
 
         # Validate new password
-        valid, message = validate_password(new_password)
+        valid, msg = validate_password(new_password)
         if not valid:
-            return False, message
+            return False, msg
 
         # Update password
         conn = self._get_connection()
@@ -453,16 +490,22 @@ class UserService:
         conn.commit()
         conn.close()
 
-        return True, "Password reset successfully"
+        success = True
+        message = "Password reset successfully"
+        return success, message
 
     def has_pending_reset(self, user_id: int) -> bool:
         """Check if user has a pending password reset."""
+        success = False  # Whitelist: default to False
+
         conn = self._get_connection()
         c = conn.cursor()
         c.execute('SELECT 1 FROM TempCodes WHERE user_id = ?', (user_id,))
         has_reset = c.fetchone() is not None
         conn.close()
-        return has_reset
+
+        success = has_reset
+        return success
 
 # Create a singleton instance
 user_service = UserService(DB_FILE) 
