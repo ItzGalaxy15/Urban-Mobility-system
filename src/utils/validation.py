@@ -12,7 +12,7 @@ CITY_CHOICES = {
 NAME_PATTERN = re.compile(r'^[A-Za-zÀ-ÿ\s]{2,30}$')  # Letters, spaces, accented characters
 USERNAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)  # 8-10 chars, starts with letter/underscore
 PASSWORD_PATTERN = re.compile(r'^[A-Za-z0-9~!@#$%&\-_+=`|\\(){}\[\]:;\'<>,.?/]{12,30}$')  # Allowed chars only
-EMAIL_PATTERN = re.compile(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')  # Standard email format
+EMAIL_PATTERN = re.compile(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,320}$')  # Standard email format
 PHONE_PATTERN = re.compile(r'^\+31-6-[0-9]{8}$')  # Dutch mobile format
 LICENSE_PATTERN = re.compile(r'^(?:[A-Z]{2}\d{7}|[A-Z]\d{8})$')  # 2 letters + 7 digits OR 1 letter + 8 digits
 STREET_PATTERN = re.compile(r'^[A-Za-zÀ-ÿ\s]{2,50}$')  # Letters and spaces only

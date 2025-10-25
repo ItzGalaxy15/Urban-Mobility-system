@@ -54,35 +54,3 @@ def require_role(*required_roles):
                 return False, f"Permission denied: {user_role} cannot perform this action (requires one of: {', '.join(required_roles)})."
         return wrapper
     return decorator
-
-def has_permission(user_id, required_role):
-    """
-    Checks if a user has sufficient permissions for a given role level (exact match).
-    
-    Args:
-        user_id: The ID of the user to check permissions for
-        required_role (str): The role level to check against
-        
-    Returns:
-        bool: True if user has sufficient permissions, False otherwise
-        
-    Example:
-        if has_permission(user_id, "system_admin"):
-            # Perform admin-only operation
-            pass
-    """
-    if user_id == 0:
-        user = User(
-            username="super_admin",
-            password_plain="Admin_123?",
-            role="super"
-        )
-    else:
-        # Import user_service here to avoid circular imports
-        from services.userservice import user_service
-        user = user_service.get_user_by_id(user_id)
-    
-    if not user:
-        return False
-    user_role = user.role_plain
-    return user_role == required_role
