@@ -24,14 +24,14 @@ from utils.validation import (
 class TravellerService:
     """Service layer responsible for CRUD operations on *Traveller* records.
     * A thin validation layer to give quick feedback before creating a ``Traveller``.
-    * Encryption happens **inside** the ``Traveller`` model ‑ the service never stores plain data.
-    * Each public method returns ``(bool, str)`` → success flag + human‑readable message.
+    * Encryption happens **inside** the ``Traveller`` model - the service never stores plain data.
+    * Each public method returns ``(bool, str)`` → success flag + human-readable message.
     """
 
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    # Low‑level helpers
+    # Low-level helpers
     def _get_connection(self) -> sqlite3.Connection:
         """Return a *new* SQLite connection (caller closes it)."""
         return sqlite3.connect(self.db_path)
@@ -40,9 +40,11 @@ class TravellerService:
     def add_traveller(self, *, traveller: Optional[Traveller] = None, **fields) -> Tuple[bool, str]:
         """Add a traveller to the database.
 
-        Accepts either a pre‑built *Traveller* instance **or** raw keyword
+        Accepts either a pre-built *Traveller* instance **or** raw keyword
         arguments with the model fields (first_name=..., last_name=..., …).
         """
+        success = False  # default whitelist: fail unless proven valid
+        message = "Traveller could not be added"
         try:
             if traveller is None:
                 validations = [
@@ -89,12 +91,17 @@ class TravellerService:
             )
             conn.commit()
             conn.close()
-            return True, "Traveller added successfully"
+            success, message = True, "Traveller added successfully"
         except ValueError as exc:
-            return False, str(exc)
+            message = str(exc)
+        except Exception as exc:
+            message = f"Unexpected error: {exc}"
+        return success, message
 
     def update_traveller(self, traveller_id: int, **updates) -> Tuple[bool, str]:
         """Update *one or more* fields of a traveller."""
+        success = False
+        message = "Traveller could not be updated"
 
         if not updates:
             return False, "No updates supplied"
@@ -113,7 +120,7 @@ class TravellerService:
             "driving_license_no": validate_license,
         }
 
-        # 1 Run pre‑checks
+        # 1 Run pre-checks
         for field, value in updates.items():
             check = validators.get(field)
             if check is None:
@@ -126,7 +133,7 @@ class TravellerService:
         set_parts = []
         values: list[bytes] = []
         for col, val in updates.items():
-            encrypted = encrypt(val.lower()) if col == "gender" else encrypt(val)
+            encrypted = encrypt(val)
             set_parts.append(f"{col} = ?")
             values.append(encrypted)
         values.append(traveller_id)
@@ -134,28 +141,36 @@ class TravellerService:
         sql = f"UPDATE Traveller SET {set_clause} WHERE traveller_id = ?"
 
         # 3️ Execute & close
-        conn = self._get_connection()
-        cur = conn.cursor()
-        cur.execute(sql, tuple(values))
-        conn.commit()
-        affected = cur.rowcount
-        conn.close()
-        if affected:
-            return True, "Traveller updated successfully"
-        return False, "Traveller not found"
+        try:
+            conn = self._get_connection()
+            cur = conn.cursor()
+            cur.execute(sql, tuple(values))
+            conn.commit()
+            affected = cur.rowcount
+            conn.close()
+            if affected:
+                success, message = True, "Traveller updated successfully"
+        except Exception as exc:
+            message = f"Error updating traveller: {exc}"
+
+        return success, message
 
     def delete_traveller(self, traveller_id: int) -> Tuple[bool, str]:
         """Remove a traveller record by *traveller_id*."""
-        conn = self._get_connection()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM Traveller WHERE traveller_id = ?", (traveller_id,))
-        conn.commit()
-        affected = cur.rowcount
-        conn.close()
-        if affected:
-            return True, "Traveller deleted successfully"
-        return False, "Traveller not found"
-
+        success = False
+        message = "Traveller could not be deleted"
+        try:
+            conn = self._get_connection()
+            cur = conn.cursor()
+            cur.execute("DELETE FROM Traveller WHERE traveller_id = ?", (traveller_id,))
+            conn.commit()
+            affected = cur.rowcount
+            conn.close()
+            if affected:
+                success, message = True, "Traveller deleted successfully"
+        except Exception as exc:
+            message = f"Error deleting traveller: {exc}"
+        return success, message
 
     def search_travellers(self, key: str, limit: int = 50) -> list[Traveller]:
         """
@@ -176,10 +191,11 @@ class TravellerService:
             key: piece of text/number to search for ("mik", "2328", …)
             limit: Maximum results to return
         """
+        # --- Whitelist rule: deny by default if key is missing or invalid ---
         if not key:
             return []
 
-        key_lc = key.lower()
+        results: list[Traveller] = []
         conn = self._get_connection()
         cur = conn.cursor()
 
@@ -187,7 +203,7 @@ class TravellerService:
             # Analyze search term to optimize SQL query
             is_numeric = key.isdigit()
             has_email_chars = '@' in key and '.' in key
-            
+
             # Build intelligent SQL query based on search pattern
             if is_numeric:
                 # Numeric search: Only fetch records with numeric fields populated
@@ -218,10 +234,10 @@ class TravellerService:
                        OR city IS NOT NULL
                        OR street_name IS NOT NULL
                 ''')
-            
+
             rows = cur.fetchall()
             matching_ids = []
-            
+
             # PHASE 1: LIGHTWEIGHT SEARCH - Only decrypt search-relevant fields
             for row in rows:
                 traveller_id = row[0]
@@ -229,46 +245,41 @@ class TravellerService:
                     # Decrypt ONLY the fields needed for this search type
                     if is_numeric:
                         # Only decrypt numeric fields (4 fields instead of 12!)
-                        # row[0]=traveller_id, row[1]=mobile_phone, row[2]=house_number, row[3]=zip_code, row[4]=driving_license_no
                         searchable = " ".join([
                             decrypt(row[1]) if row[1] else "",  # mobile_phone
                             decrypt(row[2]) if row[2] else "",  # house_number
                             decrypt(row[3]) if row[3] else "",  # zip_code
                             decrypt(row[4]) if row[4] else "",  # driving_license_no
-                        ]).lower()
+                        ])
                     elif has_email_chars:
                         # Only decrypt email field (1 field instead of 12!)
-                        # row[0]=traveller_id, row[1]=email
-                        searchable = decrypt(row[1]).lower() if row[1] else ""  # email
+                        searchable = decrypt(row[1]) if row[1] else ""  # email
                     else:
                         # Only decrypt text fields (4 fields instead of 12!)
-                        # row[0]=traveller_id, row[1]=first_name, row[2]=last_name, row[3]=street_name, row[4]=city
                         searchable = " ".join([
                             decrypt(row[1]) if row[1] else "",  # first_name
                             decrypt(row[2]) if row[2] else "",  # last_name
                             decrypt(row[3]) if row[3] else "",  # street_name
                             decrypt(row[4]) if row[4] else "",  # city
-                        ]).lower()
-                    
-                    # Check if this row matches the search
-                    if key_lc in searchable:
+                        ])
+
+                    # --- Whitelist logic: only count if exact match or substring match ---
+                    if key in searchable:
                         matching_ids.append(traveller_id)
-                        
+
                         # Early exit when limit reached
                         if len(matching_ids) >= limit:
                             break
-                            
                 except Exception as exc:
                     # Skip rows that fail to decrypt
                     print(f"Error processing traveller {traveller_id}: {exc}")
                     continue
-            
+
             # If no matches, return empty list
             if not matching_ids:
                 return []
-            
+
             # PHASE 2: FULL DECRYPTION - Only for matching records
-            # Fetch complete records for matches only
             placeholders = ','.join(['?'] * len(matching_ids))
             cur.execute(f'''
                 SELECT traveller_id, first_name, last_name, birthday, gender,
@@ -277,10 +288,10 @@ class TravellerService:
                 FROM Traveller 
                 WHERE traveller_id IN ({placeholders})
             ''', matching_ids)
-            
+
             matching_rows = cur.fetchall()
             results = []
-            
+
             # Now decrypt all fields only for matches
             for row in matching_rows:
                 try:
@@ -302,14 +313,14 @@ class TravellerService:
                 except Exception as exc:
                     print(f"Error creating traveller {row[0]}: {exc}")
                     continue
-            
-            return results
-            
+
         except Exception as e:
             print(f"Error in traveller search: {e}")
-            return []
         finally:
             conn.close()
+
+        return results
+
 
 # Singleton instance
 traveller_service = TravellerService(DB_FILE)

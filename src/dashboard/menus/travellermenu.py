@@ -6,11 +6,25 @@ from utils.validation import (
     validate_street_name, validate_house_number, validate_zip, validate_city,
     validate_email, validate_phone, validate_license
 )
+from typing import Callable, Optional, Tuple
 CANCEL_KEYWORDS = {"back", "exit"}
 
-def ask(label: str, validator=None):
+def ask(label: str, validator: Optional[Callable[[str], Tuple[bool, str]]] = None) -> Optional[str]:
+    """
+    Ask the user for a value. If a validator is given, repeat until it passes.
+    If the user types 'back' or 'exit', return None to cancel.
+
+    Args:
+        label: The prompt shown to the user.
+        validator: A function that takes the input string and returns (ok, message).
+
+    Returns:
+        The validated input string, or None if the user cancels.
+    """
     while True:
         value = input(f"{label}: ")
+        if value in CANCEL_KEYWORDS:
+            return None
         if validator:
             ok, msg = validator(value)
             if not ok:
@@ -18,7 +32,16 @@ def ask(label: str, validator=None):
                 continue
         return value
 
-def add_traveller_flow(session):
+def add_traveller_flow(session: UserSession) -> None:
+    """
+    Collect traveller details from the user and save them.
+
+    Args:
+        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    Returns:
+        None. Prints feedback to the console.
+    """
     print("\n=== Add Traveller ===")
     print("Type 'back' or 'exit' at any prompt to cancel.\n")
 
@@ -63,10 +86,14 @@ def add_traveller_flow(session):
     for k, v in data.items():
         print(f"  {k.replace('_',' ').title()}: {v}")
 
-    if input("\nSave this traveller? (y/n): ").lower() != "y":
+    answer = input("\nSave this traveller? (y/n): ")
+
+    if answer != "y":
         print("Add cancelled.")
         input("Press Enter to continue...")
         return
+    
+    
 
     # ── Persist ─────────────────────────────────────────────────
     current_user_id = UserSession.get_current_user_id()
@@ -76,10 +103,16 @@ def add_traveller_flow(session):
     print(message)
     input("Press Enter to continue..." if success else "\nPress Enter to return...")
 
-def _prompt_update(label: str, validator):
+def _prompt_update(label: str, validator: Callable[[str], Tuple[bool, str]]) -> Optional[str]:
     """
-    Ask for a field once or until it passes validation.
-    Return None if user leaves it blank (→ keep current value).
+    Ask once for a value and validate. If blank, keep current value.
+
+    Args:
+        label: The prompt shown to the user.
+        validator: A function that validates the input, returning (ok, message).
+
+    Returns:
+        The new value if valid, or None to keep the current value.
     """
     while True:
         val = input(f"{label} (blank = keep): ")
@@ -90,7 +123,16 @@ def _prompt_update(label: str, validator):
             return val                          # valid → use it
         print(msg)                              # invalid → try again
 
-def update_traveller_flow(session):
+def update_traveller_flow(session: UserSession) -> None:
+    """
+    Update selected traveller fields.
+
+    Args:
+        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    Returns:
+        None. Prints feedback to the console.
+    """
     user_input = input("Enter Traveller ID to update (leave blank to cancel): ")
 
     if user_input == "":
@@ -158,7 +200,16 @@ def update_traveller_flow(session):
     print(msg)
     input("Press Enter to continue...")
 
-def delete_traveller_flow(session):
+def delete_traveller_flow(session: UserSession) -> None:
+    """
+    Delete a traveller by id after confirmation.
+
+    Args:
+        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    Returns:
+        None. Prints feedback to the console.
+    """
     print("\n=== Delete Traveller ===")
 
     user_input = input("Enter Traveller ID to delete (leave blank to cancel): ")
@@ -174,8 +225,8 @@ def delete_traveller_flow(session):
         return
 
     traveller_id = int(user_input)
-    confirm = input("Type YES to confirm: ")
-    if confirm.lower() == "yes":
+    confirm = input("Type 'yes' to confirm: ")
+    if confirm == "yes":
         current_user_id = UserSession.get_current_user_id()
         ok, msg = TravellerController.delete_traveller_controller(
             current_user_id, traveller_id
@@ -191,7 +242,16 @@ def delete_traveller_flow(session):
     else:
         input("Deletion cancelled. Press Enter to continue...")
 
-def search_traveller_flow(session):
+def search_traveller_flow(session: UserSession) -> None:
+    """
+    Search travellers by a free text key.
+
+    Args:
+        session: The current user session (not used directly here).!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    Returns:
+        None. Prints the search results.
+    """
     key = input("\nSearch key (id / first name / last name / e-mail / phone / birthday / gender / street name / house number / ZIP / city / driving licence, leave blank to cancel): ")
 
     if key == "":
