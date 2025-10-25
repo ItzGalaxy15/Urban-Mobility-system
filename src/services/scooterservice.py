@@ -41,6 +41,7 @@ class ScooterService:
 
     def add_scooter(self, scooter: Scooter) -> bool:
         """Add a new scooter to the database"""
+        success = False  # Whitelist: default to False
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
@@ -68,11 +69,12 @@ class ScooterService:
                     scooter.in_service_date
                 ))
                 conn.commit()
-                return True
+                success = True
         except sqlite3.Error as e:
-            return False
+            pass
         except Exception as e:
-            return False
+            pass
+        return success
 
     def get_scooter_by_id(self, scooter_id: int) -> Optional[Scooter]:
         """Retrieve a scooter by its ID"""
@@ -232,6 +234,7 @@ class ScooterService:
 
     def update_scooter(self, scooter: Scooter) -> bool:
         """Update an existing scooter in the database"""
+        success = False  # Whitelist: default to False
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
@@ -260,21 +263,25 @@ class ScooterService:
                     scooter.scooter_id
                 ))
                 conn.commit()
-                return True
+                success = True
         except sqlite3.Error as e:
-            return False
+            pass
         except Exception as e:
-            return False
+            pass
+        return success
     
     def delete_scooter(self, scooter_id: int) -> bool:
         """Delete a scooter from the database by its ID"""
+        success = False  # Whitelist: default to False
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("DELETE FROM Scooter WHERE scooter_id = ?", (scooter_id,))
                 conn.commit()
-                return cursor.rowcount > 0
+                if cursor.rowcount > 0:
+                    success = True
         except sqlite3.Error as e:
-            return False
+            pass
         except Exception as e:
-            return False
+            pass
+        return success
