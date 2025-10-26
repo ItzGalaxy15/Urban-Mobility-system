@@ -1,14 +1,13 @@
 # models/traveller.py
-import re, random
 from datetime import datetime, date
 from typing import Optional
 from utils.crypto_utils import encrypt, decrypt
 from utils.validation import (
-    CITY_CHOICES, ZIP_PATTERN, PHONE_PATTERN, LICENSE_PATTERN,
-    NAME_PATTERN, STREET_PATTERN, BIRTH_PATTERN, EMAIL_PATTERN,
-    HOUSE_PATTERN, GENDER_CHOICES, validate_birthday
+    validate_first_name, validate_last_name, validate_birthday,
+    validate_gender, validate_street_name, validate_house_number,
+    validate_zip, validate_city, validate_email, validate_phone,
+    validate_license
 )
-
 
 
 class Traveller:
@@ -27,43 +26,47 @@ class Traveller:
         driving_license_no: str,
         traveller_id: Optional[int] = None,  # Optional, for existing travellers
     ):
-        #basic non-empty checks
-        for v in (first_name, last_name, birthday, gender, street_name,
-                  house_number, zip_code, city, email, mobile_phone,
-                  driving_license_no):
-            if not v:
-                raise ValueError("all fields are mandatory")
+        
+        # Basic empty check
+        required_fields = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "birthday": birthday,
+            "gender": gender,
+            "street_name": street_name,
+            "house_number": house_number,
+            "zip_code": zip_code,
+            "city": city,
+            "email": email,
+            "mobile_phone": mobile_phone,
+            "driving_license_no": driving_license_no,
+        }
 
-        # format checks
-        if not NAME_PATTERN.fullmatch(first_name):
-            raise ValueError("first_name must be 2-30 chars")
-        if not NAME_PATTERN.fullmatch(last_name):
-            raise ValueError("last_name must be 2-30 chars")
-        if not BIRTH_PATTERN.fullmatch(birthday):
-            raise ValueError("birthday must be YYYY-MM-DD")
-        if not STREET_PATTERN.fullmatch(street_name):
-            raise ValueError("street_name must be 2-50 chars, letters and spaces only")
-        if not HOUSE_PATTERN.fullmatch(house_number):
-            raise ValueError("house_number may contain digits only")
-        if not ZIP_PATTERN.fullmatch(zip_code):
-            raise ValueError("zip_code must be DDDDXX")
-        if city not in CITY_CHOICES:
-            raise ValueError("city must be one of the predefined choices")
-        if not EMAIL_PATTERN.fullmatch(email):
-            raise ValueError("invalid email")
-        if not PHONE_PATTERN.fullmatch(mobile_phone):
-            raise ValueError("mobile_phone must be +31-6-DDDDDDDD")
-        if not LICENSE_PATTERN.fullmatch(driving_license_no):
-            raise ValueError("driving_license format invalid")
+        for field, value in required_fields.items():
+            if not value:
+                raise ValueError(f"{field} is required")
 
-        # birthday validation and 18+ control
-        valid, message = validate_birthday(birthday)
-        if not valid:
-            raise ValueError(message)
+        # Centralized validation (from utils/validation.py)
+        checks = [
+            validate_first_name(first_name),
+            validate_last_name(last_name),
+            validate_birthday(birthday),
+            validate_gender(gender),
+            validate_street_name(street_name),
+            validate_house_number(house_number),
+            validate_zip(zip_code),
+            validate_city(city),
+            validate_email(email),
+            validate_phone(mobile_phone),
+            validate_license(driving_license_no),
+        ]
+        for ok, msg in checks:
+            if not ok:
+                raise ValueError(msg)
 
-        if gender not in GENDER_CHOICES:
-            raise ValueError(f"gender must be one of: {', '.join(sorted(GENDER_CHOICES))}")
-
+        if traveller_id is not None and not isinstance(traveller_id, int):
+            raise ValueError("traveller_id must be an integer")
+    
         # store(encrypted)
         self.traveller_id       = traveller_id
         self.registration_date  = datetime.now()
