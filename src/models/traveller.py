@@ -3,18 +3,13 @@ import re, random
 from datetime import datetime, date
 from typing import Optional
 from utils.crypto_utils import encrypt, decrypt
-from utils.validation import CITY_CHOICES, ZIP_PATTERN, PHONE_PATTERN, LICENSE_PATTERN, NAME_PATTERN, STREET_PATTERN, BIRTH_PATTERN, EMAIL_PATTERN, HOUSE_PATTERN
+from utils.validation import (
+    CITY_CHOICES, ZIP_PATTERN, PHONE_PATTERN, LICENSE_PATTERN,
+    NAME_PATTERN, STREET_PATTERN, BIRTH_PATTERN, EMAIL_PATTERN,
+    HOUSE_PATTERN, GENDER_CHOICES, validate_birthday
+)
 
-# These are now imported from utils/validation.py
-# CITY_CHOICES
-# ZIP_RE     |ZIP_PATTERN = re.compile(r"^\d{4}[A-Z]{2}$")
-# PHONE_RE   |PHONE_PATTERN = re.compile(r"^\+31-6-\d{8}$")
-# LICENSE_RE |LICENSE_PATTERN = re.compile(r"^(?:[A-Z]{2}\d{7}|[A-Z]\d{8})$")
-# NAME_RE    |NAME_PATTERN = re.compile(r"^[A-Za-zÀ-ÿ]{2,30}$")  # letters only, 2-30 chars
-# STREET_RE  |STREET_PATTERN = re.compile(r"^[A-Za-zÀ-ÿ\s]{2,50}$")  # letters and spaces, 2-50 chars
-# BIRTH_RE   |BIRTH_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # yyyy-mm-dd
-# EMAIL_RE   |EMAIL_PATTERN = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-# HOUSE_RE   |HOUSE_PATTERN = re.compile(r"^\d+$") 
+
 
 class Traveller:
     def __init__(
@@ -40,35 +35,34 @@ class Traveller:
                 raise ValueError("all fields are mandatory")
 
         # format checks
-        if not NAME_PATTERN.match(first_name):
-            raise ValueError("first_name must be 2-30 chars, letters only")
-        if not NAME_PATTERN.match(last_name):
-            raise ValueError("last_name must be 2-30 chars, letters only")
-        if not BIRTH_PATTERN.match(birthday):
+        if not NAME_PATTERN.fullmatch(first_name):
+            raise ValueError("first_name must be 2-30 chars")
+        if not NAME_PATTERN.fullmatch(last_name):
+            raise ValueError("last_name must be 2-30 chars")
+        if not BIRTH_PATTERN.fullmatch(birthday):
             raise ValueError("birthday must be YYYY-MM-DD")
-        if not STREET_PATTERN.match(street_name):
+        if not STREET_PATTERN.fullmatch(street_name):
             raise ValueError("street_name must be 2-50 chars, letters and spaces only")
-        if not HOUSE_PATTERN.match(house_number):
+        if not HOUSE_PATTERN.fullmatch(house_number):
             raise ValueError("house_number may contain digits only")
-        if not ZIP_PATTERN.match(zip_code):
+        if not ZIP_PATTERN.fullmatch(zip_code):
             raise ValueError("zip_code must be DDDDXX")
         if city not in CITY_CHOICES:
             raise ValueError("city must be one of the predefined choices")
-        if not EMAIL_PATTERN.match(email):
+        if not EMAIL_PATTERN.fullmatch(email):
             raise ValueError("invalid email")
-        if not PHONE_PATTERN.match(mobile_phone):
+        if not PHONE_PATTERN.fullmatch(mobile_phone):
             raise ValueError("mobile_phone must be +31-6-DDDDDDDD")
-        if not LICENSE_PATTERN.match(driving_license_no):
+        if not LICENSE_PATTERN.fullmatch(driving_license_no):
             raise ValueError("driving_license format invalid")
 
-        # 18+ control
-        y, m, d = map(int, birthday.split("-"))
-        age = (date.today() - date(y, m, d)).days // 365
-        if age < 18:
-            raise ValueError("traveller must be at least 18 years old")
+        # birthday validation and 18+ control
+        valid, message = validate_birthday(birthday)
+        if not valid:
+            raise ValueError(message)
 
-        if gender not in {"male", "female"}:
-            raise ValueError("gender must be male or female")
+        if gender not in GENDER_CHOICES:
+            raise ValueError(f"gender must be one of: {', '.join(sorted(GENDER_CHOICES))}")
 
         # store(encrypted)
         self.traveller_id       = traveller_id
