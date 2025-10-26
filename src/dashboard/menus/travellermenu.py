@@ -1,5 +1,5 @@
 from controllers.traveller_controller import TravellerController
-from services.session_service import session_service
+from controllers.session_controller import session_controller
 from utils.validation import (
     validate_first_name, validate_last_name, validate_birthday, validate_gender,
     validate_street_name, validate_house_number, validate_zip, validate_city,
@@ -95,7 +95,7 @@ def add_traveller_flow(session) -> None:
     
 
     # ── Persist ─────────────────────────────────────────────────
-    current_user_id = session_service.get_current_user_id()
+    current_user_id = session_controller.get_current_user_id()
     success, message = TravellerController.add_traveller_controller(
         current_user_id, **data
     )
@@ -192,7 +192,7 @@ def update_traveller_flow(session) -> None:
         input("Press Enter to continue...")
         return
 
-    current_user_id = session_service.get_current_user_id()
+    current_user_id = session_controller.get_current_user_id()
     ok, msg = TravellerController.update_traveller_controller(
         current_user_id, traveller_id, **updates
     )
@@ -226,7 +226,7 @@ def delete_traveller_flow(session) -> None:
     traveller_id = int(user_input)
     confirm = input("Type 'yes' to confirm: ")
     if confirm == "yes":
-        current_user_id = session_service.get_current_user_id()
+        current_user_id = session_controller.get_current_user_id()
         ok, msg = TravellerController.delete_traveller_controller(
             current_user_id, traveller_id
         )
@@ -285,7 +285,7 @@ def search_traveller_flow(session) -> None:
     }
 
     search_field = field_map[field_choice]
-    current_user_id = session_service.get_current_user_id()
+    current_user_id = session_controller.get_current_user_id()
     results = TravellerController.search_travellers_controller(current_user_id, search_term, search_field)
 
     if not results or not results[0]:

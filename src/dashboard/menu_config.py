@@ -1,5 +1,5 @@
 import os
-from services.session_service import session_service
+from controllers.session_controller import session_controller
 from controllers.usercontroller import UserController
 from controllers.backupcontroller import BackupController
 from dashboard.menus.backup_db_menu import backup_db_flow
@@ -105,9 +105,9 @@ def get_menu_traveller_management(session):
 def traveller_menu(session):
     while True:
         os.system("cls")
-        print(f"\nWelcome, {session_service.get_current_username()} ({session_service.get_current_role()})")
+        print(f"\nWelcome, {session_controller.get_current_username()} ({session_controller.get_current_role()})")
         menu_items = get_menu_traveller_management(session)
-        visible_menu = build_menu_with_roles_and_permissions(menu_items, session_service.get_current_role())
+        visible_menu = build_menu_with_roles_and_permissions(menu_items, session_controller.get_current_role())
         # print("Visible menu:", visible_menu)
         choice = display_menu(visible_menu, title="Traveller Management Menu")
         if choice is None:
@@ -152,9 +152,9 @@ def get_menu_user_management(session):
 def user_menu(session):
     while True:
         os.system("cls")
-        print(f"\nWelcome, {session_service.get_current_username()} ({session_service.get_current_role()})")
+        print(f"\nWelcome, {session_controller.get_current_username()} ({session_controller.get_current_role()})")
         menu_items = get_menu_user_management(session)
-        visible_menu = build_menu_with_roles_and_permissions(menu_items, session_service.get_current_role())
+        visible_menu = build_menu_with_roles_and_permissions(menu_items, session_controller.get_current_role())
         # print("Visible menu:", visible_menu)
         choice = display_menu(visible_menu, title="User Management Menu")
         if choice is None:
@@ -199,9 +199,9 @@ def get_menu_scooter_management(session):
 def scooter_menu(session):
     while True:
         os.system("cls")
-        print(f"\nWelcome, {session_service.get_current_username()} ({session_service.get_current_role()})")
+        print(f"\nWelcome, {session_controller.get_current_username()} ({session_controller.get_current_role()})")
         menu_items = get_menu_scooter_management(session)
-        visible_menu = build_menu_with_roles_and_permissions(menu_items, session_service.get_current_role())
+        visible_menu = build_menu_with_roles_and_permissions(menu_items, session_controller.get_current_role())
         # print("Visible menu:", visible_menu)
         choice = display_menu(visible_menu, title="Scooter Management Menu")
         if choice is None:
@@ -236,9 +236,9 @@ def get_menu_backup_management(session):
 def backup_menu(session):
     while True:
         os.system("cls")
-        print(f"\nWelcome, {session_service.get_current_username()} ({session_service.get_current_role()})")
+        print(f"\nWelcome, {session_controller.get_current_username()} ({session_controller.get_current_role()})")
         menu_items = get_menu_backup_management(session)
-        visible_menu = build_menu_with_roles_and_permissions(menu_items, session_service.get_current_role())
+        visible_menu = build_menu_with_roles_and_permissions(menu_items, session_controller.get_current_role())
         # print("Visible menu:", visible_menu)
         choice = display_menu(visible_menu, title="Backup Management Menu")
         if choice is None:

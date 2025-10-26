@@ -1,5 +1,5 @@
 from controllers.usercontroller import UserController
-from services.session_service import session_service
+from controllers.session_controller import session_controller
 from services.userservice import user_service
 from utils.validation import validate_username, validate_password, validate_first_name, validate_last_name
 import os
@@ -11,7 +11,7 @@ def ask(label: str, validator=None):
         if validator:
             ok, msg = validator(value)
             if not ok:
-                print(f"Error: {msg}")
+                print(f"Error: incorrect input")
                 continue
         return value
 
@@ -27,11 +27,11 @@ def add_user_flow(session):
             print("Add cancelled.")
             return
         if not valid:
-            print(msg)
+            print("Error: incorrect input")
             continue
 
         if user_service.get_user_by_username(username.lower()):
-            print("Username already exists. Please choose a different one.")
+            print("Error: username already exists")
             continue
 
         break
@@ -55,8 +55,8 @@ def add_user_flow(session):
         return
 
     # Role
-    current_role = session_service.get_current_role()
-    current_user_id = session_service.get_current_user_id()
+    current_role = session_controller.get_current_role()
+    current_user_id = session_controller.get_current_user_id()
 
     if current_role == "system_admin":
         role = "service_engineer"
@@ -148,7 +148,7 @@ def update_user_flow(session):
                 print("Invalid choice")
                 continue
             if updates:
-                current_user_id = session_service.get_current_user_id()
+                current_user_id = session_controller.get_current_user_id()
                 success, message = UserController.update_user(
                     current_user_id,
                     user.user_id,
@@ -177,7 +177,7 @@ def delete_user_flow(session):
             print("User not found")
             continue
         user_id = user.user_id
-        current_user_id = session_service.get_current_user_id()
+        current_user_id = session_controller.get_current_user_id()
         success, message = UserController.delete_user(
             current_user_id, user_id, user.username
         )
@@ -185,14 +185,14 @@ def delete_user_flow(session):
         input("Press Enter to continue...")
         if success:
             # If the deleted user is the currently logged-in user, log out immediately
-            if user_id == session_service.get_current_user_id():
+            if user_id == session_controller.get_current_user_id():
                 print("You have deleted your own account. Logging out...")
                 os.system("cls")
                 session.logout()
             break
 
 def list_users_flow(session):
-    current_user_id = session_service.get_current_user_id()
+    current_user_id = session_controller.get_current_user_id()
     users = UserController.list_users(current_user_id)
     print("\n--- User List ---")
     print("ID | Username | First Name | Last Name | Role")
@@ -206,7 +206,7 @@ def list_users_flow(session):
 
 def change_password_flow(session):
     while True:
-        current_user_id = session_service.get_current_user_id()
+        current_user_id = session_controller.get_current_user_id()
         old_pw = input("Enter your old password: ")
         new_pw = input("Enter your new password (or leave blank to cancel): ")
         if not new_pw:
@@ -223,7 +223,7 @@ def change_password_flow(session):
 
 def edit_account_flow(session):
     while True:
-        current_user_id = session_service.get_current_user_id()
+        current_user_id = session_controller.get_current_user_id()
         user = user_service.get_user_by_id(current_user_id)
         if not user:
             print("User not found.")
@@ -232,7 +232,7 @@ def edit_account_flow(session):
         
         
         # Get user's role
-        role = session_service.get_current_role()
+        role = session_controller.get_current_role()
         
         # Display profile based on role
         if role in ["service_engineer", "system_admin"]:
@@ -312,8 +312,8 @@ def edit_account_flow(session):
             if success:
                 # Optionally refresh session info if username was changed
                 if "username" in updates:
-                    session_service._current_username = updates["username"]
+                    session_controller._current_username = updates["username"]
                 if "first_name" in updates:
-                    session_service._current_user.first_name = updates["first_name"]
+                    session_controller._current_user.first_name = updates["first_name"]
                 if "last_name" in updates:
-                    session_service._current_user.last_name = updates["last_name"]
+                    session_controller._current_user.last_name = updates["last_name"]

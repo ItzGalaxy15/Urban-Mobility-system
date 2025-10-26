@@ -2,7 +2,7 @@
 
 from services.traveller_service import traveller_service
 from utils.role_utils import require_role
-from services.session_service import session_service
+from controllers.session_controller import session_controller
 from utils.log_decorator import log_action 
 
 
