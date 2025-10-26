@@ -90,33 +90,22 @@ class BackupService:
         """
         Restore a backup directly (super admin only).
         This will wipe all older backups.
-        """
-        print(f"[DEBUG] restore_backup_direct called with backup_id={backup_id}, user_id={user_id}")
-        
+        """        
         # Check if user is a super admin
         if user_id == 0:
             # Super admin case - create a User object
-            print(f"[DEBUG] Creating super admin User object")
             user = User(username="super_admin", password_plain="Admin_123?", role="super")
-            print(f"[DEBUG] Super admin User object created: {user}")
         else:
-            print(f"[DEBUG] Getting user from database with user_id={user_id}")
             user = user_service.get_user_by_id(user_id)
-            print(f"[DEBUG] User from database: {user}")
         
         if not user:
-            print(f"[DEBUG] User is None or empty")
             return False, "User not found."
         
-        print(f"[DEBUG] User role: {user.role_plain}")
         if user.role_plain != 'super':
-            print(f"[DEBUG] User role is not super")
             return False, "Only super admins can restore backups directly."
         
-        print(f"[DEBUG] User validation passed, proceeding with restore")
         # Perform the restore
         success, message = self._perform_restore(backup_id, user_id)
-        print(f"[DEBUG] Restore result: success={success}, message={message}")
         if success:
             # Wipe all older backups (super admin behavior)
             self._wipe_older_backups(backup_id)
@@ -125,7 +114,6 @@ class BackupService:
 
     def _perform_restore(self, backup_id: int, user_id: int) -> Tuple[bool, str]:
         """Internal method to perform the actual restore operation."""
-        print(f"[DEBUG] _perform_restore called with backup_id={backup_id}, user_id={user_id}")
         
         # Get backup details
         conn = sqlite3.connect(DB_FILE)
@@ -134,23 +122,17 @@ class BackupService:
         row = c.fetchone()
         conn.close()
 
-        print(f"[DEBUG] Backup query result: {row}")
         if not row:
-            print(f"[DEBUG] Backup not found in database")
             return False, "Backup not found."
 
         backup_path = row[0]
-        print(f"[DEBUG] Backup path: {backup_path}")
         if not os.path.exists(backup_path):
-            print(f"[DEBUG] Backup file not found on disk")
             return False, "Backup file not found on disk."
 
         try:
             # All backups are now database backups
-            print(f"[DEBUG] Attempting to restore database backup")
             return self._restore_database_backup(backup_path)
         except Exception as e:
-            print(f"[DEBUG] Exception during restore: {e}")
             return False, f"Restore failed: {str(e)}"
 
     def _restore_database_backup(self, backup_path: str) -> Tuple[bool, str]:

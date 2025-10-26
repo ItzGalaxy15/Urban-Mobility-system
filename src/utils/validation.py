@@ -1,29 +1,31 @@
 import re
 from datetime import date, datetime
-# from models.traveller import CITY_CHOICES, ZIP_RE, PHONE_RE, LICENSE_RE, NAME_RE, STREET_RE, BIRTH_RE, EMAIL_RE, HOUSE_RE
-# from models.user import USERNAME_RE, PWD_ALLOWED_RE
-# from models.scooter import BRAND_RE, MODEL_RE, SERIAL_RE, DATE_RE, TOP_SPEED_MIN, TOP_SPEED_MAX, BATTERY_CAP_MAX, MILEAGE_MAX
 
+GENDER_CHOICES = {"male", "female"}
 # Define whitelist patterns for consistent validation
 CITY_CHOICES = {
     "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
     "Groningen", "Maastricht", "Arnhem", "Leiden", "Zwolle",
 }
-NAME_PATTERN = re.compile(r'^[A-Za-zÀ-ÿ\s]{2,30}$')  # Letters, spaces, accented characters
+
+# Letters + optional space/dot/hyphen/apostrophe between words, 2–30 chars, max 5 parts
+NAME_PATTERN = re.compile(r"^(?=.{2,30}$)[A-Za-zÀ-ÿ]+(?:[ .'-][A-Za-zÀ-ÿ]+){0,4}$")
 USERNAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)  # 8-10 chars, starts with letter/underscore
 PASSWORD_PATTERN = re.compile(r'^[A-Za-z0-9~!@#$%&\-_+=`|\\(){}\[\]:;\'<>,.?/]{12,30}$')  # Allowed chars only
 EMAIL_PATTERN = re.compile(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,320}$')  # Standard email format
 PHONE_PATTERN = re.compile(r'^\+31-6-[0-9]{8}$')  # Dutch mobile format
 LICENSE_PATTERN = re.compile(r'^(?:[A-Z]{2}\d{7}|[A-Z]\d{8})$')  # 2 letters + 7 digits OR 1 letter + 8 digits
-STREET_PATTERN = re.compile(r'^[A-Za-zÀ-ÿ\s]{2,50}$')  # Letters and spaces only
+STREET_PATTERN = re.compile(r"^(?=.{2,50}$)[A-Za-zÀ-ÿ0-9]+(?:[ .'\-][A-Za-zÀ-ÿ0-9]+)*$")  # Letters/numbers, single spaces/dots/hyphens, 2–50 chars
 HOUSE_PATTERN = re.compile(r'^[0-9]+$')  # Digits only
 ZIP_PATTERN = re.compile(r'^[0-9]{4}[A-Z]{2}$')  # 4 digits + 2 uppercase letters
-BIRTH_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
-BRAND_PATTERN = re.compile(r'^[A-Za-z0-9\s\-]{2,30}$')  # Alphanumeric, spaces, dashes
-MODEL_PATTERN = re.compile(r'^[A-Za-z0-9\s\-]{1,30}$')  # Alphanumeric, spaces, dashes
+BIRTH_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")  # YYYY-MM-DD format
+
+BRAND_PATTERN = re.compile(r"^(?=.{2,30}$)[A-Za-z0-9]+(?:[ \-][A-Za-z0-9]+)*$") # Alphanumeric, single spaces/dashes, 2–30 chars
+MODEL_PATTERN = re.compile(r"^(?=.{1,30}$)[A-Za-z0-9]+(?:[ \-][A-Za-z0-9]+)*$") # Alphanumeric, single spaces/dashes, 1–30 chars
 SERIAL_PATTERN = re.compile(r'^[A-Za-z0-9]{10,17}$')  # Alphanumeric only
-# DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD format
 DATE_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")  # YYYY-MM-DD format
+
+
 TIME_PATTERN = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$") # HH:MM:SS format
 
 # Scooter specifications
@@ -40,14 +42,14 @@ def validate_first_name(value: str) -> tuple[bool, str]:
         return False, "First name is required"
     if NAME_PATTERN.fullmatch(value):
         return True, ""
-    return False, "First name must be 2-30 characters and contain only letters and spaces"
+    return False, "First name must be 2–30 characters long"
 
 def validate_last_name(value: str) -> tuple[bool, str]:
     if not value:
         return False, "Last name is required"
     if NAME_PATTERN.fullmatch(value):
         return True, ""
-    return False, "Last name must be 2-30 characters and contain only letters and spaces"
+    return False, "Last name must be 2–30 characters long"
 
 # --- Username Validation ---
 def validate_username(username: str) -> tuple[bool, str]:
@@ -88,9 +90,9 @@ def validate_birthday(birthday: str) -> tuple[bool, str]:
 def validate_gender(gender: str) -> tuple[bool, str]:
     if not gender:
         return False, "Gender is required"
-    if gender in {"male", "female"}:
+    if gender in GENDER_CHOICES:
         return True, ""
-    return False, "Gender must be 'male' or 'female'"
+    return False, f"Gender must be one of: {', '.join(sorted(GENDER_CHOICES))}"
 
 # --- Street Name Validation ---
 def validate_street_name(street: str) -> tuple[bool, str]:
@@ -98,7 +100,8 @@ def validate_street_name(street: str) -> tuple[bool, str]:
         return False, "Street name is required"
     if STREET_PATTERN.fullmatch(street):
         return True, ""
-    return False, "Street name must be 2-50 characters and contain only letters and spaces"
+    return False, "Street name must be 2–50 characters and may include letters, numbers, spaces, or hyphens."
+
 
 # --- House Number Validation ---
 def validate_house_number(house_number: str) -> tuple[bool, str]:
@@ -154,14 +157,14 @@ def validate_brand(brand: str) -> tuple[bool, str]:
         return False, "Brand is required"
     if BRAND_PATTERN.fullmatch(brand):
         return True, ""
-    return False, "Brand must be 2-30 alphanumeric characters, spaces, or dashes"
+    return False, "Brand must be 2–30 characters and may include letters, numbers, spaces, or hyphens."
 
 def validate_model(model: str) -> tuple[bool, str]:
     if not model:
         return False, "Model is required"
     if MODEL_PATTERN.fullmatch(model):
         return True, ""
-    return False, "Model must be 1-30 alphanumeric characters, spaces, or dashes"
+    return False, "Model must be 1–30 characters and may include letters, numbers, spaces, or hyphens."
 
 # --- Scooter Serial Number Validation ---
 def validate_serial_number(serial_number: str) -> tuple[bool, str]:
