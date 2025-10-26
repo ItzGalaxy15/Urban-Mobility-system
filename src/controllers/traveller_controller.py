@@ -2,7 +2,7 @@
 
 from services.traveller_service import traveller_service
 from utils.role_utils import require_role
-from controllers.session import UserSession
+from controllers.session_controller import session_controller
 from utils.log_decorator import log_action 
 
 
@@ -34,9 +34,8 @@ class TravellerController:
     @staticmethod
     @log_action("Search travellers -> {msg}") 
     @require_role("system_admin", "super")
-    def search_travellers_controller(current_user_id: int, key: str, limit: int = 50):
+    def search_travellers_controller(current_user_id: int, key: str, field_name: str, limit: int = 50):
         """Find travellers via partial-text search."""
-        return traveller_service.search_travellers(key, limit)
-
+        return traveller_service.search_travellers(key, field_name, limit)
 
 traveller_controller = TravellerController()

@@ -2,16 +2,7 @@ import re, random
 from datetime import datetime
 from typing import Optional
 from utils.crypto_utils import encrypt, decrypt
-
-# Regex & ranges
-BRAND_RE   = re.compile(r"^[A-Za-z0-9\- ]{2,30}$")
-MODEL_RE   = re.compile(r"^[A-Za-z0-9\- ]{1,30}$")
-SERIAL_RE  = re.compile(r"^[A-Za-z0-9]{10,17}$")
-DATE_RE    = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-
-TOP_SPEED_MIN, TOP_SPEED_MAX = 5, 50     # km/h
-BATTERY_CAP_MAX = 5_000                  # Wh
-MILEAGE_MAX     = 1_000_000              # km
+from utils.validation import validate_brand, validate_model, validate_serial_number, validate_scooter_date, TOP_SPEED_MIN, TOP_SPEED_MAX, BATTERY_CAP_MAX, MILEAGE_MAX
 
 
 class Scooter:
@@ -38,12 +29,15 @@ class Scooter:
         if not all([brand, model, serial_number]):
             raise ValueError("brand, model and serial_number are mandatory")
 
-        if not BRAND_RE.fullmatch(brand):
-            raise ValueError("brand format invalid (2‑30 alphanum/- chars)")
-        if not MODEL_RE.fullmatch(model):
-            raise ValueError("model format invalid (1‑30 alphanum/‑ chars)")
-        if not SERIAL_RE.fullmatch(serial_number):
-            raise ValueError("serial_number must be 10‑17 alphanum chars")
+        validations = [
+            validate_brand(brand),
+            validate_model(model),
+            validate_serial_number(serial_number),
+        ]
+
+        for ok, msg in validations:
+            if not ok:
+                raise ValueError(msg)
 
         # numeric range checks
         if not (TOP_SPEED_MIN <= top_speed <= TOP_SPEED_MAX):
@@ -61,20 +55,20 @@ class Scooter:
         if not (-180 <= location_lon <= 180):
             raise ValueError("longitude out of range")
         if not 0 <= mileage < MILEAGE_MAX:
-            raise ValueError("mileage out of range (0‑1 000 000)")
+            raise ValueError(f"mileage out of range (0-{MILEAGE_MAX})")
 
         # date handling
         if last_maint_date is not None:
-            if not DATE_RE.fullmatch(last_maint_date):
-                raise ValueError("last_maint_date must be YYYY‑MM‑DD")
+            ok, msg = validate_scooter_date(last_maint_date, "last_maint_date")
+            if not ok:
+                raise ValueError(msg)
             try:
-                last_maint_date_obj = datetime.strptime(last_maint_date, "%Y-%m-%d").date()
+                datetime.strptime(last_maint_date, "%Y-%m-%d").date()
             except ValueError:
                 raise ValueError("Invalid date: Please enter a valid date (e.g., 2023-01-15)")
-        else:
-            last_maint_date_obj = None
 
-        in_service_dt = datetime.now()
+        # Store date as string for SQLite compatibility (Python 3.12+ deprecates datetime adapters)
+        in_service_date_str = datetime.now().strftime("%Y-%m-%d")
 
         # store(encrypted) -------------------------------------------
         try:
@@ -95,8 +89,8 @@ class Scooter:
         self.mileage = float(mileage)
 
         self.scooter_id = scooter_id
-        self.last_maint_date = last_maint_date_obj  # date or None
-        self.in_service_date = in_service_dt        # datetime
+        self.last_maint_date = last_maint_date  # string YYYY-MM-DD or None
+        self.in_service_date = in_service_date_str  # string YYYY-MM-DD
 
 
     # Getters (plain text)

@@ -1,22 +1,14 @@
 # models/traveller.py
-import re, random
 from datetime import datetime, date
 from typing import Optional
 from utils.crypto_utils import encrypt, decrypt
+from utils.validation import (
+    validate_first_name, validate_last_name, validate_birthday,
+    validate_gender, validate_street_name, validate_house_number,
+    validate_zip, validate_city, validate_email, validate_phone,
+    validate_license
+)
 
-CITY_CHOICES = {
-    "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
-    "Groningen", "Maastricht", "Arnhem", "Leiden", "Zwolle",
-}
-
-ZIP_RE      = re.compile(r"^\d{4}[A-Z]{2}$")
-PHONE_RE    = re.compile(r"^\+31-6-\d{8}$")
-LICENSE_RE  = re.compile(r"^(?:[A-Z]{2}\d{7}|[A-Z]\d{8})$")
-NAME_RE     = re.compile(r"^[A-Za-zÀ-ÿ]{2,30}$")  # letters only, 2-30 chars
-STREET_RE   = re.compile(r"^[A-Za-zÀ-ÿ\s]{2,50}$")  # letters and spaces, 2-50 chars
-BIRTH_RE    = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # yyyy-mm-dd
-EMAIL_RE    = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-HOUSE_RE    = re.compile(r"^\d+$") 
 
 class Traveller:
     def __init__(
@@ -34,55 +26,54 @@ class Traveller:
         driving_license_no: str,
         traveller_id: Optional[int] = None,  # Optional, for existing travellers
     ):
-        #basic non-empty checks
-        for v in (first_name, last_name, birthday, gender, street_name,
-                  house_number, zip_code, city, email, mobile_phone,
-                  driving_license_no):
-            if not v:
-                raise ValueError("all fields are mandatory")
+        
+        # Basic empty check
+        required_fields = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "birthday": birthday,
+            "gender": gender,
+            "street_name": street_name,
+            "house_number": house_number,
+            "zip_code": zip_code,
+            "city": city,
+            "email": email,
+            "mobile_phone": mobile_phone,
+            "driving_license_no": driving_license_no,
+        }
 
-        # format checks
-        if not NAME_RE.match(first_name):
-            raise ValueError("first_name must be 2-30 chars, letters only")
-        if not NAME_RE.match(last_name):
-            raise ValueError("last_name must be 2-30 chars, letters only")
-        if not BIRTH_RE.match(birthday):
-            raise ValueError("birthday must be YYYY-MM-DD")
-        if not STREET_RE.match(street_name):
-            raise ValueError("street_name must be 2-50 chars, letters and spaces only")
-        if not HOUSE_RE.match(house_number):
-            raise ValueError("house_number may contain digits only")
-        if not ZIP_RE.match(zip_code):
-            raise ValueError("zip_code must be DDDDXX")
-        if city not in CITY_CHOICES:
-            raise ValueError("city must be one of the predefined choices")
-        if not EMAIL_RE.match(email):
-            raise ValueError("invalid email")
-        if not PHONE_RE.match(mobile_phone):
-            raise ValueError("mobile_phone must be +31-6-DDDDDDDD")
-        if not LICENSE_RE.match(driving_license_no):
-            raise ValueError("driving_license format invalid")
+        for field, value in required_fields.items():
+            if not value:
+                raise ValueError(f"{field} is required")
 
-        # 18+ control
-        try:
-            y, m, d = map(int, birthday.split("-"))
-            birth_date = date(y, m, d)
-            age = (date.today() - birth_date).days // 365
-            if age < 18:
-                raise ValueError("traveller must be at least 18 years old")
-        except ValueError:
-            raise ValueError("Invalid date: Please enter a valid date (e.g., 1990-01-15)")
+        # Centralized validation (from utils/validation.py)
+        checks = [
+            validate_first_name(first_name),
+            validate_last_name(last_name),
+            validate_birthday(birthday),
+            validate_gender(gender),
+            validate_street_name(street_name),
+            validate_house_number(house_number),
+            validate_zip(zip_code),
+            validate_city(city),
+            validate_email(email),
+            validate_phone(mobile_phone),
+            validate_license(driving_license_no),
+        ]
+        for ok, msg in checks:
+            if not ok:
+                raise ValueError(msg)
 
-        if gender.lower() not in {"male", "female"}:
-            raise ValueError("gender must be male or female")
-
+        if traveller_id is not None and not isinstance(traveller_id, int):
+            raise ValueError("traveller_id must be an integer")
+    
         # store(encrypted)
         self.traveller_id       = traveller_id
         self.registration_date  = datetime.now()
         self.first_name         = encrypt(first_name)
         self.last_name          = encrypt(last_name)
         self.birthday           = encrypt(birthday)
-        self.gender             = encrypt(gender.lower())
+        self.gender             = encrypt(gender)
         self.street_name        = encrypt(street_name)
         self.house_number       = encrypt(house_number)
         self.zip_code           = encrypt(zip_code)

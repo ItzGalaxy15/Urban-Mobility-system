@@ -1,7 +1,8 @@
 import sqlite3
+from config import DB_FILE
 
 def create_db():
-    conn = sqlite3.connect('urban_mobility.db')
+    conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
 
     # User table

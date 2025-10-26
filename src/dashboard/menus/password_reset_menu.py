@@ -1,6 +1,8 @@
 from controllers.usercontroller import UserController
-from controllers.session import UserSession
+from controllers.session_controller import session_controller
 from services.userservice import user_service
+from utils.validation import validate_password
+import os
 CANCEL_KEYWORDS = {"back", "exit"}
 
 def reset_password_flow(session):
@@ -9,8 +11,8 @@ def reset_password_flow(session):
     
     # Get user identifier (ID or username)
     while True:
-        identifier = input("Enter user ID or username ('back' or 'exit' to cancel): ").strip()
-        if identifier.lower() in CANCEL_KEYWORDS:
+        identifier = input("Enter user ID or username ('back' or 'exit' to cancel): ")
+        if identifier in CANCEL_KEYWORDS:
             print("Operation cancelled.")
             return
             
@@ -26,7 +28,7 @@ def reset_password_flow(session):
             print("User not found")
             continue
         
-        current_user_id = UserSession.get_current_user_id()
+        current_user_id = session_controller.get_current_user_id()
         # Special-case for hardcoded super admin
         if current_user_id == 0:
             current_role = 'super'
@@ -89,7 +91,7 @@ def use_reset_code_flow(user_id):
         if not new_password:
             print("Password reset cancelled.")
             return False
-        valid, message = user_service.validate_password(new_password)
+        valid, message = validate_password(new_password)
         if not valid:
             print(message)
             continue
@@ -107,17 +109,12 @@ def use_reset_code_flow(user_id):
         # Try to reset password
         success, msg = user_service.reset_password_with_code(user_id, reset_code, new_password)
         if success:
-            print("Password reset successful. You are now logged in with your new password.")
-            # Set session for user
-            user_data = user_service.get_user_by_id(user_id)
-            UserSession._current_user = user_data  # This is now a User object
-            UserSession._current_user_id = user_data.user_id
-            UserSession._current_username = user_data.username_plain
-            UserSession._current_role = user_data.role_plain
+            print("Password reset successful. You will be logged out for security reasons.")
+            input("Press Enter to continue...")
+            os.system("cls")
+            # Logout the user immediately after password reset
+            session_controller.logout()
             return True
         else:
             print(msg)
-            # If code is invalid/expired, break, else loop again
-            if "code" in msg.lower():
-                return False
-            # Otherwise, allow retry 
+            # If code is invalid/expired, break, else loop again 

@@ -7,12 +7,7 @@ from services.userservice import user_service
 from services.restore_code_service import restore_code_service
 from typing import Tuple
 from models.user import User
-
-# Get the absolute path to the project root (one level above src/)
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-SRC_FOLDER = os.path.join(PROJECT_ROOT, 'src')
-BACKUP_DIR = os.path.join(SRC_FOLDER, 'backups')
-DB_FILE = os.path.join(SRC_FOLDER, 'urban_mobility.db')
+from config import DB_FILE, BACKUP_DIR, SRC_FOLDER
 
 class BackupService:
     def __init__(self):
@@ -95,33 +90,22 @@ class BackupService:
         """
         Restore a backup directly (super admin only).
         This will wipe all older backups.
-        """
-        print(f"[DEBUG] restore_backup_direct called with backup_id={backup_id}, user_id={user_id}")
-        
+        """        
         # Check if user is a super admin
         if user_id == 0:
             # Super admin case - create a User object
-            print(f"[DEBUG] Creating super admin User object")
             user = User(username="super_admin", password_plain="Admin_123?", role="super")
-            print(f"[DEBUG] Super admin User object created: {user}")
         else:
-            print(f"[DEBUG] Getting user from database with user_id={user_id}")
             user = user_service.get_user_by_id(user_id)
-            print(f"[DEBUG] User from database: {user}")
         
         if not user:
-            print(f"[DEBUG] User is None or empty")
             return False, "User not found."
         
-        print(f"[DEBUG] User role: {user.role_plain}")
         if user.role_plain != 'super':
-            print(f"[DEBUG] User role is not super")
             return False, "Only super admins can restore backups directly."
         
-        print(f"[DEBUG] User validation passed, proceeding with restore")
         # Perform the restore
         success, message = self._perform_restore(backup_id, user_id)
-        print(f"[DEBUG] Restore result: success={success}, message={message}")
         if success:
             # Wipe all older backups (super admin behavior)
             self._wipe_older_backups(backup_id)
@@ -130,7 +114,6 @@ class BackupService:
 
     def _perform_restore(self, backup_id: int, user_id: int) -> Tuple[bool, str]:
         """Internal method to perform the actual restore operation."""
-        print(f"[DEBUG] _perform_restore called with backup_id={backup_id}, user_id={user_id}")
         
         # Get backup details
         conn = sqlite3.connect(DB_FILE)
@@ -139,40 +122,78 @@ class BackupService:
         row = c.fetchone()
         conn.close()
 
-        print(f"[DEBUG] Backup query result: {row}")
         if not row:
-            print(f"[DEBUG] Backup not found in database")
             return False, "Backup not found."
 
         backup_path = row[0]
-        print(f"[DEBUG] Backup path: {backup_path}")
         if not os.path.exists(backup_path):
-            print(f"[DEBUG] Backup file not found on disk")
             return False, "Backup file not found on disk."
 
         try:
             # All backups are now database backups
-            print(f"[DEBUG] Attempting to restore database backup")
             return self._restore_database_backup(backup_path)
         except Exception as e:
-            print(f"[DEBUG] Exception during restore: {e}")
             return False, f"Restore failed: {str(e)}"
 
     def _restore_database_backup(self, backup_path: str) -> Tuple[bool, str]:
-        """Restore database from backup."""
+        """Restore database from backup while preserving current user passwords."""
         try:
             # Create a backup of current database before restoring
             timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             current_db_backup = os.path.join(BACKUP_DIR, f'pre_restore_db_{timestamp}.db')
             shutil.copy2(DB_FILE, current_db_backup)
 
+            # Backup current user passwords before restore
+            current_passwords = self._backup_current_passwords()
+            
             # Extract and restore database
             with zipfile.ZipFile(backup_path, 'r') as zipf:
                 zipf.extractall(SRC_FOLDER)
 
-            return True, "Database restored successfully"
+            # Restore current passwords to prevent security vulnerability
+            self._restore_current_passwords(current_passwords)
+
+            return True, "Database restored successfully (current passwords preserved)"
         except Exception as e:
             return False, f"Database restore failed: {str(e)}"
+
+    def _backup_current_passwords(self) -> dict:
+        """Backup current user passwords before database restore."""
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        
+        # Get all current user passwords
+        c.execute('SELECT user_id, password_hash FROM User WHERE password_hash IS NOT NULL')
+        rows = c.fetchall()
+        conn.close()
+        
+        # Store as {user_id: password_hash}
+        current_passwords = {row[0]: row[1] for row in rows}
+        return current_passwords
+
+    def _restore_current_passwords(self, current_passwords: dict):
+        """Restore current user passwords after database restore."""
+        if not current_passwords:
+            return
+            
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        
+        try:
+            # Update passwords for users that exist in the restored database
+            for user_id, password_hash in current_passwords.items():
+                c.execute('''
+                    UPDATE User 
+                    SET password_hash = ? 
+                    WHERE user_id = ? AND password_hash IS NOT NULL
+                ''', (password_hash, user_id))
+            
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(f"Error restoring passwords: {str(e)}")
+        finally:
+            conn.close()
 
     def _wipe_older_backups(self, current_backup_id: int):
         """Wipe all backups older than the current one."""

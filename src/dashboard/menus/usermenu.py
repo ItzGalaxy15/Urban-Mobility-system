@@ -1,20 +1,19 @@
 from controllers.usercontroller import UserController
-from controllers.session import UserSession
+from controllers.session_controller import session_controller
 from services.userservice import user_service
+from utils.validation import validate_username, validate_password, validate_first_name, validate_last_name
+import os
 CANCEL_KEYWORDS = {"back", "exit"}
 
-def ask(label: str, validator) -> str | None:
-    """
-    Prompt until valid input or user cancels with a keyword.
-    """
+def ask(label: str, validator=None):
     while True:
-        value = input(f"{label}: ").strip()
-        if value.lower() in CANCEL_KEYWORDS:
-            return None
-        ok, msg = validator(value)
-        if ok:
-            return value
-        print(msg)
+        value = input(f"{label}: ")
+        if validator:
+            ok, msg = validator(value)
+            if not ok:
+                print(f"Error: incorrect input")
+                continue
+        return value
 
 def add_user_flow(session):
     print("\n=== Add User ===")
@@ -22,44 +21,42 @@ def add_user_flow(session):
 
     # Username
     while True:
-        username = input("Username (8-10 chars, starts with letter/underscore): ").strip()
+        username = input("Username (8-10 chars, starts with letter/underscore): ")
+        valid, msg = validate_username(username)
         if username.lower() in CANCEL_KEYWORDS:
             print("Add cancelled.")
             return
-
-        valid, msg = user_service.validate_username(username)
         if not valid:
-            print(msg)
+            print("Error: incorrect input")
             continue
 
-        if user_service.get_user_by_username(username):
-            print("Username already exists. Please choose a different one.")
+        if user_service.get_user_by_username(username.lower()):
+            print("Error: username already exists")
             continue
 
         break
 
     # Password
-    password = ask("Password (12-30 chars, incl. lowercase, uppercase, digit, special)", 
-                   user_service.validate_password)
+    password = ask("Password (12-30 chars, incl. lowercase, uppercase, digit, special)", validate_password)
     if password is None:
         print("Add cancelled.")
         return
 
     # First name
-    first_name = ask("First name", lambda v: user_service.validate_name(v, "First name"))
+    first_name = ask("First name", validate_first_name)
     if first_name is None:
         print("Add cancelled.")
         return
 
     # Last name
-    last_name = ask("Last name", lambda v: user_service.validate_name(v, "Last name"))
+    last_name = ask("Last name", validate_last_name)
     if last_name is None:
         print("Add cancelled.")
         return
 
     # Role
-    current_role = UserSession.get_current_role()
-    current_user_id = UserSession.get_current_user_id()
+    current_role = session_controller.get_current_role()
+    current_user_id = session_controller.get_current_user_id()
 
     if current_role == "system_admin":
         role = "service_engineer"
@@ -69,10 +66,7 @@ def add_user_flow(session):
         print("1. Service Engineer")
         print("2. System Admin")
         while True:
-            role_choice = input("Enter the role (1 or 2): ").strip()
-            if role_choice.lower() in CANCEL_KEYWORDS:
-                print("Add cancelled.")
-                return
+            role_choice = input("Enter the role (1 or 2): ")
             if role_choice == "1":
                 role = "service_engineer"
                 break
@@ -88,7 +82,9 @@ def add_user_flow(session):
     print(f"  First name: {first_name}")
     print(f"  Last name: {last_name}")
     print(f"  Role: {role}")
-    if input("\nSave this user? (y/n): ").strip().lower() != "y":
+
+    answer = input("\nSave this user? (y/n): ")
+    if answer != "y":
         print("Add cancelled.")
         input("Press Enter to continue...")
         return
@@ -123,7 +119,7 @@ def update_user_flow(session):
             print("2. Update first name (2-20 chars)")
             print("3. Update last name (2-20 chars)")
             print("4. Back")
-            choice = input("Choose an option: ").strip()
+            choice = input("Choose an option: ")
             updates = {}
             if choice == "1":
                 username = input("Enter the new username: ")
@@ -134,14 +130,14 @@ def update_user_flow(session):
                 updates["username"] = username
             elif choice == "2":
                 first_name = input("Enter the new first name: ")
-                valid, message = user_service.validate_name(first_name, "First name")
+                valid, message = user_service.validate_first_name(first_name)
                 if not valid:
                     print(message)
                     break
                 updates["first_name"] = first_name
             elif choice == "3":
                 last_name = input("Enter the new last name: ")
-                valid, message = user_service.validate_name(last_name, "Last name")
+                valid, message = user_service.validate_last_name(last_name)
                 if not valid:
                     print(message)
                     break
@@ -152,7 +148,7 @@ def update_user_flow(session):
                 print("Invalid choice")
                 continue
             if updates:
-                current_user_id = UserSession.get_current_user_id()
+                current_user_id = session_controller.get_current_user_id()
                 success, message = UserController.update_user(
                     current_user_id,
                     user.user_id,
@@ -181,7 +177,7 @@ def delete_user_flow(session):
             print("User not found")
             continue
         user_id = user.user_id
-        current_user_id = UserSession.get_current_user_id()
+        current_user_id = session_controller.get_current_user_id()
         success, message = UserController.delete_user(
             current_user_id, user_id, user.username
         )
@@ -189,14 +185,14 @@ def delete_user_flow(session):
         input("Press Enter to continue...")
         if success:
             # If the deleted user is the currently logged-in user, log out immediately
-            if user_id == UserSession.get_current_user_id():
+            if user_id == session_controller.get_current_user_id():
                 print("You have deleted your own account. Logging out...")
-                input("\nPress Enter to continue...")
+                os.system("cls")
                 session.logout()
             break
 
 def list_users_flow(session):
-    current_user_id = UserSession.get_current_user_id()
+    current_user_id = session_controller.get_current_user_id()
     users = UserController.list_users(current_user_id)
     print("\n--- User List ---")
     print("ID | Username | First Name | Last Name | Role")
@@ -210,7 +206,7 @@ def list_users_flow(session):
 
 def change_password_flow(session):
     while True:
-        current_user_id = UserSession.get_current_user_id()
+        current_user_id = session_controller.get_current_user_id()
         old_pw = input("Enter your old password: ")
         new_pw = input("Enter your new password (or leave blank to cancel): ")
         if not new_pw:
@@ -219,12 +215,15 @@ def change_password_flow(session):
         success, message = UserController.change_password(current_user_id, old_pw, new_pw)
         print(message)
         if success:
+            print("Password changed successfully. You will be logged out for security reasons.")
+            input("Press Enter to continue...")
+            os.system("cls")
+            session.logout()
             break
-    input("Press Enter to continue...")
 
 def edit_account_flow(session):
     while True:
-        current_user_id = UserSession.get_current_user_id()
+        current_user_id = session_controller.get_current_user_id()
         user = user_service.get_user_by_id(current_user_id)
         if not user:
             print("User not found.")
@@ -233,7 +232,7 @@ def edit_account_flow(session):
         
         
         # Get user's role
-        role = UserSession.get_current_role()
+        role = session_controller.get_current_role()
         
         # Display profile based on role
         if role in ["service_engineer", "system_admin"]:
@@ -251,20 +250,20 @@ def edit_account_flow(session):
             print("3. Change last name")
             print("4. Back/Exit to main menu")
         
-        choice = input("Choose an option: ").strip()
+        choice = input("Choose an option: ")
         updates = {}
         
         if role in ["service_engineer", "system_admin"]:
             if choice == "1":
                 first_name = input("Enter the new first name: ")
-                valid, message = user_service.validate_name(first_name, "First name")
+                valid, message = user_service.validate_first_name(first_name)
                 if not valid:
                     print(message)
                     continue
                 updates["first_name"] = first_name
             elif choice == "2":
                 last_name = input("Enter the new last name: ")
-                valid, message = user_service.validate_name(last_name, "Last name")
+                valid, message = user_service.validate_last_name(last_name)
                 if not valid:
                     print(message)
                     continue
@@ -284,14 +283,14 @@ def edit_account_flow(session):
                 updates["username"] = username
             elif choice == "2":
                 first_name = input("Enter the new first name: ")
-                valid, message = user_service.validate_name(first_name, "First name")
+                valid, message = user_service.validate_first_name(first_name)
                 if not valid:
                     print(message)
                     continue
                 updates["first_name"] = first_name
             elif choice == "3":
                 last_name = input("Enter the new last name: ")
-                valid, message = user_service.validate_name(last_name, "Last name")
+                valid, message = user_service.validate_last_name(last_name)
                 if not valid:
                     print(message)
                     continue
@@ -313,8 +312,8 @@ def edit_account_flow(session):
             if success:
                 # Optionally refresh session info if username was changed
                 if "username" in updates:
-                    UserSession._current_username = updates["username"]
+                    session_controller._current_username = updates["username"]
                 if "first_name" in updates:
-                    UserSession._current_user.first_name = updates["first_name"]
+                    session_controller._current_user.first_name = updates["first_name"]
                 if "last_name" in updates:
-                    UserSession._current_user.last_name = updates["last_name"]
+                    session_controller._current_user.last_name = updates["last_name"]

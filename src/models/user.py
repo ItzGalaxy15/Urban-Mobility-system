@@ -3,11 +3,9 @@ import re, random
 from datetime import datetime
 from typing import Optional
 from utils.crypto_utils import encrypt, decrypt, hash_password, check_password
+from utils.validation import validate_username, validate_password, validate_first_name, validate_last_name
 
-# Username & password validation patterns
-USERNAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_'.]{7,9}$", re.IGNORECASE)
-# Allowed special chars for password as per spec
-PWD_ALLOWED_RE = re.compile(r"^[A-Za-z0-9~!@#$%&_\-+=`|\\(){}\[\]:;'<>,.?/]{12,30}$")
+
 
 class User:
     def __init__(
@@ -30,33 +28,41 @@ class User:
         if password_plain is None and password_hash is None:
             raise ValueError("Either password_plain or password_hash must be provided")
 
-        role = role.lower()
+        # Validate role without modification
         if role not in {"super", "system_admin", "service_engineer"}:
             raise ValueError(f"Unknown role: {role}")
 
         # Username & password rules (skip super admin hard‑coded user)
         if role != "super":
             # Username rules
-            if not USERNAME_RE.fullmatch(username):
-                raise ValueError("username does not meet format/length rules")
+            valid, msg = validate_username(username)
+            if not valid:
+                raise ValueError(msg)
             # Password rules (only validate if password_plain is provided)
             if password_plain is not None:
-                if not PWD_ALLOWED_RE.fullmatch(password_plain):
-                    raise ValueError("password contains invalid characters or length")
-                # complexity check
-                if not (re.search(r"[a-z]", password_plain)
-                        and re.search(r"[A-Z]", password_plain)
-                        and re.search(r"\d",   password_plain)
-                        and re.search(r"[~!@#$%&\-_+=`|\\(){}\[\]:;'<>,.?/]", password_plain)):
-                    raise ValueError("password must include lowercase, uppercase, digit and special char")
+                valid, msg = validate_password(password_plain)
+                if not valid:
+                    raise ValueError(msg)
 
         # extra profile requirement
         if role in {"system_admin", "service_engineer"}:
             if first_name is None or last_name is None:
                 raise ValueError("first_name and last_name are required for this role")
 
+
+        if first_name is not None:
+            valid, msg = validate_first_name(first_name)
+            if not valid:
+                raise ValueError(msg)
+
+        if last_name is not None:
+            valid, msg = validate_last_name(last_name)
+            if not valid:
+                raise ValueError(msg)
+
+
         # Core fields
-        self.username: bytes = encrypt(username.lower())  # case‑insensitive store
+        self.username: bytes = encrypt(username)  # case‑insensitive store
         
         # Handle password - either use provided hash or create hash from plain text
         if password_hash is not None:
@@ -64,7 +70,7 @@ class User:
         else:
             self.password_hash: bytes = hash_password(password_plain)
             
-        self.role: str = encrypt(role)
+        self.role: str = encrypt(role)  # Store role encrypted
 
         # Optional profile (encrypted)
         self.user_id = user_id
@@ -100,7 +106,7 @@ class User:
     def full_name(self) -> str:
         first = decrypt(self.first_name) if self.first_name else ""
         last  = decrypt(self.last_name)  if self.last_name  else ""
-        return f"{first} {last}".strip()
+        return f"{first} {last}"
 
     def __repr__(self) -> str:
         uname = self.username_plain if self.username else "<unset>"

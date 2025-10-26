@@ -1,24 +1,27 @@
 # models/log_entry.py
 import re
 from datetime import datetime
-DATE_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
-TIME_RE = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$")
+from utils.validation import DATE_PATTERN, TIME_PATTERN
+
+# These are now imported from utils/validation.py
+# DATE_RE | DATE_PATTERN = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
+# TIME_RE | TIME_PATTERN = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$")
 
 class LogEntry:
     def __init__(self, user_id: str, username: str, description: str,
                   additional: str = "", suspicious: bool = False, log_id: int = None, date = None, time = None):
 
         def is_valid_date(s: str) -> bool:
-            return isinstance(s, str) and DATE_RE.fullmatch(s)
+            return isinstance(s, str) and DATE_PATTERN.fullmatch(s)
 
         def is_valid_time(s: str) -> bool:
-            return isinstance(s, str) and TIME_RE.fullmatch(s)
+            return isinstance(s, str) and TIME_PATTERN.fullmatch(s)
 
         self.user_id = user_id
         now = datetime.now()
         self.date = date if is_valid_date(date) else now.strftime("%Y-%m-%d")
         self.time = time if is_valid_time(time) else now.strftime("%H:%M:%S")
-        self.username = username.lower()
+        self.username = username
         self.description = description
         self.additional = additional
         self.suspicious = suspicious

@@ -3,158 +3,63 @@ from datetime import date
 from typing import Tuple, Optional
 
 from utils.crypto_utils import encrypt, decrypt
-from models.traveller import (
-    Traveller,
-    CITY_CHOICES,
-    ZIP_RE,
-    PHONE_RE,
-    LICENSE_RE,
-    NAME_RE,
-    STREET_RE,
-    BIRTH_RE,
-    EMAIL_RE,
-    HOUSE_RE,
+from models.traveller import Traveller
+from config import DB_FILE
+from utils.validation import (
+    validate_first_name, validate_last_name, validate_birthday, validate_gender,
+    validate_street_name, validate_house_number, validate_zip, validate_city,
+    validate_email, validate_phone, validate_license
 )
 
+
+# Allowed fields for search_travellers (must match column names in the Traveller table)
+ALLOWED_FIELDS = {
+    "first_name", "last_name", "birthday", "gender", "street_name",
+    "house_number", "zip_code", "city", "email", "mobile_phone",
+    "driving_license_no"
+}
 
 class TravellerService:
     """Service layer responsible for CRUD operations on *Traveller* records.
     * A thin validation layer to give quick feedback before creating a ``Traveller``.
-    * Encryption happens **inside** the ``Traveller`` model ‑ the service never stores plain data.
-    * Each public method returns ``(bool, str)`` → success flag + human‑readable message.
+    * Encryption happens **inside** the ``Traveller`` model - the service never stores plain data.
+    * Each public method returns ``(bool, str)`` → success flag + human-readable message.
     """
 
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    # Low‑level helpers
+    # Low-level helpers
     def _get_connection(self) -> sqlite3.Connection:
         """Return a *new* SQLite connection (caller closes it)."""
         return sqlite3.connect(self.db_path)
-
-    # Validation helpers (keep them simple & self‑contained)
-    def _validate_name(self, value: str, field: str) -> Tuple[bool, str]:
-        if not value:
-            return False, f"{field} is required"
-        
-        # Trim spaces and check if empty after trimming
-        trimmed_value = value.strip()
-        if not trimmed_value:
-            return False, f"{field} cannot be empty or contain only spaces"
-        
-        # Check if the trimmed value matches the name pattern (letters only)
-        if not NAME_RE.match(trimmed_value):
-            return False, f"{field} must be 2-30 chars, letters only (no spaces allowed)"
-        
-        # Check if original value had leading/trailing spaces (should be rejected)
-        if value != trimmed_value:
-            return False, f"{field} cannot have leading or trailing spaces"
-        
-        return True, ""
-
-    def _validate_birthday(self, birthday: str) -> Tuple[bool, str]:
-        if not birthday:
-            return False, "Birthday is required"
-        if not BIRTH_RE.fullmatch(birthday):
-            return False, "Birthday must be YYYY‑MM‑DD"
-        
-        try:
-            y, m, d = map(int, birthday.split("-"))
-            # Validate that the date actually exists
-            birth_date = date(y, m, d)
-            age = (date.today() - birth_date).days // 365
-            if age < 18:
-                return False, "Traveller must be at least 18 years old"
-            return True, ""
-        except ValueError:
-            return False, "Invalid date: Please enter a valid date (e.g., 1990-01-15)"
-
-    def _validate_zip(self, zip_code: str) -> Tuple[bool, str]:
-        if not zip_code:
-            return False, "Zip code is required"
-        if not ZIP_RE.fullmatch(zip_code):
-            return False, "Zip code must be 4 digits + 2 uppercase letters"
-        return True, ""
-
-    def _validate_city(self, city: str) -> Tuple[bool, str]:
-        if not city:
-            return False, "City is required"
-        if city not in CITY_CHOICES:
-            return False, f"City must be one of: {', '.join(sorted(CITY_CHOICES))}"
-        return True, ""
-
-    def _validate_email(self, email: str) -> Tuple[bool, str]:
-        if not email:
-            return False, "Email is required"
-        if not EMAIL_RE.fullmatch(email):
-            return False, "Invalid email format"
-        return True, ""
-
-    def _validate_phone(self, phone: str) -> Tuple[bool, str]:
-        if not phone:
-            return False, "Mobile phone is required"
-        if not PHONE_RE.fullmatch(phone):
-            return False, "Phone must be +31-6-DDDDDDDD"
-        return True, ""
-
-    def _validate_house_number(self, house_number: str) -> Tuple[bool, str]:
-        if not house_number:
-            return False, "House number is required"
-        if not HOUSE_RE.fullmatch(house_number):
-            return False, "House number must contain digits only"
-        return True, ""
-
-    def _validate_license(self, license_no: str) -> Tuple[bool, str]:
-        if not license_no:
-            return False, "Driving licence number is required"
-        if not LICENSE_RE.fullmatch(license_no):
-            return False, "Driving licence format invalid"
-        return True, ""
-
-    def _validate_gender(self, gender: str) -> Tuple[bool, str]:
-        """Accept only "male" or "female" (case‑insensitive)."""
-        if not gender:
-            return False, "Gender is required"
-        if gender.lower() not in {"male", "female"}:
-            return False, "Gender must be 'male' or 'female'"
-        return True, ""
-
-    def _validate_street_name(self, street: str) -> Tuple[bool, str]:
-        if not street:
-            return False, "Street name is required"
-        if not street.strip():
-            return False, "Street name cannot be empty"
-        if not STREET_RE.match(street):
-            return False, "street_name must be 2-50 chars, letters and spaces only"
-        return True, ""
 
     # CRUD Methods
     def add_traveller(self, *, traveller: Optional[Traveller] = None, **fields) -> Tuple[bool, str]:
         """Add a traveller to the database.
 
-        Accepts either a pre‑built *Traveller* instance **or** raw keyword
+        Accepts either a pre-built *Traveller* instance **or** raw keyword
         arguments with the model fields (first_name=..., last_name=..., …).
         """
+        success = False  # default whitelist: fail unless proven valid
+        message = "Traveller could not be added"
         try:
             if traveller is None:
-                # 1️ Quick validations (user‑friendly feedback)
                 validations = [
-                    self._validate_name(fields.get("first_name"), "First name"),
-                    self._validate_name(fields.get("last_name"), "Last name"),
-                    self._validate_birthday(fields.get("birthday")),
-                    self._validate_city(fields.get("city")),
-                    self._validate_zip(fields.get("zip_code")),
-                    self._validate_email(fields.get("email")),
-                    self._validate_phone(fields.get("mobile_phone")),
-                    self._validate_house_number(fields.get("house_number")),
-                    self._validate_gender(fields.get("gender")),
-                    self._validate_street_name(fields.get("street_name")),
+                    validate_first_name(fields.get("first_name")),
+                    validate_last_name(fields.get("last_name")),
+                    validate_birthday(fields.get("birthday")),
+                    validate_city(fields.get("city")),
+                    validate_zip(fields.get("zip_code")),
+                    validate_email(fields.get("email")),
+                    validate_phone(fields.get("mobile_phone")),
+                    validate_house_number(fields.get("house_number")),
+                    validate_gender(fields.get("gender")),
+                    validate_street_name(fields.get("street_name")),
                 ]
                 for ok, msg in validations:
                     if not ok:
                         return False, msg
-
-                # 2️ Let the model handle heavy validation & encryption
                 traveller = Traveller(**fields)
 
             # 3️ Persist (encrypted!)
@@ -184,32 +89,36 @@ class TravellerService:
             )
             conn.commit()
             conn.close()
-            return True, "Traveller added successfully"
+            success, message = True, "Traveller added successfully"
         except ValueError as exc:
-            return False, str(exc)
+            message = str(exc)
+        except Exception as exc:
+            message = f"Unexpected error: {exc}"
+        return success, message
 
     def update_traveller(self, traveller_id: int, **updates) -> Tuple[bool, str]:
         """Update *one or more* fields of a traveller."""
+        success = False
+        message = "Traveller could not be updated"
 
         if not updates:
             return False, "No updates supplied"
 
-        # Map each updatable column to a validator (or None if not validated here)
         validators = {
-            "first_name": lambda v: self._validate_name(v, "First name"),
-            "last_name": lambda v: self._validate_name(v, "Last name"),
-            "birthday": self._validate_birthday,
-            "gender": self._validate_gender,
-            "street_name": self._validate_street_name,
-            "city": self._validate_city,
-            "zip_code": self._validate_zip,
-            "email": self._validate_email,
-            "mobile_phone": self._validate_phone,
-            "house_number": self._validate_house_number,
-            "driving_license_no": self._validate_license,
+            "first_name": validate_first_name,
+            "last_name": validate_last_name,
+            "birthday": validate_birthday,
+            "gender": validate_gender,
+            "street_name": validate_street_name,
+            "city": validate_city,
+            "zip_code": validate_zip,
+            "email": validate_email,
+            "mobile_phone": validate_phone,
+            "house_number": validate_house_number,
+            "driving_license_no": validate_license,
         }
 
-        # 1 Run pre‑checks
+        # 1 Run pre-checks
         for field, value in updates.items():
             check = validators.get(field)
             if check is None:
@@ -222,7 +131,7 @@ class TravellerService:
         set_parts = []
         values: list[bytes] = []
         for col, val in updates.items():
-            encrypted = encrypt(val.lower()) if col == "gender" else encrypt(val)
+            encrypted = encrypt(val)
             set_parts.append(f"{col} = ?")
             values.append(encrypted)
         values.append(traveller_id)
@@ -230,95 +139,122 @@ class TravellerService:
         sql = f"UPDATE Traveller SET {set_clause} WHERE traveller_id = ?"
 
         # 3️ Execute & close
-        conn = self._get_connection()
-        cur = conn.cursor()
-        cur.execute(sql, tuple(values))
-        conn.commit()
-        affected = cur.rowcount
-        conn.close()
-        if affected:
-            return True, "Traveller updated successfully"
-        return False, "Traveller not found"
+        try:
+            conn = self._get_connection()
+            cur = conn.cursor()
+            cur.execute(sql, tuple(values))
+            conn.commit()
+            affected = cur.rowcount
+            conn.close()
+            if affected:
+                success, message = True, "Traveller updated successfully"
+        except Exception as exc:
+            message = f"Error updating traveller: {exc}"
+
+        return success, message
 
     def delete_traveller(self, traveller_id: int) -> Tuple[bool, str]:
         """Remove a traveller record by *traveller_id*."""
+        success = False
+        message = "Traveller could not be deleted"
+        try:
+            conn = self._get_connection()
+            cur = conn.cursor()
+            cur.execute("DELETE FROM Traveller WHERE traveller_id = ?", (traveller_id,))
+            conn.commit()
+            affected = cur.rowcount
+            conn.close()
+            if affected:
+                success, message = True, "Traveller deleted successfully"
+        except Exception as exc:
+            message = f"Error deleting traveller: {exc}"
+        return success, message
+
+    def search_travellers(self, key: str, field_name: str, limit: int = 50) -> list[Traveller]:
+        """
+        Search for travellers in a SPECIFIC field only.
+        More accurate for edge cases like "45DE" in ZIP or "john.smith" in email.
+        
+        Args:
+            key: search term
+            field_name: exact field to search ("first_name", "email", "zip_code", etc.)
+            limit: max results
+        """
+        if not key or field_name not in ALLOWED_FIELDS:
+            return []
+        
         conn = self._get_connection()
         cur = conn.cursor()
-        cur.execute("DELETE FROM Traveller WHERE traveller_id = ?", (traveller_id,))
-        conn.commit()
-        affected = cur.rowcount
-        conn.close()
-        if affected:
-            return True, "Traveller deleted successfully"
-        return False, "Traveller not found"
+        
+        try:
+            # PHASE 1: Fetch only specified field
+            cur.execute(f'''
+                SELECT traveller_id, {field_name}
+                FROM Traveller
+                WHERE {field_name} IS NOT NULL
+            ''')
+            
+            rows = cur.fetchall()
+            matching_ids = []
+            key_lc = key
+            
+            # Decrypt and search ONLY the specified field
+            for row in rows:
+                traveller_id, encrypted_value = row
+                try:
+                    decrypted = decrypt(encrypted_value) if encrypted_value else ""
+                    if key_lc in decrypted:
+                        matching_ids.append(traveller_id)
+                        if len(matching_ids) >= limit:
+                            break
+                except Exception:
+                    continue
+            
+            if not matching_ids:
+                return []
+            
+            # PHASE 2: Fetch full records for matches
+            placeholders = ','.join(['?'] * len(matching_ids))
+            cur.execute(f'''
+                SELECT traveller_id, first_name, last_name, birthday, gender,
+                    street_name, house_number, zip_code, city, email,
+                    mobile_phone, driving_license_no, registration_date
+                FROM Traveller 
+                WHERE traveller_id IN ({placeholders})
+            ''', matching_ids)            
+            
+            matching_rows = cur.fetchall()
+            results = []
 
+            # Now decrypt all fields only for matches
+            for row in matching_rows:
+                try:
+                    traveller = Traveller(
+                        traveller_id=row[0],
+                        first_name=decrypt(row[1]) if row[1] else "",
+                        last_name=decrypt(row[2]) if row[2] else "",
+                        birthday=decrypt(row[3]) if row[3] else "",
+                        gender=decrypt(row[4]) if row[4] else "",
+                        street_name=decrypt(row[5]) if row[5] else "",
+                        house_number=decrypt(row[6]) if row[6] else "",
+                        zip_code=decrypt(row[7]) if row[7] else "",
+                        city=decrypt(row[8]) if row[8] else "",
+                        email=decrypt(row[9]) if row[9] else "",
+                        mobile_phone=decrypt(row[10]) if row[10] else "",
+                        driving_license_no=decrypt(row[11]) if row[11] else ""
+                    )
+                    results.append(traveller)
+                except Exception as exc:
+                    print(f"Error creating traveller {row[0]}: {exc}")
+                    continue
 
-    def search_travellers(self, key: str, limit: int = 50) -> list[Traveller]:
-        """
-        Search (partial, case-insensitive) for Travellers on the most common fields.
-        Returns a list of decrypted dicts; empty list = no match.
-
-        Args:
-        key : piece of text/number to search for ("mik", "2328", …)
-        limit : max. number of results
-        """
-        if not key:
-            return []
-
-        key_lc = key.lower()
-        conn   = self._get_connection()
-        cur    = conn.cursor()
-
-        cur.execute(
-            '''SELECT traveller_id, first_name, last_name, birthday, gender,
-                      street_name, house_number, zip_code, city, email,
-                      mobile_phone, driving_license_no, registration_date
-               FROM Traveller'''
-        )
-        rows = cur.fetchall()
-        conn.close()
-
-        results: list[dict] = []
-        for row in rows:
-            try:
-                traveller = Traveller(
-                    traveller_id=row[0],
-                    first_name=decrypt(row[1]),
-                    last_name=decrypt(row[2]),
-                    birthday=decrypt(row[3]),
-                    gender=decrypt(row[4]),
-                    street_name=decrypt(row[5]),
-                    house_number=decrypt(row[6]),
-                    zip_code=decrypt(row[7]),
-                    city=decrypt(row[8]),
-                    email=decrypt(row[9]),
-                    mobile_phone=decrypt(row[10]),
-                    driving_license_no=decrypt(row[11])
-                    # registration_date is set internally by the Traveller model
-                )
-            except Exception as exc:
-                # Skip rows that fail to decrypt or instantiate
-                print(f"Error processing traveller row {row[0]}: {exc}")
-                continue
-
-            # Combine all fields into one string and check substring (if None, use empty string)
-            searchable = (
-                str(traveller.traveller_id or "")
-                + (traveller.first_name_plain or "")
-                + (traveller.last_name_plain or "")
-                + (traveller.email_plain or "")
-                + (traveller.mobile_phone_plain or "")
-                + (traveller.driving_license_no_plain or "")
-                + (traveller.city_plain or "")
-                + (traveller.zip_code_plain or "")
-            ).lower()
-
-            if key_lc in searchable:
-                results.append(traveller)
-                if len(results) >= limit:
-                    break
+        except Exception as e:
+            print(f"Error in traveller search: {e}")
+        finally:
+            conn.close()
 
         return results
 
-# Singleton instance (keeps import code clean)
-traveller_service = TravellerService("urban_mobility.db")
+
+# Singleton instance
+traveller_service = TravellerService(DB_FILE)

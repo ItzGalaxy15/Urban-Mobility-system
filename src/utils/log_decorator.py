@@ -1,7 +1,7 @@
 from functools import wraps
 from services.log_service import write_log_entry
 from models.log_entry import LogEntry
-from controllers.session import UserSession
+from controllers.session_controller import session_controller
 
 def log_action(description: str):
     """
@@ -19,12 +19,12 @@ def log_action(description: str):
             # Normalise return value
             if not (isinstance(result, tuple) and len(result) == 2
                     and isinstance(result[0], bool)):
-                success, message = True, "OK"
+                success, message = True, ""
             else:
                 success, message = result
 
-            user_id  = UserSession.get_current_user_id() or "-"
-            username = UserSession.get_current_username() or "-"
+            user_id  = session_controller.get_current_user_id() or "-"
+            username = session_controller.get_current_username() or "-"
 
             write_log_entry(LogEntry(
                 user_id=str(user_id),

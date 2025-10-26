@@ -5,17 +5,20 @@ from models.user import User
 from services.userservice import UserService, user_service
 from services.scooterservice import ScooterService
 from utils.role_utils import require_role
-from models.scooter import BATTERY_CAP_MAX, BRAND_RE, DATE_RE, MILEAGE_MAX, MODEL_RE, SERIAL_RE, TOP_SPEED_MAX, TOP_SPEED_MIN
-from controllers.session import UserSession
-from utils.log_decorator import log_action 
+from models.scooter import BATTERY_CAP_MAX, MILEAGE_MAX, TOP_SPEED_MAX, TOP_SPEED_MIN
+from utils.validation import validate_brand, validate_model, validate_serial_number, validate_scooter_date
+from controllers.session_controller import session_controller
+from utils.log_decorator import log_action
+from config import DB_FILE
+
+# Create singleton service instance
+_scooterservice = ScooterService(DB_FILE) 
 
 class ScooterController:
     @staticmethod
     @require_role("super", "system_admin")
     @log_action("Add scooter -> {msg}")
     def add_scooter(current_user_id: int, new_scooter: Scooter) -> tuple[bool, str]:
-        _scooterservice = ScooterService("urban_mobility.db")
-
         try:
             if _scooterservice.add_scooter(scooter=new_scooter):
                 return True, f"Scooter {new_scooter.serial_number_plain} added successfully"
@@ -32,7 +35,6 @@ class ScooterController:
     @log_action("Get scooter(s) -> {msg}")
     @require_role("super", "system_admin", "service_engineer")
     def get_scooter(user_id: int, scooter_id: int | None = None) -> tuple[Optional[Scooter], str]:
-        _scooterservice = ScooterService("urban_mobility.db")
         try:
             if scooter_id is None:
                 scooters = _scooterservice.get_all_scooters()
@@ -51,7 +53,6 @@ class ScooterController:
     @log_action("Service scooter -> {msg}") 
     @require_role("service_engineer")
     def service_scooter(user_id: int, scooter_id: int, update_data: Scooter) -> tuple[bool, str]:
-        _scooterservice = ScooterService("urban_mobility.db")
         user = user_service.get_user_by_id(user_id)
         if user.role_plain != "service_engineer":
             return False, "Unauthorized: Only service engineer can use this function"
@@ -93,7 +94,6 @@ class ScooterController:
     @log_action("Update scooter -> {msg}")
     @require_role("super", "system_admin")
     def update_scooter(user_id: int, scooter_id: int, update_data: Scooter) -> tuple[bool, str]:
-        _scooterservice = ScooterService("urban_mobility.db")
         try:
             scooter = _scooterservice.get_scooter_by_id(scooter_id)
             if not scooter:
@@ -128,19 +128,20 @@ class ScooterController:
     @staticmethod
     @log_action("Search scooters -> {msg}")
     @require_role("super", "system_admin", "service_engineer")
-    def search_for_scooters(user_id: int, search_term: str, field: str) -> tuple[Optional[Scooter], str]:
-        _scooterservice = ScooterService("urban_mobility.db")
-
-        scooters = _scooterservice.search_for_scooters(search_term, field)
+    def search_for_scooters(user_id: int, search_term: str, field_name: str, limit: int = 50) -> tuple[Optional[list[Scooter]], str]:
+        """
+        Search for scooters by partial text match across brand, model, and serial_number.
+        Uses intelligent field detection and minimal decryption strategy.
+        """
+        scooters = _scooterservice.search_for_scooters(search_term, field_name, limit)
         if scooters:
-            return scooters, f"Scooter(s) found for {field}='{search_term}'"
-        return None, f"No scooters found for {field}='{search_term}'"
+            return scooters, f"Found {len(scooters)} scooter(s) matching '{search_term}'"
+        return None, f"No scooters found matching '{search_term}'"
 
     @staticmethod
     @log_action("Delete scooter -> {msg}")
     @require_role("super", "system_admin")
     def delete_scooter(user_id: int, scooter_id: int) -> tuple[bool, str]:
-        _scooterservice = ScooterService("urban_mobility.db")
 
         if _scooterservice.delete_scooter(scooter_id):
             return True, f"Scooter {scooter_id} deleted successfully"
@@ -175,9 +176,7 @@ class ScooterController:
                 print(f"Old scooter brand: {old_scooter.brand_plain}")
 
             brand = input("Enter scooter brand (2-30 chars): ")
-            # Use service validation for better error handling
-            scooter_service = ScooterService("urban_mobility.db")
-            valid, msg = scooter_service._validate_brand(brand)
+            valid, msg = validate_brand(brand)
             if valid:
                 break
             else:
@@ -195,8 +194,7 @@ class ScooterController:
                 print(f"Old scooter model: {old_scooter.model_plain}")
 
             model = input("Enter scooter model (1-30 chars): ")
-            # Use service validation for better error handling
-            valid, msg = scooter_service._validate_model(model)
+            valid, msg = validate_model(model)
             if valid:
                 break
             else:
@@ -214,10 +212,11 @@ class ScooterController:
                 print(f"Old scooter serial number: {old_scooter.serial_number_plain}")
 
             serial_number = input("Enter serial number (10-17 chars): ")
-            if SERIAL_RE.match(serial_number):
+            valid, msg = validate_serial_number(serial_number)
+            if valid:
                 break
             else:
-                print("Invalid serial number. 10-17 alphanumeric.")
+                print(f"Invalid serial number: {msg}")
 
         # Top Speed
         while True:
@@ -362,8 +361,8 @@ class ScooterController:
                 print(f"Old scooter out of service: {'Yes' if old_scooter.out_of_service else 'No'}")
 
             out_of_service_input = input("Is the scooter out of service? (y/n): ")
-            if out_of_service_input.lower() in ["y", "n"]:
-                out_of_service = out_of_service_input.lower() == "y"
+            if out_of_service_input in ["y", "n"]:
+                out_of_service = out_of_service_input == "y"
                 break
             print("Invalid format (y/n).")
 
@@ -379,8 +378,7 @@ class ScooterController:
                 last_maint_date = datetime.date.today().strftime('%Y-%m-%d')
                 break
             else:
-                # Use service validation for better error handling
-                valid, msg = scooter_service._validate_date(last_maint_date, "Last maintenance date")
+                valid, msg = validate_scooter_date(last_maint_date, "Last maintenance date")
                 if valid:
                     break
                 else:
